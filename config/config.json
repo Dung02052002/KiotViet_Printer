@@ -1,0 +1,25 @@
+{
+
+  "Version": "1.0.0",
+  "Company": "Dũng Store",
+
+  "BarTenderExe": "C:\\Program Files (x86)\\Seagull\\BarTender Suite\\bartend.exe",
+
+  "FullLabel": {
+    "Template": "",
+    "Data": ""
+  },
+
+  "BarcodeLabel": {
+    "Template": "",
+    "Data": ""
+  },
+
+  "LastFolder": "",
+
+  "AutoOpenLastFolder": true,
+
+  "RememberEmployee": true,
+
+  "DefaultEmployee": ""
+}
