@@ -108,30 +108,32 @@ public class FormMain : Form
     }
 
     private void BtnPrint_Click(object? sender, EventArgs e)
+{
+    try
     {
-        try
+        if (!chkFullLabel.Checked && !chkBarcodeLabel.Checked)
         {
-            if (!chkFullLabel.Checked && !chkBarcodeLabel.Checked)
-            {
-                MessageBox.Show("Vui lòng chọn ít nhất một loại tem.");
-                return;
-            }
-
-            if (!ConfigService.Instance.IsConfigured())
-            {
-                MessageBox.Show("Cấu hình chưa đầy đủ.");
-                return;
-            }
-
-            _labelService.Print(
-                chkFullLabel.Checked,
-                chkBarcodeLabel.Checked);
-
-            MessageBox.Show("Đã gửi lệnh in.");
+            MessageBox.Show("Vui lòng chọn ít nhất một loại tem.");
+            return;
         }
-        catch (Exception ex)
+
+        if (!ConfigService.Instance.IsConfigured())
         {
-            MessageBox.Show(ex.Message, "Lỗi");
+            MessageBox.Show("Cấu hình chưa đầy đủ.");
+            return;
         }
+
+        int total = _labelService.Print(
+            txtExcelFile.Text.Trim(),
+            chkFullLabel.Checked,
+            chkBarcodeLabel.Checked,
+            txtEmployeeCode.Text.Trim());
+
+        MessageBox.Show($"Đã xử lý {total} sản phẩm.");
     }
+    catch (Exception ex)
+    {
+        MessageBox.Show(ex.Message, "Lỗi");
+    }
+}
 }
