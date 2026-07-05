@@ -9,6 +9,7 @@ public class PreviewRow
     public string FinalBarcodeCode { get; set; } = "";
     public double Quantity { get; set; }
     public double Price { get; set; }
+
     public bool IsFullLabel { get; set; }
     public bool IsBarcodeLabel { get; set; }
 }

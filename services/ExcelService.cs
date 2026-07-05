@@ -1,168 +1,129 @@
-using KiotVietLabelPrinter.Models;
 using NPOI.HSSF.UserModel;
 using NPOI.SS.UserModel;
 using NPOI.XSSF.UserModel;
+using KiotVietLabelPrinter.Models;
 
 namespace KiotVietLabelPrinter.Services;
 
 public class ExcelService
 {
+    #region Read products from KiotViet Excel
     public List<ProductRow> ReadProducts(string sourceFile)
     {
-        using FileStream fs = new(sourceFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-        IWorkbook workbook = CreateWorkbook(fs, sourceFile);
+        IWorkbook workbook = OpenWorkbook(sourceFile);
         ISheet sheet = workbook.GetSheetAt(0);
 
         List<ProductRow> products = new();
 
+        // Bỏ dòng tiêu đề, bắt đầu từ dòng 1
         for (int i = 1; i <= sheet.LastRowNum; i++)
         {
             IRow? row = sheet.GetRow(i);
             if (row == null) continue;
 
-            ProductRow item = new()
-            {
-                StoreName = GetCellString(row, 0),
-                Category = GetCellString(row, 1),
-                ProductCode = GetCellString(row, 2),
-                Barcode = GetCellString(row, 3),
-                ProductName = GetCellString(row, 4),
-                ProductNameWithAttr = GetCellString(row, 5),
-                Unit = GetCellString(row, 6),
-                Quantity = GetCellDouble(row, 7),
-                Price = GetCellDouble(row, 8),
-                Description = GetCellString(row, 9),
-                Attribute = GetCellString(row, 10),
-                Position = GetCellString(row, 11)
-            };
+            string productCode = GetCellString(row, 2);           // C
+            string productName = GetCellString(row, 3);           // D
+            string productNameWithAttr = GetCellString(row, 5);   // F
+            double quantity = GetCellDouble(row, 7);              // H
+            double price = GetCellDouble(row, 8);                 // I
 
-            if (string.IsNullOrWhiteSpace(item.ProductCode) &&
-                string.IsNullOrWhiteSpace(item.ProductNameWithAttr))
+            if (string.IsNullOrWhiteSpace(productCode) &&
+                string.IsNullOrWhiteSpace(productName) &&
+                string.IsNullOrWhiteSpace(productNameWithAttr))
             {
                 continue;
             }
 
-            products.Add(item);
+            products.Add(new ProductRow
+            {
+                ProductCode = productCode,
+                ProductName = productName,
+                ProductNameWithAttr = productNameWithAttr,
+                Quantity = quantity,
+                Price = price
+            });
         }
 
         workbook.Close();
         return products;
     }
+    #endregion
 
-    public void WriteFullLabelData(List<ProductRow> products, string targetFile)
+    #region Generic label write
+    public void WriteGenericLabelData(
+        List<ProductRow> products,
+        LabelDefinition label)
     {
-        using FileStream fs = new(targetFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-        IWorkbook workbook = CreateWorkbook(fs, targetFile);
+        IWorkbook workbook = OpenWorkbook(label.DataFilePath);
         ISheet sheet = workbook.GetSheetAt(0);
 
         ClearDataRows(sheet);
 
-        int rowIndex = 1;
-        foreach (var item in products)
+        for (int i = 0; i < products.Count; i++)
         {
-            IRow row = sheet.CreateRow(rowIndex++);
+            ProductRow item = products[i];
+            IRow row = sheet.CreateRow(i + 1);
 
-            SetCell(row, 0, item.StoreName);
-            SetCell(row, 1, item.Category);
-            SetCell(row, 2, item.ProductCode);
-            SetCell(row, 3, item.Barcode);
-            SetCell(row, 4, item.ProductName);
-            SetCell(row, 5, item.ProductNameWithAttr);
-            SetCell(row, 6, item.Unit);
-            SetCell(row, 7, item.Quantity);
-            SetCell(row, 8, item.Price);
-            SetCell(row, 9, item.Description);
-            SetCell(row, 10, item.Attribute);
-            SetCell(row, 11, item.Position);
+            WriteDefaultProductRow(row, item);
         }
 
-        SaveWorkbook(workbook, targetFile);
+        SaveWorkbook(workbook, label.DataFilePath);
     }
+    #endregion
 
-    public void WriteBarcodeLabelData(
+    #region Barcode-like label write
+    public void WriteBarcodeLikeData(
         List<ProductRow> products,
-        string targetFile,
+        LabelDefinition label,
         string employeeCode)
     {
-        using FileStream fs = new(targetFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-        IWorkbook workbook = CreateWorkbook(fs, targetFile);
+        IWorkbook workbook = OpenWorkbook(label.DataFilePath);
         ISheet sheet = workbook.GetSheetAt(0);
 
         ClearDataRows(sheet);
 
-        int rowIndex = 1;
-        foreach (var item in products)
+        for (int i = 0; i < products.Count; i++)
         {
-            string parsedCode = BarcodeParser.Parse(
-                item.ProductNameWithAttr,
-                item.ProductCode);
+            ProductRow item = products[i];
+            IRow row = sheet.CreateRow(i + 1);
 
-            if (!string.IsNullOrWhiteSpace(employeeCode))
+            // ghi mặc định trước
+            WriteDefaultProductRow(row, item);
+
+            string finalText = item.ProductNameWithAttr;
+
+            if (label.UseBarcodeParser)
             {
-                parsedCode = $"{parsedCode}-{employeeCode.Trim()}";
+                finalText = BarcodeParser.Parse(
+                    item.ProductNameWithAttr,
+                    item.ProductCode);
             }
 
-            IRow row = sheet.CreateRow(rowIndex++);
+            if (label.AppendEmployeeCode &&
+                !string.IsNullOrWhiteSpace(employeeCode))
+            {
+                finalText = $"{finalText}-{employeeCode.Trim()}";
+            }
 
-            SetCell(row, 0, item.StoreName);
-            SetCell(row, 1, item.Category);
-            SetCell(row, 2, item.ProductCode);
-            SetCell(row, 3, item.Barcode);
-            SetCell(row, 4, item.ProductName);
-            SetCell(row, 5, parsedCode); // tem mã vạch sẽ dùng cột F làm nội dung in mã
-            SetCell(row, 6, item.Unit);
-            SetCell(row, 7, item.Quantity);
-            SetCell(row, 8, item.Price);
-            SetCell(row, 9, item.Description);
-            SetCell(row, 10, item.Attribute);
-            SetCell(row, 11, item.Position);
+            int targetCol = label.TargetNameColumnIndex;
+            ICell cell = row.GetCell(targetCol) ?? row.CreateCell(targetCol);
+            cell.SetCellValue(finalText);
         }
 
-        SaveWorkbook(workbook, targetFile);
+        SaveWorkbook(workbook, label.DataFilePath);
     }
+    #endregion
 
-    private static IWorkbook CreateWorkbook(Stream stream, string filePath)
+    #region Helpers
+    private static void WriteDefaultProductRow(IRow row, ProductRow item)
     {
-        string ext = Path.GetExtension(filePath).ToLower();
-
-        return ext switch
-        {
-            ".xls" => new HSSFWorkbook(stream),
-            ".xlsx" => new XSSFWorkbook(stream),
-            _ => throw new Exception("Định dạng Excel không hỗ trợ: " + ext)
-        };
-    }
-
-    private static string GetCellString(IRow row, int cellIndex)
-    {
-        ICell? cell = row.GetCell(cellIndex);
-        if (cell == null) return "";
-
-        return cell.ToString()?.Trim() ?? "";
-    }
-
-    private static double GetCellDouble(IRow row, int cellIndex)
-    {
-        ICell? cell = row.GetCell(cellIndex);
-        if (cell == null) return 0;
-
-        if (cell.CellType == CellType.Numeric)
-            return cell.NumericCellValue;
-
-        if (double.TryParse(cell.ToString(), out double value))
-            return value;
-
-        return 0;
-    }
-
-    private static void SetCell(IRow row, int index, string value)
-    {
-        row.CreateCell(index).SetCellValue(value ?? "");
-    }
-
-    private static void SetCell(IRow row, int index, double value)
-    {
-        row.CreateCell(index).SetCellValue(value);
+        // Cột theo layout file KiotViet / file data hiện tại của bạn
+        // Có thể điều chỉnh sau nếu cần map động hơn
+        row.CreateCell(2).SetCellValue(item.ProductCode);          // C
+        row.CreateCell(3).SetCellValue(item.ProductName);          // D
+        row.CreateCell(5).SetCellValue(item.ProductNameWithAttr);  // F
+        row.CreateCell(7).SetCellValue(item.Quantity);             // H
+        row.CreateCell(8).SetCellValue(item.Price);                // I
     }
 
     private static void ClearDataRows(ISheet sheet)
@@ -175,10 +136,44 @@ public class ExcelService
         }
     }
 
-  private static void SaveWorkbook(IWorkbook workbook, string targetFile)
-{
-    using FileStream output = new(targetFile, FileMode.Create, FileAccess.Write);
-    workbook.Write(output);
-    workbook.Close();
-}
+    private static void SaveWorkbook(IWorkbook workbook, string targetFile)
+    {
+        using FileStream output = new(targetFile, FileMode.Create, FileAccess.Write);
+        workbook.Write(output);
+        workbook.Close();
+    }
+
+    private static IWorkbook OpenWorkbook(string filePath)
+    {
+        FileStream fs = new(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+        string ext = Path.GetExtension(filePath).ToLower();
+
+        if (ext == ".xls")
+            return new HSSFWorkbook(fs);
+
+        if (ext == ".xlsx")
+            return new XSSFWorkbook(fs);
+
+        throw new Exception("Định dạng Excel không hỗ trợ.");
+    }
+
+    private static string GetCellString(IRow row, int index)
+    {
+        return row.GetCell(index)?.ToString()?.Trim() ?? "";
+    }
+
+    private static double GetCellDouble(IRow row, int index)
+    {
+        ICell? cell = row.GetCell(index);
+        if (cell == null) return 0;
+
+        if (cell.CellType == CellType.Numeric)
+            return cell.NumericCellValue;
+
+        if (double.TryParse(cell.ToString(), out double value))
+            return value;
+
+        return 0;
+    }
+    #endregion
 }

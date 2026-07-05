@@ -1,25 +1,37 @@
 {
-
-  "Version": "1.0.0",
-  "Company": "Dũng Store",
-
-  "BarTenderExe": "C:\\Program Files (x86)\\Seagull\\BarTender Suite\\bartend.exe",
-
-  "FullLabel": {
-    "Template": "",
-    "Data": ""
-  },
-
-  "BarcodeLabel": {
-    "Template": "",
-    "Data": ""
-  },
-
+  "BarTenderExe": "C:\\Program Files\\Seagull Scientific\\BarTender Suite\\bartend.exe",
   "LastFolder": "",
-
   "AutoOpenLastFolder": true,
-
   "RememberEmployee": true,
-
-  "DefaultEmployee": ""
+  "DefaultEmployee": "",
+  "Labels": [
+    {
+      "Code": "FULL",
+      "Name": "Tem đầy đủ",
+      "Description": "Tên + thuộc tính + mã vạch + giá",
+      "IconText": "🧾",
+      "IsEnabled": true,
+      "TemplatePath": "D:\\In Tem\\IN SP KOV\\3 TEM.btw",
+      "DataFilePath": "D:\\In Tem\\IN SP KOV\\dataa 3 tem.xls",
+      "HandlerType": "FULL",
+      "RequiresEmployeeCode": false,
+      "UseBarcodeParser": false,
+      "AppendEmployeeCode": false,
+      "TargetNameColumnIndex": 5
+    },
+    {
+      "Code": "BARCODE",
+      "Name": "Tem mã vạch",
+      "Description": "Mã parser + mã nhân viên",
+      "IconText": "🏷",
+      "IsEnabled": true,
+      "TemplatePath": "D:\\In Tem\\In tem ma vach\\3 TEM MÃ VẠCH.btw",
+      "DataFilePath": "D:\\In Tem\\In tem ma vach\\dataa tem ma vach.xls",
+      "HandlerType": "BARCODE",
+      "RequiresEmployeeCode": true,
+      "UseBarcodeParser": true,
+      "AppendEmployeeCode": true,
+      "TargetNameColumnIndex": 5
+    }
+  ]
 }

@@ -1,193 +1,540 @@
+using KiotVietLabelPrinter.Models;
 using KiotVietLabelPrinter.Services;
 
 namespace KiotVietLabelPrinter.Forms;
 
 public class FormMain : Form
 {
+    private readonly LabelService _labelService = new();
+    private readonly LabelCatalogService _catalogService = new();
+
+    // Header
+    private readonly Panel pnlHeader = new();
+    private readonly Button btnBack = new();
+    private readonly PictureBox picLogo = new();
+    private readonly Label lblTitle = new();
+    private readonly Label lblSubtitle = new();
+
+    // Home / Category
+    private readonly Panel pnlCategory = new();
+    private readonly FlowLayoutPanel flpCategories = new();
+
+    // Workspace
+    private readonly Panel pnlWorkspace = new();
+    private readonly Label lblCurrentCategory = new();
+
     private readonly TextBox txtExcelFile = new();
     private readonly TextBox txtEmployeeCode = new();
 
-    private readonly CheckBox chkFullLabel = new();
-    private readonly CheckBox chkBarcodeLabel = new();
-
     private readonly Button btnChooseExcel = new();
     private readonly Button btnConfig = new();
+    private readonly Button btnHistory = new();
     private readonly Button btnPreview = new();
     private readonly Button btnPrint = new();
-    
-    private readonly Button btnHistory = new();
 
-    private readonly LabelService _labelService = new();
+    private LabelDefinition? _selectedLabel;
 
     public FormMain()
     {
         Text = "KiotViet Label Printer";
-        Width = 700;
-        Height = 300;
+        Width = 980;
+        Height = 620;
         StartPosition = FormStartPosition.CenterScreen;
+        FormBorderStyle = FormBorderStyle.FixedSingle;
+        MaximizeBox = false;
+        BackColor = Color.White;
 
         BuildUi();
         CheckConfigOnStart();
+        ShowHome();
     }
 
     private void BuildUi()
     {
+        BuildHeader();
+        BuildCategoryPanel();
+        BuildWorkspacePanel();
+    }
+
+    #region Header
+    private void BuildHeader()
+    {
+        pnlHeader.Left = 0;
+        pnlHeader.Top = 0;
+        pnlHeader.Width = ClientSize.Width;
+        pnlHeader.Height = 110;
+        pnlHeader.BackColor = Color.FromArgb(245, 247, 250);
+        pnlHeader.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+        Controls.Add(pnlHeader);
+
+        btnBack.Text = "← Back";
+        btnBack.Left = 20;
+        btnBack.Top = 20;
+        btnBack.Width = 90;
+        btnBack.Height = 32;
+        btnBack.Visible = false;
+        btnBack.Click += (_, _) => ShowHome();
+        pnlHeader.Controls.Add(btnBack);
+
+        picLogo.Left = 130;
+        picLogo.Top = 18;
+        picLogo.Width = 64;
+        picLogo.Height = 64;
+        picLogo.SizeMode = PictureBoxSizeMode.Zoom;
+        picLogo.BorderStyle = BorderStyle.FixedSingle;
+
+        // Nếu có logo thì mở comment đoạn này:
+        // string logoPath = Path.Combine(Application.StartupPath, "Assets", "logo.png");
+        // if (File.Exists(logoPath))
+        // {
+        //     picLogo.Image = Image.FromFile(logoPath);
+        // }
+
+        pnlHeader.Controls.Add(picLogo);
+
+        lblTitle.Text = "IN TEM";
+        lblTitle.Left = 210;
+        lblTitle.Top = 18;
+        lblTitle.Width = 400;
+        lblTitle.Font = new Font("Segoe UI", 20, FontStyle.Bold);
+        pnlHeader.Controls.Add(lblTitle);
+
+        lblSubtitle.Text = "Chọn danh mục tem để bắt đầu";
+        lblSubtitle.Left = 212;
+        lblSubtitle.Top = 58;
+        lblSubtitle.Width = 600;
+        lblSubtitle.Font = new Font("Segoe UI", 10, FontStyle.Regular);
+        lblSubtitle.ForeColor = Color.DimGray;
+        pnlHeader.Controls.Add(lblSubtitle);
+    }
+    #endregion
+
+    #region Category panel
+    private void BuildCategoryPanel()
+    {
+        pnlCategory.Left = 20;
+        pnlCategory.Top = 130;
+        pnlCategory.Width = 920;
+        pnlCategory.Height = 420;
+        pnlCategory.BackColor = Color.White;
+        Controls.Add(pnlCategory);
+
+        Label lblCategoryTitle = new()
+        {
+            Text = "DANH MỤC TEM",
+            Left = 10,
+            Top = 10,
+            Width = 300,
+            Font = new Font("Segoe UI", 12, FontStyle.Bold)
+        };
+        pnlCategory.Controls.Add(lblCategoryTitle);
+
+        Label lblHint = new()
+        {
+            Text = "Chọn loại tem cần in. Danh sách này được lấy từ cấu hình.",
+            Left = 10,
+            Top = 40,
+            Width = 700,
+            ForeColor = Color.DimGray
+        };
+        pnlCategory.Controls.Add(lblHint);
+
+        flpCategories.Left = 10;
+        flpCategories.Top = 80;
+        flpCategories.Width = 880;
+        flpCategories.Height = 300;
+        flpCategories.AutoScroll = true;
+        flpCategories.WrapContents = true;
+        flpCategories.FlowDirection = FlowDirection.LeftToRight;
+        pnlCategory.Controls.Add(flpCategories);
+    }
+
+    private void ReloadCategories()
+    {
+        flpCategories.Controls.Clear();
+
+        List<LabelDefinition> labels = _catalogService.GetAllEnabled();
+
+        if (labels.Count == 0)
+        {
+            Label empty = new()
+            {
+                Text = "Chưa có loại tem nào được bật trong cấu hình.",
+                AutoSize = true,
+                ForeColor = Color.DarkRed,
+                Font = new Font("Segoe UI", 10, FontStyle.Bold),
+                Margin = new Padding(20)
+            };
+
+            flpCategories.Controls.Add(empty);
+            return;
+        }
+
+        foreach (var label in labels)
+        {
+            flpCategories.Controls.Add(CreateCategoryCard(label));
+        }
+    }
+
+    private Control CreateCategoryCard(LabelDefinition label)
+    {
+        Panel card = new()
+        {
+            Width = 260,
+            Height = 150,
+            Margin = new Padding(12),
+            BackColor = Color.FromArgb(248, 249, 252),
+            BorderStyle = BorderStyle.FixedSingle,
+            Cursor = Cursors.Hand
+        };
+
+        Label lblIcon = new()
+        {
+            Text = string.IsNullOrWhiteSpace(label.IconText) ? "🏷" : label.IconText,
+            Left = 18,
+            Top = 16,
+            Width = 50,
+            Height = 40,
+            Font = new Font("Segoe UI Emoji", 20, FontStyle.Regular)
+        };
+
+        Label lblName = new()
+        {
+            Text = label.Name,
+            Left = 18,
+            Top = 60,
+            Width = 220,
+            Font = new Font("Segoe UI", 12, FontStyle.Bold)
+        };
+
+        Label lblDesc = new()
+        {
+            Text = label.Description,
+            Left = 18,
+            Top = 95,
+            Width = 220,
+            Height = 40,
+            ForeColor = Color.DimGray
+        };
+
+        card.Controls.Add(lblIcon);
+        card.Controls.Add(lblName);
+        card.Controls.Add(lblDesc);
+
+        void open(object? s, EventArgs e) => OpenLabelWorkspace(label);
+
+        card.Click += open;
+        lblIcon.Click += open;
+        lblName.Click += open;
+        lblDesc.Click += open;
+
+        return card;
+    }
+    #endregion
+
+    #region Workspace panel
+    private void BuildWorkspacePanel()
+    {
+        pnlWorkspace.Left = 20;
+        pnlWorkspace.Top = 130;
+        pnlWorkspace.Width = 920;
+        pnlWorkspace.Height = 420;
+        pnlWorkspace.BackColor = Color.White;
+        pnlWorkspace.Visible = false;
+        Controls.Add(pnlWorkspace);
+
+        lblCurrentCategory.Text = "Danh mục:";
+        lblCurrentCategory.Left = 10;
+        lblCurrentCategory.Top = 10;
+        lblCurrentCategory.Width = 700;
+        lblCurrentCategory.Font = new Font("Segoe UI", 12, FontStyle.Bold);
+        pnlWorkspace.Controls.Add(lblCurrentCategory);
+
         Label lblExcel = new()
         {
             Text = "File Excel KiotViet",
-            Left = 20,
-            Top = 25,
-            Width = 120
+            Left = 10,
+            Top = 70,
+            Width = 140
         };
-        Controls.Add(lblExcel);
+        pnlWorkspace.Controls.Add(lblExcel);
 
-        txtExcelFile.SetBounds(150, 20, 380, 28);
+        txtExcelFile.Left = 160;
+        txtExcelFile.Top = 66;
+        txtExcelFile.Width = 520;
         txtExcelFile.ReadOnly = true;
-        Controls.Add(txtExcelFile);
+        pnlWorkspace.Controls.Add(txtExcelFile);
 
         btnChooseExcel.Text = "Chọn file";
-        btnChooseExcel.SetBounds(540, 20, 100, 30);
+        btnChooseExcel.Left = 700;
+        btnChooseExcel.Top = 64;
+        btnChooseExcel.Width = 110;
+        btnChooseExcel.Height = 32;
         btnChooseExcel.Click += BtnChooseExcel_Click;
-        Controls.Add(btnChooseExcel);
-
-        chkFullLabel.Text = "Tem đầy đủ";
-        chkFullLabel.SetBounds(150, 70, 200, 30);
-        Controls.Add(chkFullLabel);
-
-        chkBarcodeLabel.Text = "Tem mã vạch";
-        chkBarcodeLabel.SetBounds(350, 70, 200, 30);
-        Controls.Add(chkBarcodeLabel);
+        pnlWorkspace.Controls.Add(btnChooseExcel);
 
         Label lblEmployee = new()
         {
+            Name = "lblEmployee",
             Text = "Mã nhân viên",
-            Left = 20,
-            Top = 120,
-            Width = 120
+            Left = 10,
+            Top = 125,
+            Width = 140
         };
-        Controls.Add(lblEmployee);
+        pnlWorkspace.Controls.Add(lblEmployee);
 
-        txtEmployeeCode.SetBounds(150, 115, 380, 28);
-        Controls.Add(txtEmployeeCode);
+        txtEmployeeCode.Left = 160;
+        txtEmployeeCode.Top = 121;
+        txtEmployeeCode.Width = 300;
+        pnlWorkspace.Controls.Add(txtEmployeeCode);
+
+        Label lblEmployeeHint = new()
+        {
+            Name = "lblEmployeeHint",
+            Text = "Ví dụ: H020 hoặc H020-K026",
+            Left = 470,
+            Top = 125,
+            Width = 260,
+            ForeColor = Color.DimGray
+        };
+        pnlWorkspace.Controls.Add(lblEmployeeHint);
+
+        Panel line = new()
+        {
+            Left = 10,
+            Top = 170,
+            Width = 860,
+            Height = 1,
+            BackColor = Color.Gainsboro
+        };
+        pnlWorkspace.Controls.Add(line);
 
         btnConfig.Text = "Cấu hình";
-        btnConfig.SetBounds(150, 180, 120, 40);
+        btnConfig.Left = 60;
+        btnConfig.Top = 220;
+        btnConfig.Width = 120;
+        btnConfig.Height = 42;
         btnConfig.Click += BtnConfig_Click;
-        Controls.Add(btnConfig);
+        pnlWorkspace.Controls.Add(btnConfig);
 
         btnHistory.Text = "Lịch sử";
-        btnHistory.SetBounds(200, 180, 120, 40);
+        btnHistory.Left = 210;
+        btnHistory.Top = 220;
+        btnHistory.Width = 120;
+        btnHistory.Height = 42;
         btnHistory.Click += BtnHistory_Click;
-        Controls.Add(btnHistory);
+        pnlWorkspace.Controls.Add(btnHistory);
 
         btnPreview.Text = "Xem trước";
-        btnPreview.SetBounds(270, 180, 140, 40);
+        btnPreview.Left = 360;
+        btnPreview.Top = 220;
+        btnPreview.Width = 140;
+        btnPreview.Height = 42;
         btnPreview.Click += BtnPreview_Click;
-        Controls.Add(btnPreview);
+        pnlWorkspace.Controls.Add(btnPreview);
 
         btnPrint.Text = "IN TEM";
-        btnPrint.SetBounds(300, 180, 180, 40);
+        btnPrint.Left = 530;
+        btnPrint.Top = 220;
+        btnPrint.Width = 160;
+        btnPrint.Height = 42;
+        btnPrint.Font = new Font("Segoe UI", 10, FontStyle.Bold);
         btnPrint.Click += BtnPrint_Click;
-        Controls.Add(btnPrint);
+        pnlWorkspace.Controls.Add(btnPrint);
+    }
+    #endregion
+
+    #region Navigation
+    private void ShowHome()
+    {
+        _selectedLabel = null;
+
+        pnlCategory.Visible = true;
+        pnlWorkspace.Visible = false;
+        btnBack.Visible = false;
+
+        lblSubtitle.Text = "Chọn danh mục tem để bắt đầu";
+
+        ReloadCategories();
     }
 
+    private void OpenLabelWorkspace(LabelDefinition label)
+    {
+        _selectedLabel = label;
+
+        pnlCategory.Visible = false;
+        pnlWorkspace.Visible = true;
+        btnBack.Visible = true;
+
+        lblSubtitle.Text = $"Danh mục: {label.Name}";
+        lblCurrentCategory.Text = $"Danh mục: {label.Name} ({label.Code})";
+
+        ApplyEmployeeCodeMode(label);
+    }
+
+    private void ApplyEmployeeCodeMode(LabelDefinition label)
+    {
+        Control? lblEmployee = pnlWorkspace.Controls["lblEmployee"];
+        Control? lblEmployeeHint = pnlWorkspace.Controls["lblEmployeeHint"];
+
+        bool needEmployee = label.RequiresEmployeeCode;
+
+        if (lblEmployee != null)
+            lblEmployee.Visible = needEmployee;
+
+        if (lblEmployeeHint != null)
+            lblEmployeeHint.Visible = needEmployee;
+
+        txtEmployeeCode.Visible = needEmployee;
+        txtEmployeeCode.Enabled = needEmployee;
+        txtEmployeeCode.BackColor = needEmployee ? Color.White : Color.Gainsboro;
+
+        if (needEmployee)
+        {
+            if (ConfigService.Instance.Config.RememberEmployee &&
+                !string.IsNullOrWhiteSpace(ConfigService.Instance.Config.DefaultEmployee) &&
+                string.IsNullOrWhiteSpace(txtEmployeeCode.Text))
+            {
+                txtEmployeeCode.Text = ConfigService.Instance.Config.DefaultEmployee;
+            }
+        }
+        else
+        {
+            txtEmployeeCode.Text = "";
+        }
+    }
+    #endregion
+
+    #region Events
     private void CheckConfigOnStart()
     {
         if (!ConfigService.Instance.IsConfigured())
         {
-            MessageBox.Show("Phần mềm chưa được cấu hình. Vui lòng chọn đường dẫn trước khi sử dụng.");
-            using FormConfig formConfig = new();
-            formConfig.ShowDialog();
+            MessageBox.Show("Phần mềm chưa được cấu hình đầy đủ. Vui lòng kiểm tra cấu hình trước khi sử dụng.");
+
+            try
+            {
+                using FormConfig formConfig = new();
+                formConfig.ShowDialog();
+            }
+            catch
+            {
+                // Nếu FormConfig chưa refactor xong thì bỏ qua để app vẫn mở được
+            }
         }
     }
 
     private void BtnChooseExcel_Click(object? sender, EventArgs e)
     {
+        string initialDir = "";
+
+        if (ConfigService.Instance.Config.AutoOpenLastFolder &&
+            !string.IsNullOrWhiteSpace(ConfigService.Instance.Config.LastFolder) &&
+            Directory.Exists(ConfigService.Instance.Config.LastFolder))
+        {
+            initialDir = ConfigService.Instance.Config.LastFolder;
+        }
+
         using OpenFileDialog dialog = new()
         {
             Filter = "Excel Files|*.xls;*.xlsx"
         };
 
+        if (!string.IsNullOrWhiteSpace(initialDir))
+            dialog.InitialDirectory = initialDir;
+
         if (dialog.ShowDialog() == DialogResult.OK)
         {
             txtExcelFile.Text = dialog.FileName;
+
+            string? folder = Path.GetDirectoryName(dialog.FileName);
+            if (!string.IsNullOrWhiteSpace(folder))
+            {
+                ConfigService.Instance.Config.LastFolder = folder;
+                ConfigService.Instance.Save();
+            }
         }
     }
 
     private void BtnConfig_Click(object? sender, EventArgs e)
     {
-        using FormConfig formConfig = new();
-        formConfig.ShowDialog();
+        try
+        {
+            using FormConfig formConfig = new();
+            formConfig.ShowDialog();
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Form cấu hình chưa sẵn sàng hoặc đang lỗi:\n{ex.Message}", "Thông báo");
+        }
+
+        // Sau khi cấu hình xong, reload danh mục tem
+        ShowHome();
+    }
+
+    private void BtnHistory_Click(object? sender, EventArgs e)
+    {
+        using FormHistory history = new();
+        history.ShowDialog();
+    }
+
+    private void BtnPreview_Click(object? sender, EventArgs e)
+    {
+        try
+        {
+            EnsureReadyToProcess();
+
+            using FormPreview preview = new(
+                txtExcelFile.Text.Trim(),
+                _selectedLabel!.Code,
+                txtEmployeeCode.Text.Trim());
+
+            preview.ShowDialog();
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(ex.Message, "Lỗi");
+        }
     }
 
     private void BtnPrint_Click(object? sender, EventArgs e)
-{
-    try
     {
-        if (!chkFullLabel.Checked && !chkBarcodeLabel.Checked)
+        try
         {
-            MessageBox.Show("Vui lòng chọn ít nhất một loại tem.");
-            return;
-        }
+            EnsureReadyToProcess();
 
-        if (!ConfigService.Instance.IsConfigured())
+            int total = _labelService.Print(
+                txtExcelFile.Text.Trim(),
+                _selectedLabel!.Code,
+                txtEmployeeCode.Text.Trim());
+
+            MessageBox.Show($"Đã xử lý {total} sản phẩm.");
+        }
+        catch (Exception ex)
         {
-            MessageBox.Show("Cấu hình chưa đầy đủ.");
-            return;
+            MessageBox.Show(ex.Message, "Lỗi");
         }
-
-        int total = _labelService.Print(
-            txtExcelFile.Text.Trim(),
-            chkFullLabel.Checked,
-            chkBarcodeLabel.Checked,
-            txtEmployeeCode.Text.Trim());
-
-        MessageBox.Show($"Đã xử lý {total} sản phẩm.");
     }
-    catch (Exception ex)
-    {
-        MessageBox.Show(ex.Message, "Lỗi");
-    }
-}
 
-private void BtnPreview_Click(object? sender, EventArgs e)
-{
-    try
+    private void EnsureReadyToProcess()
     {
+        if (_selectedLabel == null)
+            throw new Exception("Vui lòng chọn danh mục tem.");
+
         if (string.IsNullOrWhiteSpace(txtExcelFile.Text))
-        {
-            MessageBox.Show("Vui lòng chọn file Excel KiotViet.");
-            return;
-        }
+            throw new Exception("Vui lòng chọn file Excel KiotViet.");
 
-        if (!chkFullLabel.Checked && !chkBarcodeLabel.Checked)
-        {
-            MessageBox.Show("Vui lòng chọn ít nhất một loại tem.");
-            return;
-        }
+        if (!File.Exists(txtExcelFile.Text.Trim()))
+            throw new Exception("Không tìm thấy file Excel đã chọn.");
 
         if (!ConfigService.Instance.IsConfigured())
+            throw new Exception("Cấu hình chưa đầy đủ.");
+
+        if (_selectedLabel.RequiresEmployeeCode &&
+            string.IsNullOrWhiteSpace(txtEmployeeCode.Text))
         {
-            MessageBox.Show("Cấu hình chưa đầy đủ.");
-            return;
+            throw new Exception("Loại tem này yêu cầu nhập mã nhân viên.");
         }
-
-        using FormPreview preview = new(
-            txtExcelFile.Text.Trim(),
-            chkFullLabel.Checked,
-            chkBarcodeLabel.Checked,
-            txtEmployeeCode.Text.Trim());
-
-        preview.ShowDialog();
     }
-    catch (Exception ex)
-    {
-        MessageBox.Show(ex.Message, "Lỗi");
-    }
-}
-private void BtnHistory_Click(object? sender, EventArgs e)
-{
-    using FormHistory history = new();
-    history.ShowDialog();
-}
+    #endregion
 }
