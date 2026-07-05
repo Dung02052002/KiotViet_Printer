@@ -12,8 +12,10 @@ public class FormMain : Form
 
     private readonly Button btnChooseExcel = new();
     private readonly Button btnConfig = new();
-    private readonly Button btnPrint = new();
     private readonly Button btnPreview = new();
+    private readonly Button btnPrint = new();
+    
+    private readonly Button btnHistory = new();
 
     private readonly LabelService _labelService = new();
 
@@ -72,6 +74,11 @@ public class FormMain : Form
         btnConfig.SetBounds(150, 180, 120, 40);
         btnConfig.Click += BtnConfig_Click;
         Controls.Add(btnConfig);
+
+        btnHistory.Text = "Lịch sử";
+        btnHistory.SetBounds(200, 180, 120, 40);
+        btnHistory.Click += BtnHistory_Click;
+        Controls.Add(btnHistory);
 
         btnPreview.Text = "Xem trước";
         btnPreview.SetBounds(270, 180, 140, 40);
@@ -177,5 +184,10 @@ private void BtnPreview_Click(object? sender, EventArgs e)
     {
         MessageBox.Show(ex.Message, "Lỗi");
     }
+}
+private void BtnHistory_Click(object? sender, EventArgs e)
+{
+    using FormHistory history = new();
+    history.ShowDialog();
 }
 }

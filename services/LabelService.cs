@@ -7,6 +7,7 @@ public class LabelService
     private readonly ExcelService _excelService = new();
     private readonly BarTenderService _barTenderService = new();
     private readonly PreviewService _previewService = new();
+    private readonly HistoryService _historyService = new();
 
     public List<ProductRow> ReadProducts(string sourceExcelFile)
     {
@@ -64,6 +65,36 @@ public class LabelService
             _barTenderService.Print(config.BarcodeLabel.Template);
         }
 
+        SaveHistory(
+            sourceExcelFile,
+            printFull,
+            printBarcode,
+            employeeCode,
+            products);
+
         return products.Count;
+    }
+
+    private void SaveHistory(
+        string sourceExcelFile,
+        bool printFull,
+        bool printBarcode,
+        string employeeCode,
+        List<ProductRow> products)
+    {
+        PrintHistory history = new()
+        {
+            PrintTime = DateTime.Now,
+            SourceExcelFile = sourceExcelFile,
+            PrintedFullLabel = printFull,
+            PrintedBarcodeLabel = printBarcode,
+            EmployeeCode = employeeCode,
+            ProductCount = products.Count,
+            TotalLabels = products.Sum(x => x.Quantity),
+            MachineName = Environment.MachineName,
+            UserName = Environment.UserName
+        };
+
+        _historyService.Add(history);
     }
 }
