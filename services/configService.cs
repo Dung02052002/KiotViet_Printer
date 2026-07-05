@@ -12,7 +12,6 @@ public sealed class ConfigService
         get
         {
             _instance ??= new ConfigService();
-
             return _instance;
         }
     }
@@ -25,7 +24,7 @@ public sealed class ConfigService
     {
         _configPath = Path.Combine(
             Application.StartupPath,
-            "Config",
+            "config",
             "config.json");
     }
 
@@ -34,7 +33,6 @@ public sealed class ConfigService
         if (!File.Exists(_configPath))
         {
             Save();
-
             return;
         }
 
@@ -46,9 +44,9 @@ public sealed class ConfigService
 
     public void Save()
     {
-        string folder = Path.GetDirectoryName(_configPath)!;
+        string? folder = Path.GetDirectoryName(_configPath);
 
-        if (!Directory.Exists(folder))
+        if (!string.IsNullOrWhiteSpace(folder) && !Directory.Exists(folder))
             Directory.CreateDirectory(folder);
 
         string json = JsonConvert.SerializeObject(

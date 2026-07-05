@@ -1,4 +1,4 @@
-using KiotViet_Label_Printer_Pro_V2;
+using KiotVietLabelPrinter.Forms;
 using KiotVietLabelPrinter.Services;
 
 namespace KiotVietLabelPrinter;
@@ -12,6 +12,6 @@ internal static class Program
 
         ConfigService.Instance.Load();
 
-        Application.Run(new Form1());
+        Application.Run(new FormMain());
     }
 }
