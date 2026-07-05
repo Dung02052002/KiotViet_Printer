@@ -13,6 +13,7 @@ public class FormMain : Form
     private readonly Button btnChooseExcel = new();
     private readonly Button btnConfig = new();
     private readonly Button btnPrint = new();
+    private readonly Button btnPreview = new();
 
     private readonly LabelService _labelService = new();
 
@@ -72,6 +73,11 @@ public class FormMain : Form
         btnConfig.Click += BtnConfig_Click;
         Controls.Add(btnConfig);
 
+        btnPreview.Text = "Xem trước";
+        btnPreview.SetBounds(270, 180, 140, 40);
+        btnPreview.Click += BtnPreview_Click;
+        Controls.Add(btnPreview);
+
         btnPrint.Text = "IN TEM";
         btnPrint.SetBounds(300, 180, 180, 40);
         btnPrint.Click += BtnPrint_Click;
@@ -130,6 +136,42 @@ public class FormMain : Form
             txtEmployeeCode.Text.Trim());
 
         MessageBox.Show($"Đã xử lý {total} sản phẩm.");
+    }
+    catch (Exception ex)
+    {
+        MessageBox.Show(ex.Message, "Lỗi");
+    }
+}
+
+private void BtnPreview_Click(object? sender, EventArgs e)
+{
+    try
+    {
+        if (string.IsNullOrWhiteSpace(txtExcelFile.Text))
+        {
+            MessageBox.Show("Vui lòng chọn file Excel KiotViet.");
+            return;
+        }
+
+        if (!chkFullLabel.Checked && !chkBarcodeLabel.Checked)
+        {
+            MessageBox.Show("Vui lòng chọn ít nhất một loại tem.");
+            return;
+        }
+
+        if (!ConfigService.Instance.IsConfigured())
+        {
+            MessageBox.Show("Cấu hình chưa đầy đủ.");
+            return;
+        }
+
+        using FormPreview preview = new(
+            txtExcelFile.Text.Trim(),
+            chkFullLabel.Checked,
+            chkBarcodeLabel.Checked,
+            txtEmployeeCode.Text.Trim());
+
+        preview.ShowDialog();
     }
     catch (Exception ex)
     {
