@@ -5,6 +5,25 @@ namespace KiotVietLabelPrinter.Services;
 
 public static class BarcodeParser
 {
+    private static readonly HashSet<string> InvalidCodeTokens = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "model",
+        "mã",
+        "mã sp",
+        "MA",
+        "MA SP",
+        "code",
+        "ms",
+        "NỮ",
+        "NU",
+        "NAM",
+        "PUCINI",
+        "CAO CẤP",
+        "CAO CAP",
+        "KIM LOẠI",
+        "KIM LOAI"
+    };
+
     public static string Parse(string text, string fallbackCode = "")
     {
         return ParseFull(text, fallbackCode).BarcodeCode;
@@ -16,18 +35,17 @@ public static class BarcodeParser
 
         if (string.IsNullOrWhiteSpace(text))
         {
-            result.BarcodeCode = fallbackCode ?? "";
+            result.BarcodeCode = fallbackCode?.Trim() ?? "";
             result.AttributeText = "";
             return result;
         }
 
-        string input = text.Trim();
+        string input = NormalizeInput(text);
 
         // =========================
         // 1) LẤY THUỘC TÍNH
         // =========================
-        // Ưu tiên lấy phần trong ngoặc cuối cùng
-        // ví dụ: "... mã UGQ2307 (BROWN 40 GC)" => "(BROWN 40 GC)"
+        // ưu tiên ngoặc cuối cùng
         Match attrMatch = Regex.Match(input, @"(\([^()]+\))\s*$");
         if (attrMatch.Success)
         {
@@ -35,44 +53,143 @@ public static class BarcodeParser
         }
 
         // =========================
-        // 2) LẤY MÃ
+        // 2) LẤY MÃ TỪ KEYWORD
         // =========================
-
-        // Trường hợp 1: có chữ "mã" / "model"
-        Match codeByKeyword = Regex.Match(
+        // hỗ trợ: mã, mã sp, model, code, ms
+        // ví dụ:
+        // "mã UGQ2307"
+        // "model: MK285"
+        // "mã sp - ABC123"
+        var keywordMatches = Regex.Matches(
             input,
-            @"(?i)(?:mã|model)\s*[:\-]?\s*([A-Z0-9]+)",
+            @"(?ix)
+            \b(?:mã\s*sp|ma\s*sp|mã|ma|model|code|ms)\b
+            \s*[:\-]?\s*
+            ([A-Z0-9\-_\.]{3,30})
+            ",
             RegexOptions.IgnoreCase);
 
-        if (codeByKeyword.Success)
+        foreach (Match m in keywordMatches)
         {
-            result.BarcodeCode = codeByKeyword.Groups[1].Value.Trim().ToUpper();
+            if (!m.Success) continue;
+
+            string candidate = CleanupCandidate(m.Groups[1].Value);
+
+            if (IsValidBarcodeCode(candidate))
+            {
+                result.BarcodeCode = candidate;
+                break;
+            }
         }
 
-        // Trường hợp 2: fallback bằng cách tìm cụm chữ+số kiểu UGQ2307, MK285...
+        // =========================
+        // 3) FALLBACK: tìm token dạng mã hàng trong toàn chuỗi
+        // =========================
         if (string.IsNullOrWhiteSpace(result.BarcodeCode))
         {
-            Match codePattern = Regex.Match(
+            // ưu tiên token có cả chữ + số
+            var tokenMatches = Regex.Matches(
                 input,
-                @"\b[A-Z]{1,10}\d{2,10}\b",
+                @"\b[A-Z0-9][A-Z0-9\-_\.]{3,29}\b",
                 RegexOptions.IgnoreCase);
 
-            if (codePattern.Success)
-                result.BarcodeCode = codePattern.Value.Trim().ToUpper();
+            foreach (Match m in tokenMatches)
+            {
+                string candidate = CleanupCandidate(m.Value);
+
+                if (IsValidBarcodeCode(candidate))
+                {
+                    result.BarcodeCode = candidate;
+                    break;
+                }
+            }
         }
 
-        // Trường hợp 3: fallback cuối
+        // =========================
+        // 4) FALLBACK CUỐI
+        // =========================
         if (string.IsNullOrWhiteSpace(result.BarcodeCode))
-            result.BarcodeCode = fallbackCode?.Trim() ?? "";
-
-        // Nếu chưa có thuộc tính, thử lấy phần ngoặc ở cuối ProductNameWithAttr
-        if (string.IsNullOrWhiteSpace(result.AttributeText))
         {
-            Match lastParen = Regex.Match(input, @"(\([^()]+\))\s*$");
-            if (lastParen.Success)
-                result.AttributeText = lastParen.Groups[1].Value.Trim();
+            string fb = CleanupCandidate(fallbackCode);
+            result.BarcodeCode = IsValidBarcodeCode(fb) ? fb : (fallbackCode?.Trim() ?? "");
         }
+
+        // =========================
+        // 5) Làm sạch thuộc tính
+        // =========================
+        result.AttributeText = CleanupAttribute(result.AttributeText);
 
         return result;
+    }
+
+    private static string NormalizeInput(string text)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+            return string.Empty;
+
+        string s = text
+            .Replace("\r", " ")
+            .Replace("\n", " ")
+            .Replace("\t", " ");
+
+        s = Regex.Replace(s, @"\s+", " ").Trim();
+        return s;
+    }
+
+    private static string CleanupCandidate(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return string.Empty;
+
+        string s = value.Trim().ToUpper();
+
+        // bỏ ký tự rác đầu/cuối
+        s = s.Trim(':', '-', '.', ',', ';', '_', ' ');
+
+        return s;
+    }
+
+    private static string CleanupAttribute(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return string.Empty;
+
+        string s = value.Trim();
+
+        // nếu muốn bỏ ngoặc thì uncomment:
+        // s = s.Trim('(', ')');
+
+        return s;
+    }
+
+    private static bool IsValidBarcodeCode(string? code)
+    {
+        if (string.IsNullOrWhiteSpace(code))
+            return false;
+
+        code = code.Trim().ToUpper();
+
+        if (code.Length < 4 || code.Length > 30)
+            return false;
+
+        if (InvalidCodeTokens.Contains(code))
+            return false;
+
+        // loại các text chỉ toàn số
+        if (Regex.IsMatch(code, @"^\d+$"))
+            return false;
+
+        // bắt buộc có ít nhất 1 chữ và 1 số
+        bool hasLetter = Regex.IsMatch(code, @"[A-Z]");
+        bool hasDigit = Regex.IsMatch(code, @"\d");
+
+        if (!hasLetter || !hasDigit)
+            return false;
+
+        // loại một số cụm mô tả thường gặp
+        if (Regex.IsMatch(code, @"^(NAM|NU|NỮ|MODEL|CODE|MS)$", RegexOptions.IgnoreCase))
+            return false;
+
+        return true;
     }
 }

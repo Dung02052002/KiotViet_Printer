@@ -1,51 +1,61 @@
-using Newtonsoft.Json;
+using System.Text.Json;
 using KiotVietLabelPrinter.Models;
 
 namespace KiotVietLabelPrinter.Services;
 
 public class HistoryService
 {
-    private readonly string _historyPath;
+    private readonly string _historyFile;
 
     public HistoryService()
     {
-        _historyPath = Path.Combine(
-            Application.StartupPath,
-            "data",
-            "history.json");
-    }
+        _historyFile = Path.Combine(Application.StartupPath, "Data", "history.json");
 
-    public List<PrintHistory> Load()
-    {
-        if (!File.Exists(_historyPath))
-            return new List<PrintHistory>();
-
-        string json = File.ReadAllText(_historyPath);
-
-        return JsonConvert.DeserializeObject<List<PrintHistory>>(json)
-               ?? new List<PrintHistory>();
-    }
-
-    public void Save(List<PrintHistory> histories)
-    {
-        string? folder = Path.GetDirectoryName(_historyPath);
-
+        string? folder = Path.GetDirectoryName(_historyFile);
         if (!string.IsNullOrWhiteSpace(folder) && !Directory.Exists(folder))
+        {
             Directory.CreateDirectory(folder);
+        }
 
-        string json = JsonConvert.SerializeObject(
-            histories,
-            Formatting.Indented);
-
-        File.WriteAllText(_historyPath, json);
+        if (!File.Exists(_historyFile))
+        {
+            File.WriteAllText(_historyFile, "[]");
+        }
     }
 
-    public void Add(PrintHistory history)
+    public List<PrintHistory> GetAll()
     {
-        List<PrintHistory> histories = Load();
+        try
+        {
+            if (!File.Exists(_historyFile))
+                return new List<PrintHistory>();
 
-        histories.Insert(0, history);
+            string json = File.ReadAllText(_historyFile);
+            if (string.IsNullOrWhiteSpace(json))
+                return new List<PrintHistory>();
 
-        Save(histories);
+            return JsonSerializer.Deserialize<List<PrintHistory>>(json) ?? new List<PrintHistory>();
+        }
+        catch
+        {
+            return new List<PrintHistory>();
+        }
+    }
+
+    public void Add(PrintHistory item)
+    {
+        List<PrintHistory> items = GetAll();
+        items.Add(item);
+        SaveAll(items);
+    }
+
+    public void SaveAll(List<PrintHistory> items)
+    {
+        string json = JsonSerializer.Serialize(items, new JsonSerializerOptions
+        {
+            WriteIndented = true
+        });
+
+        File.WriteAllText(_historyFile, json);
     }
 }

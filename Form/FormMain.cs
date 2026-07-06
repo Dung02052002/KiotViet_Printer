@@ -533,11 +533,7 @@ public class FormMain : Form
         if (!ConfigService.Instance.IsConfigured())
             throw new Exception("Cấu hình chưa đầy đủ.");
 
-        if (_selectedLabel.RequiresEmployeeCode &&
-            string.IsNullOrWhiteSpace(txtEmployeeCode.Text))
-        {
-            throw new Exception("Loại tem này yêu cầu nhập mã nhân viên.");
-        }
+
     }
     #endregion
 }
