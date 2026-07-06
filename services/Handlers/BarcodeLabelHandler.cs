@@ -53,9 +53,20 @@ public class BarcodeLabelHandler : ILabelHandler
         LabelDefinition label,
         string employeeCode)
     {
-        // Dùng đúng file nguồn người dùng vừa chọn
-        // label.SourceExcelFile phải được set từ luồng gọi bên ngoài,
-        // hoặc bạn sửa chỗ gọi handler để truyền sourceFile vào đây nếu cần.
-        throw new NotImplementedException("BarcodeLabelHandler hiện không dùng trực tiếp. Hãy gọi ExcelService.CopyToBarTenderData(...) từ luồng in chính.");
+        if (string.IsNullOrWhiteSpace(label.SourceExcelFile) || !File.Exists(label.SourceExcelFile))
+            throw new Exception($"Không tìm thấy file Excel nguồn:\n{label.SourceExcelFile}");
+
+        if (string.IsNullOrWhiteSpace(label.DataFilePath) || !File.Exists(label.DataFilePath))
+            throw new Exception($"Không tìm thấy file data tem mã vạch:\n{label.DataFilePath}");
+
+        if (string.IsNullOrWhiteSpace(label.TemplatePath) || !File.Exists(label.TemplatePath))
+            throw new Exception($"Không tìm thấy file template BarTender:\n{label.TemplatePath}");
+
+        _excelService.WriteBarcodeLikeData(
+            label.SourceExcelFile,
+            label.DataFilePath,
+            employeeCode);
+
+        _barTenderService.Print(label.TemplatePath);
     }
 }

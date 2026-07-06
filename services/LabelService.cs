@@ -15,7 +15,7 @@ public class LabelService
             throw new Exception("Vui lòng chọn file Excel KiotViet.");
 
         if (!File.Exists(sourceExcelFile))
-            throw new Exception("Không tìm thấy file Excel KiotViet.");
+            throw new Exception($"Không tìm thấy file Excel KiotViet:\n{sourceExcelFile}");
 
         List<ProductRow> products = _excelService.ReadProducts(sourceExcelFile);
 
@@ -33,6 +33,10 @@ public class LabelService
         List<ProductRow> products = ReadProducts(sourceExcelFile);
 
         LabelDefinition label = _catalogService.GetByCode(labelCode);
+
+        // GÁN FILE NGUỒN VÀO LABEL
+        label.SourceExcelFile = sourceExcelFile;
+
         var handler = _handlerFactory.GetHandler(label.HandlerType);
 
         return handler.BuildPreview(products, label, employeeCode);
@@ -46,6 +50,10 @@ public class LabelService
         List<ProductRow> products = ReadProducts(sourceExcelFile);
 
         LabelDefinition label = _catalogService.GetByCode(labelCode);
+
+        // GÁN FILE NGUỒN VÀO LABEL
+        label.SourceExcelFile = sourceExcelFile;
+
         var handler = _handlerFactory.GetHandler(label.HandlerType);
 
         handler.PrepareDataAndPrint(products, label, employeeCode);

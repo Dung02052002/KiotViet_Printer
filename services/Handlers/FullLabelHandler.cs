@@ -15,18 +15,25 @@ public class FullLabelHandler : ILabelHandler
         LabelDefinition label,
         string employeeCode)
     {
-        return products.Select(item => new PreviewRow
+        List<PreviewRow> rows = new();
+
+        foreach (ProductRow item in products)
         {
-            ProductCode = item.ProductCode,
-            ProductName = item.ProductName,
-            ProductNameWithAttr = item.ProductNameWithAttr,
-            ParsedBarcodeCode = item.ProductCode,
-            FinalBarcodeCode = item.ProductCode,
-            Quantity = item.Quantity,
-            Price = item.Price,
-            IsFullLabel = true,
-            IsBarcodeLabel = false
-        }).ToList();
+            rows.Add(new PreviewRow
+            {
+                ProductCode = item.ProductCode,
+                ProductName = item.ProductName,
+                ProductNameWithAttr = item.ProductNameWithAttr,
+                ParsedBarcodeCode = item.ProductCode,
+                FinalBarcodeCode = item.ProductCode,
+                Quantity = item.Quantity,
+                Price = item.Price,
+                IsFullLabel = true,
+                IsBarcodeLabel = false
+            });
+        }
+
+        return rows;
     }
 
     public void PrepareDataAndPrint(
@@ -34,7 +41,19 @@ public class FullLabelHandler : ILabelHandler
         LabelDefinition label,
         string employeeCode)
     {
-        _excelService.WriteGenericLabelData(products, label);
+        if (string.IsNullOrWhiteSpace(label.SourceExcelFile) || !File.Exists(label.SourceExcelFile))
+            throw new Exception($"Không tìm thấy file Excel nguồn:\n{label.SourceExcelFile}");
+
+        if (string.IsNullOrWhiteSpace(label.DataFilePath) || !File.Exists(label.DataFilePath))
+            throw new Exception($"Không tìm thấy file data tem:\n{label.DataFilePath}");
+
+        if (string.IsNullOrWhiteSpace(label.TemplatePath) || !File.Exists(label.TemplatePath))
+            throw new Exception($"Không tìm thấy file template BarTender:\n{label.TemplatePath}");
+
+        _excelService.WriteGenericLabelData(
+            label.SourceExcelFile,
+            label.DataFilePath);
+
         _barTenderService.Print(label.TemplatePath);
     }
 }

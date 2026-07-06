@@ -170,7 +170,7 @@ public class FormMain : Form
             return;
         }
 
-        foreach (var label in labels)
+        foreach (LabelDefinition label in labels)
         {
             flpCategories.Controls.Add(CreateCategoryCard(label));
         }
@@ -468,7 +468,6 @@ public class FormMain : Form
             MessageBox.Show($"Form cấu hình chưa sẵn sàng hoặc đang lỗi:\n{ex.Message}", "Thông báo");
         }
 
-        // Sau khi cấu hình xong, reload danh mục tem
         ShowHome();
     }
 
@@ -503,21 +502,20 @@ public class FormMain : Form
         {
             EnsureReadyToProcess();
 
-            int total = _labelService.Print(
-                txtExcelFile.Text.Trim(),
-                _selectedLabel!.Code,
-                txtEmployeeCode.Text.Trim());
+            string sourceExcelFile = txtExcelFile.Text.Trim();
+            string labelCode = _selectedLabel!.Code;
+            string employeeCode = txtEmployeeCode.Text.Trim();
 
-            MessageBox.Show($"Đã xử lý {total} sản phẩm.");
-            MessageBox.Show("Đã gửi lệnh in thành công.");
+            int productCount = _labelService.Print(
+                sourceExcelFile,
+                labelCode,
+                employeeCode);
+
+            MessageBox.Show($"In thành công.\nSố sản phẩm: {productCount}", "Thông báo");
         }
         catch (Exception ex)
         {
-            MessageBox.Show(
-            "Có lỗi khi in:\n" + ex.Message,
-            "Lỗi in tem",
-            MessageBoxButtons.OK,
-            MessageBoxIcon.Error);
+            MessageBox.Show(ex.Message, "Lỗi in tem");
         }
     }
 
