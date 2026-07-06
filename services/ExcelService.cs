@@ -72,46 +72,49 @@ public class ExcelService
     #endregion
 
     #region Barcode-like label write
-    public void WriteBarcodeLikeData(
-        List<ProductRow> products,
-        LabelDefinition label,
-        string employeeCode)
+  public void WriteBarcodeLikeData(
+    List<ProductRow> products,
+    LabelDefinition label,
+    string employeeCode)
+{
+    IWorkbook workbook = OpenWorkbook(label.DataFilePath);
+    ISheet sheet = workbook.GetSheetAt(0);
+
+    ClearDataRows(sheet);
+
+    for (int i = 0; i < products.Count; i++)
     {
-        IWorkbook workbook = OpenWorkbook(label.DataFilePath);
-        ISheet sheet = workbook.GetSheetAt(0);
+        ProductRow item = products[i];
+        IRow row = sheet.CreateRow(i + 1);
 
-        ClearDataRows(sheet);
+        // Parse dữ liệu tem mã vạch
+        BarcodeParseResult parsed = BarcodeParser.ParseFull(
+            item.ProductNameWithAttr,
+            item.ProductCode);
 
-        for (int i = 0; i < products.Count; i++)
+        string finalBarcode = parsed.BarcodeCode;
+
+        if (label.AppendEmployeeCode &&
+            !string.IsNullOrWhiteSpace(employeeCode))
         {
-            ProductRow item = products[i];
-            IRow row = sheet.CreateRow(i + 1);
-
-            // ghi mặc định trước
-            WriteDefaultProductRow(row, item);
-
-            string finalText = item.ProductNameWithAttr;
-
-            if (label.UseBarcodeParser)
-            {
-                finalText = BarcodeParser.Parse(
-                    item.ProductNameWithAttr,
-                    item.ProductCode);
-            }
-
-            if (label.AppendEmployeeCode &&
-                !string.IsNullOrWhiteSpace(employeeCode))
-            {
-                finalText = $"{finalText}-{employeeCode.Trim()}";
-            }
-
-            int targetCol = label.TargetNameColumnIndex;
-            ICell cell = row.GetCell(targetCol) ?? row.CreateCell(targetCol);
-            cell.SetCellValue(finalText);
+            finalBarcode = $"{finalBarcode}-{employeeCode.Trim()}";
         }
 
-        SaveWorkbook(workbook, label.DataFilePath);
+        // Ghi dữ liệu cơ bản
+        row.CreateCell(2).SetCellValue(item.ProductCode);                 // C - mã hàng gốc
+        row.CreateCell(3).SetCellValue(item.ProductName);                 // D - tên hàng
+        row.CreateCell(5).SetCellValue(parsed.AttributeText);             // F - thuộc tính để hiện màu/size
+        row.CreateCell(7).SetCellValue(item.Quantity);                    // H - số lượng
+        row.CreateCell(8).SetCellValue(item.Price);                       // I - giá
+
+        // Ghi mã barcode cuối cùng vào cột cấu hình
+        int targetCol = label.TargetNameColumnIndex;
+        ICell barcodeCell = row.GetCell(targetCol) ?? row.CreateCell(targetCol);
+        barcodeCell.SetCellValue(finalBarcode);
     }
+
+    SaveWorkbook(workbook, label.DataFilePath);
+}
     #endregion
 
     #region Helpers

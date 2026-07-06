@@ -1,77 +1,77 @@
 using System.Text.RegularExpressions;
+using KiotVietLabelPrinter.Models;
 
 namespace KiotVietLabelPrinter.Services;
 
 public static class BarcodeParser
 {
-    public static string Parse(string text, string fallbackProductCode = "")
+    public static string Parse(string text, string fallbackCode = "")
     {
+        return ParseFull(text, fallbackCode).BarcodeCode;
+    }
+
+    public static BarcodeParseResult ParseFull(string text, string fallbackCode = "")
+    {
+        BarcodeParseResult result = new();
+
         if (string.IsNullOrWhiteSpace(text))
-            return fallbackProductCode;
+        {
+            result.BarcodeCode = fallbackCode ?? "";
+            result.AttributeText = "";
+            return result;
+        }
 
         string input = text.Trim();
 
-        // 1) Model XXXXX
-        string? model = MatchAfterKeyword(input, @"\bModel\b");
-        if (!string.IsNullOrWhiteSpace(model))
-            return CleanCode(model);
+        // =========================
+        // 1) LẤY THUỘC TÍNH
+        // =========================
+        // Ưu tiên lấy phần trong ngoặc cuối cùng
+        // ví dụ: "... mã UGQ2307 (BROWN 40 GC)" => "(BROWN 40 GC)"
+        Match attrMatch = Regex.Match(input, @"(\([^()]+\))\s*$");
+        if (attrMatch.Success)
+        {
+            result.AttributeText = attrMatch.Groups[1].Value.Trim();
+        }
 
-        // 2) Mã XXXXX
-        string? ma = MatchAfterKeyword(input, @"\bMã\b");
-        if (!string.IsNullOrWhiteSpace(ma))
-            return CleanCode(ma);
+        // =========================
+        // 2) LẤY MÃ
+        // =========================
 
-        // 3) Nam XXXXX
-        string? nam = MatchAfterKeyword(input, @"\bNam\b");
-        if (!string.IsNullOrWhiteSpace(nam))
-            return CleanCode(nam);
-
-        // 4) Nữ XXXXX
-        string? nu = MatchAfterKeyword(input, @"\bNữ\b");
-        if (!string.IsNullOrWhiteSpace(nu))
-            return CleanCode(nu);
-
-        // 5) Pucini XXXXX
-        string? pucini = MatchAfterKeyword(input, @"\bPucini\b");
-        if (!string.IsNullOrWhiteSpace(pucini))
-            return CleanCode(pucini);
-
-        return fallbackProductCode;
-    }
-
-    private static string? MatchAfterKeyword(string input, string keywordPattern)
-    {
-        // Lấy phần sau keyword cho tới dấu phẩy / ngoặc / xuống dòng
-        var match = Regex.Match(
+        // Trường hợp 1: có chữ "mã" / "model"
+        Match codeByKeyword = Regex.Match(
             input,
-            $"{keywordPattern}\\s*[:\\-]?\\s*([^,\\r\\n\\(\\)]*)",
+            @"(?i)(?:mã|model)\s*[:\-]?\s*([A-Z0-9]+)",
             RegexOptions.IgnoreCase);
 
-        if (!match.Success)
-            return null;
+        if (codeByKeyword.Success)
+        {
+            result.BarcodeCode = codeByKeyword.Groups[1].Value.Trim().ToUpper();
+        }
 
-        string value = match.Groups[1].Value.Trim();
-        return string.IsNullOrWhiteSpace(value) ? null : value;
-    }
+        // Trường hợp 2: fallback bằng cách tìm cụm chữ+số kiểu UGQ2307, MK285...
+        if (string.IsNullOrWhiteSpace(result.BarcodeCode))
+        {
+            Match codePattern = Regex.Match(
+                input,
+                @"\b[A-Z]{1,10}\d{2,10}\b",
+                RegexOptions.IgnoreCase);
 
-    private static string CleanCode(string value)
-    {
-        string result = value.Trim();
+            if (codePattern.Success)
+                result.BarcodeCode = codePattern.Value.Trim().ToUpper();
+        }
 
-        // Cắt ở dấu phẩy nếu có
-        int commaIndex = result.IndexOf(',');
-        if (commaIndex >= 0)
-            result = result[..commaIndex].Trim();
+        // Trường hợp 3: fallback cuối
+        if (string.IsNullOrWhiteSpace(result.BarcodeCode))
+            result.BarcodeCode = fallbackCode?.Trim() ?? "";
 
-        // Cắt ở dấu ngoặc nếu có
-        int bracketIndex = result.IndexOf('(');
-        if (bracketIndex >= 0)
-            result = result[..bracketIndex].Trim();
-
-        // Lấy token đầu tiên nếu có nhiều khoảng trắng
-        string[] parts = result.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        if (parts.Length > 0)
-            return parts[0].Trim();
+        // Nếu chưa có thuộc tính, thử lấy phần ngoặc ở cuối ProductNameWithAttr
+        if (string.IsNullOrWhiteSpace(result.AttributeText))
+        {
+            Match lastParen = Regex.Match(input, @"(\([^()]+\))\s*$");
+            if (lastParen.Success)
+                result.AttributeText = lastParen.Groups[1].Value.Trim();
+        }
 
         return result;
     }
