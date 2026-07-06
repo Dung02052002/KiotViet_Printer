@@ -17,26 +17,26 @@ public class BarcodeLabelHandler : ILabelHandler
     {
         List<PreviewRow> rows = new();
 
-        foreach (var item in products)
+        foreach (ProductRow item in products)
         {
-            string parsed = BarcodeParser.Parse(
+            BarcodeParseResult parsed = BarcodeParser.ParseFull(
                 item.ProductNameWithAttr,
                 item.ProductCode);
 
-            string finalCode = parsed;
+            string finalCode = parsed.BarcodeCode;
 
-            if (label.AppendEmployeeCode &&
-                !string.IsNullOrWhiteSpace(employeeCode))
-            {
-                finalCode = $"{parsed}-{employeeCode.Trim()}";
-            }
+            if (string.IsNullOrWhiteSpace(finalCode))
+                finalCode = item.ProductCode;
+
+            if (!string.IsNullOrWhiteSpace(employeeCode))
+                finalCode = $"{finalCode}-{employeeCode.Trim()}";
 
             rows.Add(new PreviewRow
             {
                 ProductCode = item.ProductCode,
                 ProductName = item.ProductName,
                 ProductNameWithAttr = item.ProductNameWithAttr,
-                ParsedBarcodeCode = parsed,
+                ParsedBarcodeCode = parsed.BarcodeCode,
                 FinalBarcodeCode = finalCode,
                 Quantity = item.Quantity,
                 Price = item.Price,
@@ -53,7 +53,9 @@ public class BarcodeLabelHandler : ILabelHandler
         LabelDefinition label,
         string employeeCode)
     {
-        _excelService.WriteBarcodeLikeData(products, label, employeeCode);
-        _barTenderService.Print(label.TemplatePath);
+        // Dùng đúng file nguồn người dùng vừa chọn
+        // label.SourceExcelFile phải được set từ luồng gọi bên ngoài,
+        // hoặc bạn sửa chỗ gọi handler để truyền sourceFile vào đây nếu cần.
+        throw new NotImplementedException("BarcodeLabelHandler hiện không dùng trực tiếp. Hãy gọi ExcelService.CopyToBarTenderData(...) từ luồng in chính.");
     }
 }
