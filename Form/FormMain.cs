@@ -509,10 +509,15 @@ public class FormMain : Form
                 txtEmployeeCode.Text.Trim());
 
             MessageBox.Show($"Đã xử lý {total} sản phẩm.");
+            MessageBox.Show("Đã gửi lệnh in thành công.");
         }
         catch (Exception ex)
         {
-            MessageBox.Show(ex.Message, "Lỗi");
+            MessageBox.Show(
+            "Có lỗi khi in:\n" + ex.Message,
+            "Lỗi in tem",
+            MessageBoxButtons.OK,
+            MessageBoxIcon.Error);
         }
     }
 

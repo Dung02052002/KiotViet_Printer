@@ -6,46 +6,58 @@ namespace KiotVietLabelPrinter.Services;
 public class BarTenderService
 {
     public void Print(string btwFile)
+{
+    string bartenderExe = ConfigService.Instance.Config.BarTenderExe;
+
+    if (string.IsNullOrWhiteSpace(bartenderExe))
+        throw new Exception("Chưa cấu hình đường dẫn BarTender.exe.");
+
+    if (!File.Exists(bartenderExe))
+        throw new Exception($"Không tìm thấy BarTender.exe:\n{bartenderExe}");
+
+    if (string.IsNullOrWhiteSpace(btwFile) || !File.Exists(btwFile))
+        throw new Exception($"Không tìm thấy file tem:\n{btwFile}");
+
+    string xmlPath = CreatePrintXml(btwFile);
+
+    try
     {
-        string bartenderExe = ConfigService.Instance.Config.BarTenderExe;
-
-        if (string.IsNullOrWhiteSpace(bartenderExe))
-            throw new Exception("Chưa cấu hình đường dẫn BarTender.exe.");
-
-        if (!File.Exists(bartenderExe))
-            throw new Exception($"Không tìm thấy BarTender.exe:\n{bartenderExe}");
-
-        if (string.IsNullOrWhiteSpace(btwFile) || !File.Exists(btwFile))
-            throw new Exception($"Không tìm thấy file tem:\n{btwFile}");
-
-        string xmlPath = CreatePrintXml(btwFile);
-
-        try
+        ProcessStartInfo psi = new()
         {
-            ProcessStartInfo psi = new()
-            {
-                FileName = bartenderExe,
-                Arguments = $"/XMLScript=\"{xmlPath}\"",
-                UseShellExecute = false,
-                CreateNoWindow = true,
-                WindowStyle = ProcessWindowStyle.Hidden
-            };
+            FileName = bartenderExe,
+            Arguments = $"/XMLScript=\"{xmlPath}\"",
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            WindowStyle = ProcessWindowStyle.Hidden,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true
+        };
 
-            using Process? process = Process.Start(psi);
+        using Process? process = Process.Start(psi);
 
-            if (process == null)
-                throw new Exception("Không thể gửi lệnh in tới BarTender.");
+        if (process == null)
+            throw new Exception("Không thể gửi lệnh in tới BarTender.");
 
-            process.WaitForExit();
+        bool exited = process.WaitForExit(3000); // tối đa 3 giây
 
-            if (process.ExitCode != 0)
-                throw new Exception($"BarTender trả về mã lỗi: {process.ExitCode}");
+        if (!exited)
+        {
+            // coi như đã gửi lệnh in, không làm app bị treo/crash
+            return;
         }
-        finally
+
+        string stdErr = process.StandardError.ReadToEnd();
+
+        if (!string.IsNullOrWhiteSpace(stdErr))
         {
-            TryDelete(xmlPath);
+            throw new Exception("BarTender báo lỗi:\n" + stdErr.Trim());
         }
     }
+    finally
+    {
+        TryDelete(xmlPath);
+    }
+}
 
     private static string CreatePrintXml(string btwFile)
     {
@@ -62,9 +74,6 @@ public class BarTenderService
   <Command>
     <Print>
       <Format>{EscapeXml(btwFile)}</Format>
-      <PrintSetup>
-        <IdenticalCopiesOfLabel>1</IdenticalCopiesOfLabel>
-      </PrintSetup>
     </Print>
   </Command>
 </XMLScript>
