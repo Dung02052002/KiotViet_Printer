@@ -1,6 +1,4 @@
-using NPOI.HSSF.UserModel;
 using NPOI.SS.UserModel;
-using NPOI.XSSF.UserModel;
 using KiotVietLabelPrinter.Models;
 
 namespace KiotVietLabelPrinter.Services;
@@ -13,7 +11,7 @@ public class ExcelService
 
     public List<ProductRow> ReadProducts(string sourceFile)
     {
-        IWorkbook workbook = OpenWorkbook(sourceFile);
+        using IWorkbook workbook = OpenWorkbook(sourceFile);
         ISheet sheet = workbook.GetSheetAt(0);
 
         List<ProductRow> products = new();
@@ -49,7 +47,6 @@ public class ExcelService
             });
         }
 
-        workbook.Close();
         return products;
     }
 
@@ -57,9 +54,7 @@ public class ExcelService
     /// Ghi file data tem FULL theo logic tool cũ:
     /// copy nguyên dữ liệu từ source sang target, không parse cột F
     /// </summary>
-    public void WriteGenericLabelData(
-        string sourceFile,
-        string targetFile)
+    public void WriteGenericLabelData(string sourceFile, string targetFile)
     {
         CopyToBarTenderData(sourceFile, targetFile, false, "");
     }
@@ -69,10 +64,7 @@ public class ExcelService
     /// copy nguyên dữ liệu từ source sang target,
     /// riêng cột F parse mã + nối mã nhân viên
     /// </summary>
-    public void WriteBarcodeLikeData(
-        string sourceFile,
-        string targetFile,
-        string employeeCode)
+    public void WriteBarcodeLikeData(string sourceFile, string targetFile, string employeeCode)
     {
         CopyToBarTenderData(sourceFile, targetFile, true, employeeCode);
     }
@@ -87,25 +79,24 @@ public class ExcelService
         bool isBarcode,
         string employeeCode = "")
     {
-        IWorkbook sourceWorkbook = OpenWorkbook(sourceFile);
-        IWorkbook targetWorkbook = OpenWorkbook(targetFile);
+        using IWorkbook sourceWorkbook = OpenWorkbook(sourceFile);
+        using IWorkbook targetWorkbook = OpenWorkbook(targetFile);
 
         ISheet sourceSheet = sourceWorkbook.GetSheetAt(0);
         ISheet targetSheet = targetWorkbook.GetSheetAt(0);
 
         // Xóa dữ liệu cũ, giữ header
-        for (int i = targetSheet.LastRowNum; i >= 1; i--)
-        {
-            IRow? oldRow = targetSheet.GetRow(i);
-            if (oldRow != null)
-                targetSheet.RemoveRow(oldRow);
-        }
+        ClearSheetData(targetSheet);
 
         // Copy nguyên từng hàng/cột từ source sang target
         for (int i = 1; i <= sourceSheet.LastRowNum; i++)
         {
             IRow? sourceRow = sourceSheet.GetRow(i);
             if (sourceRow == null)
+                continue;
+
+            // bỏ qua dòng hoàn toàn rỗng
+            if (IsRowEmpty(sourceRow))
                 continue;
 
             IRow targetRow = targetSheet.GetRow(i) ?? targetSheet.CreateRow(i);
@@ -118,7 +109,7 @@ public class ExcelService
 
                 ICell targetCell = targetRow.GetCell(j) ?? targetRow.CreateCell(j);
 
-                string value = sourceCell.ToString() ?? "";
+                string value = GetCellText(sourceCell);
 
                 // TEM BARCODE: chỉ xử lý riêng cột F
                 if (isBarcode && j == BarcodeColumnIndex)
@@ -137,62 +128,105 @@ public class ExcelService
                     }
 
                     value = parsedCode;
+                    targetCell.SetCellValue(value);
+                    continue;
                 }
 
-                switch (sourceCell.CellType)
-                {
-                    case CellType.Numeric:
-                        if (isBarcode && j == BarcodeColumnIndex)
-                            targetCell.SetCellValue(value);
-                        else
-                            targetCell.SetCellValue(sourceCell.NumericCellValue);
-                        break;
-
-                    case CellType.Boolean:
-                        if (isBarcode && j == BarcodeColumnIndex)
-                            targetCell.SetCellValue(value);
-                        else
-                            targetCell.SetCellValue(sourceCell.BooleanCellValue);
-                        break;
-
-                    case CellType.Formula:
-                        if (isBarcode && j == BarcodeColumnIndex)
-                            targetCell.SetCellValue(value);
-                        else
-                            targetCell.SetCellFormula(sourceCell.CellFormula);
-                        break;
-
-                    default:
-                        targetCell.SetCellValue(value);
-                        break;
-                }
+                CopyCellValue(sourceCell, targetCell);
             }
         }
 
-        using FileStream output = new(targetFile, FileMode.Create, FileAccess.Write, FileShare.ReadWrite);
-        targetWorkbook.Write(output);
-
-        targetWorkbook.Close();
-        sourceWorkbook.Close();
+        SaveWorkbook(targetWorkbook, targetFile);
     }
 
     #endregion
 
     #region HELPERS
 
-    private IWorkbook OpenWorkbook(string filePath)
+    private static IWorkbook OpenWorkbook(string filePath)
     {
+        if (!File.Exists(filePath))
+            throw new Exception($"Không tìm thấy file Excel:\n{filePath}");
+
         FileStream fs = new(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
 
-        string ext = Path.GetExtension(filePath).ToLower();
+        try
+        {
+            // Tự nhận diện xls / xlsx theo nội dung thật của file
+            return WorkbookFactory.Create(fs);
+        }
+        catch (Exception ex)
+        {
+            fs.Dispose();
+            throw new Exception(
+                $"Không đọc được file Excel.\n" +
+                $"File: {Path.GetFileName(filePath)}\n" +
+                $"Đường dẫn: {filePath}\n" +
+                $"Chi tiết: {ex.Message}");
+        }
+    }
 
-        if (ext == ".xls")
-            return new HSSFWorkbook(fs);
+    private static void SaveWorkbook(IWorkbook workbook, string targetFile)
+    {
+        string? folder = Path.GetDirectoryName(targetFile);
+        if (!string.IsNullOrWhiteSpace(folder) && !Directory.Exists(folder))
+        {
+            Directory.CreateDirectory(folder);
+        }
 
-        if (ext == ".xlsx")
-            return new XSSFWorkbook(fs);
+        using FileStream output = new(targetFile, FileMode.Create, FileAccess.Write, FileShare.ReadWrite);
+        workbook.Write(output);
+    }
 
-        throw new Exception("Định dạng Excel không hỗ trợ.");
+    private static void ClearSheetData(ISheet sheet)
+    {
+        for (int i = sheet.LastRowNum; i >= 1; i--)
+        {
+            IRow? row = sheet.GetRow(i);
+            if (row != null)
+                sheet.RemoveRow(row);
+        }
+    }
+
+    private static bool IsRowEmpty(IRow row)
+    {
+        for (int i = row.FirstCellNum; i < row.LastCellNum; i++)
+        {
+            if (i < 0) continue;
+
+            ICell? cell = row.GetCell(i);
+            if (cell != null && !string.IsNullOrWhiteSpace(GetCellText(cell)))
+                return false;
+        }
+
+        return true;
+    }
+
+    private static void CopyCellValue(ICell sourceCell, ICell targetCell)
+    {
+        switch (sourceCell.CellType)
+        {
+            case CellType.Numeric:
+                targetCell.SetCellValue(sourceCell.NumericCellValue);
+                break;
+
+            case CellType.Boolean:
+                targetCell.SetCellValue(sourceCell.BooleanCellValue);
+                break;
+
+            case CellType.Formula:
+                // Với file data BarTender, giữ nguyên kết quả text an toàn hơn
+                targetCell.SetCellValue(GetCellText(sourceCell));
+                break;
+
+            case CellType.Blank:
+                targetCell.SetCellValue(string.Empty);
+                break;
+
+            default:
+                targetCell.SetCellValue(GetCellText(sourceCell));
+                break;
+        }
     }
 
     private static string GetCellString(IRow row, int index)
@@ -212,6 +246,11 @@ public class ExcelService
             return value;
 
         return 0;
+    }
+
+    private static string GetCellText(ICell cell)
+    {
+        return cell.ToString()?.Trim() ?? "";
     }
 
     #endregion

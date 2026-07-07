@@ -1,0 +1,11 @@
+bin/
+obj/
+publish/
+installer_output/
+.vs/
+
+*.exe
+*.dll
+*.pdb
+*.deps.json
+*.runtimeconfig.json

@@ -373,36 +373,38 @@ public class FormMain : Form
     }
 
     private void ApplyEmployeeCodeMode(LabelDefinition label)
+{
+    Control? lblEmployee = pnlWorkspace.Controls["lblEmployee"];
+    Control? lblEmployeeHint = pnlWorkspace.Controls["lblEmployeeHint"];
+
+    // Hiện ô mã nhân viên nếu label có bật AppendEmployeeCode
+    // hoặc dùng barcode parser / tem barcode
+    bool showEmployee = label.AppendEmployeeCode || label.HandlerType == "BARCODE";
+
+    if (lblEmployee != null)
+        lblEmployee.Visible = showEmployee;
+
+    if (lblEmployeeHint != null)
+        lblEmployeeHint.Visible = showEmployee;
+
+    txtEmployeeCode.Visible = showEmployee;
+    txtEmployeeCode.Enabled = showEmployee;
+    txtEmployeeCode.BackColor = showEmployee ? Color.White : Color.Gainsboro;
+
+    if (showEmployee)
     {
-        Control? lblEmployee = pnlWorkspace.Controls["lblEmployee"];
-        Control? lblEmployeeHint = pnlWorkspace.Controls["lblEmployeeHint"];
-
-        bool needEmployee = label.RequiresEmployeeCode;
-
-        if (lblEmployee != null)
-            lblEmployee.Visible = needEmployee;
-
-        if (lblEmployeeHint != null)
-            lblEmployeeHint.Visible = needEmployee;
-
-        txtEmployeeCode.Visible = needEmployee;
-        txtEmployeeCode.Enabled = needEmployee;
-        txtEmployeeCode.BackColor = needEmployee ? Color.White : Color.Gainsboro;
-
-        if (needEmployee)
+        if (ConfigService.Instance.Config.RememberEmployee &&
+            !string.IsNullOrWhiteSpace(ConfigService.Instance.Config.DefaultEmployee) &&
+            string.IsNullOrWhiteSpace(txtEmployeeCode.Text))
         {
-            if (ConfigService.Instance.Config.RememberEmployee &&
-                !string.IsNullOrWhiteSpace(ConfigService.Instance.Config.DefaultEmployee) &&
-                string.IsNullOrWhiteSpace(txtEmployeeCode.Text))
-            {
-                txtEmployeeCode.Text = ConfigService.Instance.Config.DefaultEmployee;
-            }
-        }
-        else
-        {
-            txtEmployeeCode.Text = "";
+            txtEmployeeCode.Text = ConfigService.Instance.Config.DefaultEmployee;
         }
     }
+    else
+    {
+        txtEmployeeCode.Text = "";
+    }
+}
     #endregion
 
     #region Events
@@ -532,7 +534,7 @@ public class FormMain : Form
 
         if (!ConfigService.Instance.IsConfigured())
             throw new Exception("Cấu hình chưa đầy đủ.");
-
+      
 
     }
     #endregion
