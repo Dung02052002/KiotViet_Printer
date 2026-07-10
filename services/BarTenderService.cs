@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Text;
+using System.Windows.Forms;
 
 namespace KiotVietLabelPrinter.Services;
 
@@ -10,11 +11,6 @@ public class BarTenderService
         Print(btwFile, null);
     }
 
-    /// <summary>
-    /// In file btw, có thể truyền thêm NamedSubStrings cho BarTender.
-    /// Ví dụ:
-    /// GLASSES_INFO = "...";
-    /// </summary>
     public void Print(string btwFile, Dictionary<string, string>? namedSubStrings)
     {
         string bartenderExe = ConfigService.Instance.Config.BarTenderExe;
@@ -25,59 +21,66 @@ public class BarTenderService
         if (!File.Exists(bartenderExe))
             throw new Exception($"Không tìm thấy BarTender.exe:\n{bartenderExe}");
 
-        if (string.IsNullOrWhiteSpace(btwFile) || !File.Exists(btwFile))
+        if (string.IsNullOrWhiteSpace(btwFile))
+            throw new Exception("Đường dẫn file tem đang rỗng.");
+
+        if (!File.Exists(btwFile))
             throw new Exception($"Không tìm thấy file tem:\n{btwFile}");
 
-        string xmlPath = CreatePrintXml(btwFile, namedSubStrings);
+        string xmlPath = CreatePrintXmlNearApp(btwFile, namedSubStrings);
 
-        try
+        // Popup để biết chắc app đang chạy đúng code mới
+        // MessageBox.Show($"XML vừa tạo:\n{xmlPath}", "DEBUG BarTender XML");
+
+        ProcessStartInfo psi = new()
         {
-            ProcessStartInfo psi = new()
-            {
-                FileName = bartenderExe,
-                Arguments = $"/XMLScript=\"{xmlPath}\"",
-                UseShellExecute = false,
-                CreateNoWindow = true,
-                WindowStyle = ProcessWindowStyle.Hidden,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true
-            };
+            FileName = bartenderExe,
+            Arguments = $"/XMLScript=\"{xmlPath}\"",
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            WindowStyle = ProcessWindowStyle.Hidden,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true
+        };
 
-            using Process? process = Process.Start(psi);
+        using Process? process = Process.Start(psi);
 
-            if (process == null)
-                throw new Exception("Không thể gửi lệnh in tới BarTender.");
+        if (process == null)
+            throw new Exception("Không thể gửi lệnh in tới BarTender.");
 
-            bool exited = process.WaitForExit(3000); // tối đa 3 giây
+        bool exited = process.WaitForExit(8000);
 
-            if (!exited)
-            {
-                // coi như đã gửi lệnh in, không làm app bị treo/crash
-                return;
-            }
+        if (!exited)
+            return;
 
-            string stdErr = process.StandardError.ReadToEnd();
+        string stdOut = process.StandardOutput.ReadToEnd();
+        string stdErr = process.StandardError.ReadToEnd();
 
-            if (!string.IsNullOrWhiteSpace(stdErr))
-            {
-                throw new Exception("BarTender báo lỗi:\n" + stdErr.Trim());
-            }
-        }
-        finally
+        if (process.ExitCode != 0 || !string.IsNullOrWhiteSpace(stdErr))
         {
-            TryDelete(xmlPath);
+            string xmlContent = SafeReadAllText(xmlPath);
+
+            throw new Exception(
+                "BarTender báo lỗi khi xử lý XML in.\n\n" +
+                $"Template: {btwFile}\n" +
+                $"XML: {xmlPath}\n" +
+                $"ExitCode: {process.ExitCode}\n\n" +
+                $"STDERR:\n{stdErr}\n\n" +
+                $"STDOUT:\n{stdOut}\n\n" +
+                $"Nội dung XML:\n{xmlContent}");
         }
     }
 
-    private static string CreatePrintXml(
+    private static string CreatePrintXmlNearApp(
         string btwFile,
         Dictionary<string, string>? namedSubStrings)
     {
-        string tempFolder = Path.Combine(Path.GetTempPath(), "KiotVietLabelPrinter");
-        Directory.CreateDirectory(tempFolder);
+        string appFolder = AppDomain.CurrentDomain.BaseDirectory;
+        string debugFolder = Path.Combine(appFolder, "debug_xml");
+        Directory.CreateDirectory(debugFolder);
 
         string xmlPath = Path.Combine(
-            tempFolder,
+            debugFolder,
             $"print_{DateTime.Now:yyyyMMdd_HHmmss_fff}.xml");
 
         StringBuilder sb = new();
@@ -90,27 +93,35 @@ public class BarTenderService
 
         if (namedSubStrings != null && namedSubStrings.Count > 0)
         {
-            sb.AppendLine("""      <NamedSubString>""");
-
             foreach (var kv in namedSubStrings)
             {
                 if (string.IsNullOrWhiteSpace(kv.Key))
                     continue;
 
-                sb.AppendLine("""        <SubString>""");
-                sb.AppendLine($"          <Name>{EscapeXml(kv.Key)}</Name>");
-                sb.AppendLine($"          <Value>{EscapeXml(kv.Value ?? "")}</Value>");
-                sb.AppendLine("""        </SubString>""");
-            }
+                string value = kv.Value ?? string.Empty;
 
-            sb.AppendLine("""      </NamedSubString>""");
+                sb.AppendLine($"      <NamedSubString Name=\"{EscapeXml(kv.Key)}\">");
+                sb.AppendLine($"        <Value>{EscapeXml(value)}</Value>");
+                sb.AppendLine("      </NamedSubString>");
+            }
         }
 
         sb.AppendLine("""    </Print>""");
         sb.AppendLine("""  </Command>""");
         sb.AppendLine("""</XMLScript>""");
 
-        File.WriteAllText(xmlPath, sb.ToString(), Encoding.UTF8);
+        string xml = sb.ToString();
+
+        using (FileStream fs = new(xmlPath, FileMode.Create, FileAccess.Write, FileShare.Read))
+        using (StreamWriter writer = new(fs, new UTF8Encoding(false)))
+        {
+            writer.Write(xml);
+            writer.Flush();
+            fs.Flush(true);
+        }
+
+        File.WriteAllText(Path.Combine(debugFolder, "last_print_debug.xml"), xml, new UTF8Encoding(false));
+
         return xmlPath;
     }
 
@@ -119,16 +130,18 @@ public class BarTenderService
         return System.Security.SecurityElement.Escape(value) ?? value;
     }
 
-    private static void TryDelete(string path)
+    private static string SafeReadAllText(string path)
     {
         try
         {
-            if (File.Exists(path))
-                File.Delete(path);
+            if (!File.Exists(path))
+                return "(Không tìm thấy file XML)";
+
+            return File.ReadAllText(path);
         }
-        catch
+        catch (Exception ex)
         {
-            // bỏ qua lỗi xóa file tạm
+            return $"(Không đọc được file XML: {ex.Message})";
         }
     }
 }
