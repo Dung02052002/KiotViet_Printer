@@ -32,6 +32,21 @@
       "UseBarcodeParser": true,
       "AppendEmployeeCode": true,
       "TargetNameColumnIndex": 5
-    }
+    },
+    {
+  "Code": "GLASSES",
+  "Name": "Tem kính",
+  "Description": "Tem kính + block info mã hàng / mã vạch động",
+  "IconText": "🕶",
+  "IsEnabled": true,
+  "TemplatePath": "D:\\In Tem\\Tem Kinh\\TEM KINH.btw",
+  "DataFilePath": "D:\\In Tem\\Tem Kinh\\data tem kinh.xls",
+  "HandlerType": "GLASSES",
+  "RequiresEmployeeCode": false,
+  "UseBarcodeParser": false,
+  "AppendEmployeeCode": false,
+  "TargetNameColumnIndex": 5
+}
+    
   ]
 }

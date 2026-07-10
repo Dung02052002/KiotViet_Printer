@@ -372,26 +372,48 @@ public class FormMain : Form
         ApplyEmployeeCodeMode(label);
     }
 
-    private void ApplyEmployeeCodeMode(LabelDefinition label)
+  private void ApplyEmployeeCodeMode(LabelDefinition label)
 {
     Control? lblEmployee = pnlWorkspace.Controls["lblEmployee"];
     Control? lblEmployeeHint = pnlWorkspace.Controls["lblEmployeeHint"];
 
-    // Hiện ô mã nhân viên nếu label có bật AppendEmployeeCode
-    // hoặc dùng barcode parser / tem barcode
-    bool showEmployee = label.AppendEmployeeCode || label.HandlerType == "BARCODE";
+    bool isBarcode = label.HandlerType == "BARCODE";
+    bool isGlasses = label.HandlerType == "GLASSES";
+
+    bool showInput = label.AppendEmployeeCode || isBarcode || isGlasses;
 
     if (lblEmployee != null)
-        lblEmployee.Visible = showEmployee;
+    {
+        lblEmployee.Visible = showInput;
+
+        if (isGlasses)
+            lblEmployee.Text = "Mã màu";
+        else
+            lblEmployee.Text = "Mã nhân viên";
+    }
 
     if (lblEmployeeHint != null)
-        lblEmployeeHint.Visible = showEmployee;
+    {
+        lblEmployeeHint.Visible = showInput;
 
-    txtEmployeeCode.Visible = showEmployee;
-    txtEmployeeCode.Enabled = showEmployee;
-    txtEmployeeCode.BackColor = showEmployee ? Color.White : Color.Gainsboro;
+        if (isGlasses)
+            lblEmployeeHint.Text = "Ví dụ: -1, -2, -3";
+        else
+            lblEmployeeHint.Text = "Ví dụ: H020 hoặc H020-K026";
+    }
 
-    if (showEmployee)
+    txtEmployeeCode.Visible = showInput;
+    txtEmployeeCode.Enabled = showInput;
+    txtEmployeeCode.BackColor = showInput ? Color.White : Color.Gainsboro;
+
+    if (isGlasses)
+    {
+        // Tem kính: ô này là mã màu, không load default employee
+        txtEmployeeCode.Text = "";
+        return;
+    }
+
+    if (showInput)
     {
         if (ConfigService.Instance.Config.RememberEmployee &&
             !string.IsNullOrWhiteSpace(ConfigService.Instance.Config.DefaultEmployee) &&

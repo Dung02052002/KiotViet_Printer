@@ -13,7 +13,8 @@ public class LabelHandlerFactory
         {
             { "FULL", new FullLabelHandler() },
             { "BARCODE", new BarcodeLabelHandler() },
-            { "GENERIC", new GenericLabelHandler() }
+            { "GENERIC", new GenericLabelHandler() },
+            { "GLASSES", new GlassesLabelHandler() }
         };
     }
 
