@@ -5,11 +5,11 @@ AppVersion=1.0.1
 AppPublisher=Dung Store
 
 DefaultDirName={userdesktop}\KiotViet Label Printer
-DefaultGroupName=In Tem KiotViet
+DefaultGroupName=In Tem KiotViet_V1
 DisableProgramGroupPage=yes
 
 OutputDir=installer_output
-OutputBaseFilename=InTemKiotViet_Setup
+OutputBaseFilename=InTemKiotViet_V1_Setup
 
 Compression=lzma
 SolidCompression=yes

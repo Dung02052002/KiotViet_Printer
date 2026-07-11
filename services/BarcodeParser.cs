@@ -79,71 +79,71 @@ public static class BarcodeParser
     }
 
     private static string ParseOldLogic(string text)
-    {
-        if (string.IsNullOrWhiteSpace(text))
-            return "";
-
-        // Ưu tiên theo từ khóa
-        foreach (var key in Keywords)
-        {
-            string value = ParseAfterKeyword(text, key);
-
-            if (!string.IsNullOrEmpty(value))
-                return value;
-        }
-
-        // Nếu không có từ khóa thì tìm mã đầu tiên có chữ + số
-        Match m = Regex.Match(text, @"\b[A-Za-z]*\d+[A-Za-z0-9\-]*\b");
-
-        if (m.Success)
-            return m.Value;
-
+{
+    if (string.IsNullOrWhiteSpace(text))
         return "";
+
+    // Ưu tiên parse sau keyword
+    foreach (string key in Keywords)
+    {
+        string value = ParseAfterKeyword(text, key);
+
+        if (!string.IsNullOrWhiteSpace(value))
+            return value;
     }
 
-    private static string Normalize(string text)
+    // Nếu không có keyword thì tìm token giống mã hàng
+    MatchCollection matches = Regex.Matches(
+        text,
+        @"\b[A-Za-z]{1,10}[A-Za-z0-9\-]{2,30}\b");
+
+    foreach (Match match in matches)
     {
-        return text.Replace("\r", " ")
-                   .Replace("\n", " ")
-                   .Replace("(", " ")
-                   .Replace(")", " ")
-                   .Replace(",", " ")
-                   .Replace(";", " ")
-                   .Trim();
+        string value = match.Value.ToUpper();
+
+        // phải có ít nhất 1 số
+        if (!Regex.IsMatch(value, @"\d"))
+            continue;
+
+        // bỏ token chỉ là kích thước
+        if (Regex.IsMatch(value, @"^\d"))
+            continue;
+
+        // bỏ cm
+        if (value.EndsWith("CM"))
+            continue;
+
+        return value;
     }
+
+    return "";
+}
+
+  private static string Normalize(string text)
+{
+    return Regex.Replace(text, @"\s+", " ").Trim();
+}
 
     private static string ParseAfterKeyword(string text, string keyword)
-    {
-        int index = text.ToLower().IndexOf(keyword);
+{
+    Match m = Regex.Match(
+        text,
+        $@"{Regex.Escape(keyword)}\s*[:\-]?\s*([A-Za-z0-9\-]+)",
+        RegexOptions.IgnoreCase);
 
-        if (index < 0)
-            return "";
-
-        string remain = text[(index + keyword.Length)..];
-        remain = remain.Trim();
-
-        while (remain.StartsWith(":") || remain.StartsWith("-"))
-        {
-            remain = remain[1..].Trim();
-        }
-
-        var words = remain.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-
-        foreach (string word in words)
-        {
-            string lower = word.ToLower();
-
-            if (StopWords.Contains(lower))
-                break;
-
-            string value = Regex.Replace(word, @"[^A-Za-z0-9\-]", "");
-
-            if (Regex.IsMatch(value, @"\d"))
-                return value;
-        }
-
+    if (!m.Success)
         return "";
-    }
+
+    string value = Regex.Replace(
+        m.Groups[1].Value,
+        @"[^A-Za-z0-9\-]",
+        "");
+
+    if (!Regex.IsMatch(value, @"\d"))
+        return "";
+
+    return value.ToUpper();
+}
 
     private static string ExtractAttributeFallback(string text)
     {
