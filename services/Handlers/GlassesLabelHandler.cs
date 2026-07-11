@@ -78,36 +78,23 @@ public class GlassesLabelHandler : ILabelHandler
 
         _barTenderService.Print(label.TemplatePath, namedSubStrings);
     }
+private static string ParseGlassesBaseCode(ProductRow item)
+{
+    // Ưu tiên cột Tên hàng (thuộc tính)
+    string code = BarcodeParser.Parse(
+        item.ProductNameWithAttr,
+        item.ProductCode);
 
-    private static string ParseGlassesBaseCode(ProductRow item)
-    {
-        // Ưu tiên parse từ Tên hàng rồi fallback sang Tên hàng (thuộc tính)
-        string[] candidates =
-        {
-            item.ProductName ?? "",
-            item.ProductNameWithAttr ?? ""
-        };
+    if (!string.IsNullOrWhiteSpace(code))
+        return code;
 
-        foreach (string text in candidates)
-        {
-            if (string.IsNullOrWhiteSpace(text))
-                continue;
+    // Nếu không có thì thử Tên hàng
+    code = BarcodeParser.Parse(
+        item.ProductName,
+        item.ProductCode);
 
-            Match match = Regex.Match(
-                text,
-                @"(?i)\bmodel\s*[:\-]?\s*([A-Z0-9\-]+)");
-
-            if (match.Success)
-            {
-                string code = match.Groups[1].Value.Trim();
-                if (!string.IsNullOrWhiteSpace(code))
-                    return code;
-            }
-        }
-
-        // fallback cuối
-        return item.ProductCode?.Trim() ?? "";
-    }
+    return code;
+}
 
     private static string BuildGlassesBarcode(string baseCode, string colorSuffix)
     {
