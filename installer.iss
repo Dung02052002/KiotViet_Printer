@@ -9,7 +9,7 @@ DefaultGroupName=In Tem KiotViet_V1
 DisableProgramGroupPage=yes
 
 OutputDir=installer_output
-OutputBaseFilename=InTemKiotViet_V1_Setup
+OutputBaseFilename=InTemKiotViet_V1.1_Setup
 
 Compression=lzma
 SolidCompression=yes
