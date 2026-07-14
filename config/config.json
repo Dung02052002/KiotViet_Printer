@@ -34,7 +34,7 @@
       "TargetNameColumnIndex": 5
     },
     {
-  "Code": "GLASSES",
+  "Code": "TEM_KINH",
   "Name": "Tem kính",
   "Description": "Tem kính + block info mã hàng / mã vạch động",
   "IconText": "🕶",
@@ -46,7 +46,7 @@
   "UseBarcodeParser": false,
   "AppendEmployeeCode": false,
   "TargetNameColumnIndex": 5
-}
+  }
     
   ]
 }
