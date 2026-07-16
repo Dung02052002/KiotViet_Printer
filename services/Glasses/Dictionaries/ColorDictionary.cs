@@ -2,7 +2,7 @@ namespace KiotVietLabelPrinter.Services.Glasses.Dictionaries;
 
 public static class ColorDictionary
 {
-    private static readonly HashSet<string> _colors =
+    private static readonly HashSet<string> Colors =
     [
         "BLACK",
         "WHITE",
@@ -13,16 +13,16 @@ public static class ColorDictionary
         "BROWN",
         "RED",
         "PINK",
-        "BEIGE",
         "YELLOW",
+        "BEIGE",
         "PURPLE",
         "ORANGE",
-        "SILVER",
-        "GOLD"
+        "GOLD",
+        "SILVER"
     ];
 
     public static bool Contains(string value)
     {
-        return _colors.Contains(value.ToUpper());
+        return Colors.Contains(value.ToUpper());
     }
 }

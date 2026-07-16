@@ -1,5 +1,5 @@
-
 using KiotVietLabelPrinter.Services.Glasses.Dictionaries;
+
 using KiotVietLabelPrinter.Services.Glasses.Logging;
 
 namespace KiotVietLabelPrinter.Services.Glasses.Lexer;
