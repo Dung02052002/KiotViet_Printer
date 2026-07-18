@@ -8,8 +8,11 @@ public static class GlassesDocumentBuilder
         ProductRow product,
         string employeeCode)
     {
-        string baseCode =
-            GlassesParser.Parse(product);
+        GlassesParser parser = new();
+
+        var parse = parser.Parse(product);
+
+        string baseCode = parse.BaseCode;
 
         string barcode =
             GlassesInfoBuilder.BuildBarcode(

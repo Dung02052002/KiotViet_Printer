@@ -1,54 +1,96 @@
+using System.Diagnostics;
 using KiotVietLabelPrinter.Models;
-
+using KiotVietLabelPrinter.Models.Glasses;
+using KiotVietLabelPrinter.Services.Glasses.Lexer;
+using KiotVietLabelPrinter.Services.Glasses.Rules;
 
 namespace KiotVietLabelPrinter.Services.Glasses;
 
-/// <summary>
-/// Adapter cho Parser V3.
-/// Giữ lại API cũ để không phải sửa toàn bộ project.
-/// </summary>
-public static class GlassesParser
+public class GlassesParser
 {
-    private static readonly GlassesParserEngine _engine = new();
+    private readonly List<IGlassesRule> _rules =
+    [
+        new ModelRule(),
+        new KeywordRule(),
+        new LeftOfMkRule(),
+        new RightOfMkRule(),
+        new FirstCodeRule()
+    ];
 
     //---------------------------------------------------------
     // Product
     //---------------------------------------------------------
 
-    public static string Parse(ProductRow product)
+    public GlassesParserResult Parse(ProductRow product)
     {
-        GlassesParserResult result =
-            _engine.Parse(product);
+        string text =
+            !string.IsNullOrWhiteSpace(product.ProductNameWithAttr)
+                ? product.ProductNameWithAttr
+                : product.ProductName;
 
-        return result.BaseCode;
+        return Parse(text ?? "");
     }
 
     //---------------------------------------------------------
     // Text
     //---------------------------------------------------------
 
-    public static string Parse(string? text)
+    public GlassesParserResult Parse(string text)
     {
+        Stopwatch sw = Stopwatch.StartNew();
+
+        GlassesParserResult result = new()
+        {
+            OriginalText = text
+        };
+
         if (string.IsNullOrWhiteSpace(text))
-            return "";
+            return result;
 
-        GlassesParserResult result =
-            _engine.Parse(text);
+        //-----------------------------------------------------
+        // Normalize
+        //-----------------------------------------------------
 
-        return result.BaseCode;
-    }
+        text = text.Trim();
 
-    //---------------------------------------------------------
-    // Parser đầy đủ
-    //---------------------------------------------------------
+        result.NormalizedText = text;
 
-    public static GlassesParserResult ParseFull(ProductRow product)
-    {
-        return _engine.Parse(product);
-    }
+        //-----------------------------------------------------
+        // Lexer
+        //-----------------------------------------------------
 
-    public static GlassesParserResult ParseFull(string text)
-    {
-        return _engine.Parse(text);
+        List<GlassesToken> tokens =
+            GlassesLexer.Scan(text);
+
+        result.AddLog($"Token Count : {tokens.Count}");
+
+        //-----------------------------------------------------
+        // Rule Engine
+        //-----------------------------------------------------
+
+        foreach (IGlassesRule rule in
+                 _rules.OrderBy(x => x.Priority))
+        {
+            RuleResult ruleResult =
+                rule.Execute(tokens);
+
+            if (!ruleResult.Success)
+                continue;
+
+            result.BaseCode = ruleResult.BaseCode;
+            result.RuleName = ruleResult.RuleName;
+
+            foreach (string log in ruleResult.Logs)
+                result.AddLog(log);
+
+            break;
+        }
+
+
+        sw.Stop();
+
+        result.Elapsed = sw.Elapsed;
+
+        return result;
     }
 }

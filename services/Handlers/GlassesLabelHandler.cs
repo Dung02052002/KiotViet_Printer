@@ -18,30 +18,34 @@ public class GlassesLabelHandler : ILabelHandler
         List<PreviewRow> rows = new();
 
         foreach (ProductRow item in products)
-        {
-            string baseCode = GlassesParser.Parse(item);
+{
+    GlassesParser parser = new();
 
-            string barcode =
-                GlassesInfoBuilder.BuildBarcode(
-                    baseCode,
-                    employeeCode);
+var parse = parser.Parse(item);
 
-            rows.Add(new PreviewRow
-            {
-                ProductCode = item.ProductCode,
-                ProductName = item.ProductName,
-                ProductNameWithAttr = item.ProductNameWithAttr,
+string baseCode = parse.BaseCode;
 
-                ParsedBarcodeCode = baseCode,
-                FinalBarcodeCode = barcode,
+string barcode =
+    GlassesInfoBuilder.BuildBarcode(
+        baseCode,
+        employeeCode);
 
-                Quantity = item.Quantity,
-                Price = item.Price,
+rows.Add(new PreviewRow
+{
+    ProductCode = item.ProductCode,
+    ProductName = item.ProductName,
+    ProductNameWithAttr = item.ProductNameWithAttr,
 
-                IsFullLabel = false,
-                IsBarcodeLabel = true
-            });
-        }
+    ParsedBarcodeCode = baseCode,
+    FinalBarcodeCode = barcode,
+
+    Quantity = item.Quantity,
+    Price = item.Price,
+
+    IsFullLabel = false,
+    IsBarcodeLabel = true
+});
+}
 
         return rows;
     }
