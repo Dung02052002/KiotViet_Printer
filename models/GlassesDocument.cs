@@ -1,4 +1,4 @@
-namespace KiotVietLabelPrinter.Models;
+using KiotVietLabelPrinter.Models;
 
 public class GlassesDocument
 {
@@ -7,6 +7,8 @@ public class GlassesDocument
     public string BaseCode { get; set; } = "";
 
     public string Barcode { get; set; } = "";
+
+    public string AttributeText { get; set; } = "";
 
     public string GlassesInfo { get; set; } = "";
 }
