@@ -13,33 +13,28 @@ public static class GlassesDocumentBuilder
         // Parse BaseCode
         //-------------------------------------------------
 
-    GlassesParser parser = new();
+  GlassesParser parser = new();
 
 GlassesParserResult parse =
     parser.Parse(product);
 
-string baseCode = parse.BaseCode;
-
-string barcode =
-    GlassesInfoBuilder.BuildBarcode(
-        baseCode,
+BarcodeParseResult barcode =
+    GlassesInfoBuilder.Build(
+        product,
+        parse.BaseCode,
         employeeCode);
-
-string attribute =
-    GlassesInfoBuilder.BuildAttribute(product);
-
-string info =
-    GlassesInfoBuilder.BuildInfo(
-        baseCode,
-        barcode);
 
 return new GlassesDocument
 {
     Product = product,
-    BaseCode = baseCode,
-    Barcode = barcode,
-    AttributeText = attribute,
-    GlassesInfo = info
+
+    BaseCode = barcode.BaseCode,
+
+    Barcode = barcode.BarcodeCode,
+
+    AttributeText = barcode.AttributeText,
+
+    GlassesInfo = barcode.GlassesInfo
 };
     }
 }

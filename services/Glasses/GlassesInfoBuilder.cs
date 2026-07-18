@@ -49,4 +49,29 @@ public static class GlassesInfoBuilder
 
         return $"{baseCode} ({barcode})";
     }
+
+    public static BarcodeParseResult Build(
+    ProductRow product,
+    string baseCode,
+    string employeeCode)
+{
+    BarcodeParseResult result = new();
+
+    result.BaseCode = baseCode;
+
+    result.BarcodeCode =
+        BuildBarcode(
+            baseCode,
+            employeeCode);
+
+    result.AttributeText =
+        BuildAttribute(product);
+
+    result.GlassesInfo =
+        BuildInfo(
+            baseCode,
+            result.BarcodeCode);
+
+    return result;
+}
 }
