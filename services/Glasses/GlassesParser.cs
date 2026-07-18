@@ -1,112 +1,54 @@
-using System.Text.RegularExpressions;
 using KiotVietLabelPrinter.Models;
+
 
 namespace KiotVietLabelPrinter.Services.Glasses;
 
+/// <summary>
+/// Adapter cho Parser V3.
+/// Giữ lại API cũ để không phải sửa toàn bộ project.
+/// </summary>
 public static class GlassesParser
 {
+    private static readonly GlassesParserEngine _engine = new();
+
+    //---------------------------------------------------------
+    // Product
+    //---------------------------------------------------------
+
     public static string Parse(ProductRow product)
     {
-        string code = Parse(product.ProductNameWithAttr);
+        GlassesParserResult result =
+            _engine.Parse(product);
 
-        if (!string.IsNullOrWhiteSpace(code))
-            return code;
-
-        code = Parse(product.ProductName);
-
-        if (!string.IsNullOrWhiteSpace(code))
-            return code;
-
-        return product.ProductCode?.Trim().ToUpper() ?? "";
+        return result.BaseCode;
     }
+
+    //---------------------------------------------------------
+    // Text
+    //---------------------------------------------------------
 
     public static string Parse(string? text)
     {
         if (string.IsNullOrWhiteSpace(text))
             return "";
 
-        text = Regex.Replace(text.ToUpper(), @"\s+", " ").Trim();
+        GlassesParserResult result =
+            _engine.Parse(text);
 
-        Match match;
+        return result.BaseCode;
+    }
 
-        //-------------------------------------------------------
-        // CASE 1
-        // MODEL XY35096
-        // MODEL:P850-01
-        // MÃ SP
-        // CODE
-        //-------------------------------------------------------
+    //---------------------------------------------------------
+    // Parser đầy đủ
+    //---------------------------------------------------------
 
-        match = Regex.Match(
-            text,
-            @"(?:MODEL|MÃ SP|MÃ|CODE|MS)\s*[:\-]?\s*([A-Z0-9\-]+)");
+    public static GlassesParserResult ParseFull(ProductRow product)
+    {
+        return _engine.Parse(product);
+    }
 
-        if (match.Success)
-            return match.Groups[1].Value;
-
-        //-------------------------------------------------------
-        // CASE 2
-        // KÍNH PUCINI 2113-MK108
-        // ==> 2113
-        //-------------------------------------------------------
-
-        match = Regex.Match(
-            text,
-            @"\b(\d+)-MK\d+\b");
-
-        if (match.Success)
-            return match.Groups[1].Value;
-
-        //-------------------------------------------------------
-        // CASE 3
-        // KÍNH PUCINI MK113 - P8312
-        // ==> P8312
-        //-------------------------------------------------------
-
-        match = Regex.Match(
-            text,
-            @"MK\d+\s*-\s*([A-Z]\d+)");
-
-        if (match.Success)
-            return match.Groups[1].Value;
-
-        //-------------------------------------------------------
-        // CASE 4
-        // KÍNH PUCINI MK061 - BLACK
-        // ==> MK061
-        //-------------------------------------------------------
-
-        match = Regex.Match(
-            text,
-            @"\b(MK\d+)\b");
-
-        if (match.Success)
-            return match.Groups[1].Value;
-
-        //-------------------------------------------------------
-        // CASE 5
-        // KM-05-8820
-        //-------------------------------------------------------
-
-        match = Regex.Match(
-            text,
-            @"\b([A-Z]{2,6}-\d{2}-\d{2,10})\b");
-
-        if (match.Success)
-            return match.Groups[1].Value;
-
-        //-------------------------------------------------------
-        // CASE 6
-        // XY35096
-        //-------------------------------------------------------
-
-        match = Regex.Match(
-            text,
-            @"\b([A-Z]{2,6}\d{3,10})\b");
-
-        if (match.Success)
-            return match.Groups[1].Value;
-
-        return "";
+    public static GlassesParserResult ParseFull(string text)
+    {
+        return _engine.Parse(text);
     }
 }
