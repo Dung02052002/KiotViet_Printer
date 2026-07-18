@@ -1,4 +1,5 @@
 using KiotVietLabelPrinter.Models;
+using KiotVietLabelPrinter.Models.Glasses;
 
 namespace KiotVietLabelPrinter.Services.Glasses;
 
@@ -8,28 +9,37 @@ public static class GlassesDocumentBuilder
         ProductRow product,
         string employeeCode)
     {
-        GlassesParser parser = new();
+        //-------------------------------------------------
+        // Parse BaseCode
+        //-------------------------------------------------
 
-        var parse = parser.Parse(product);
+    GlassesParser parser = new();
 
-        string baseCode = parse.BaseCode;
+GlassesParserResult parse =
+    parser.Parse(product);
 
-        string barcode =
-            GlassesInfoBuilder.BuildBarcode(
-                baseCode,
-                employeeCode);
+string baseCode = parse.BaseCode;
 
-        string info =
-            GlassesInfoBuilder.Build(
-                baseCode,
-                barcode);
+string barcode =
+    GlassesInfoBuilder.BuildBarcode(
+        baseCode,
+        employeeCode);
 
-        return new GlassesDocument
-        {
-            Product = product,
-            BaseCode = baseCode,
-            Barcode = barcode,
-            GlassesInfo = info
-        };
+string attribute =
+    GlassesInfoBuilder.BuildAttribute(product);
+
+string info =
+    GlassesInfoBuilder.BuildInfo(
+        baseCode,
+        barcode);
+
+return new GlassesDocument
+{
+    Product = product,
+    BaseCode = baseCode,
+    Barcode = barcode,
+    AttributeText = attribute,
+    GlassesInfo = info
+};
     }
 }
