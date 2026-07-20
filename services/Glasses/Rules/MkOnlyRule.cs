@@ -1,59 +1,34 @@
-using KiotVietLabelPrinter.Models;
 using KiotVietLabelPrinter.Services.Glasses.Lexer;
 
 namespace KiotVietLabelPrinter.Services.Glasses.Rules;
 
-public class MkOnlyRule : IGlassesRule
+public class MkOnlyRule : RuleBase
 {
-    public string Name => nameof(MkOnlyRule);
+    public override string Name => "MkOnlyRule";
 
-    public int Priority => 50;
+    public override int Priority => 50;
 
-    public RuleResult Execute(List<GlassesToken> tokens)
+    //---------------------------------------------------------
+
+    public override RuleResult Execute(
+        IReadOnlyList<GlassesToken> tokens)
     {
         GlassesToken? mk =
-            tokens.FirstOrDefault(x => x.Type == TokenType.Mk);
+            tokens.FirstOrDefault(
+                x => x.Type == TokenType.Mk);
 
         if (mk == null)
-            return RuleResult.Fail("Không có MK.");
-
-        //-------------------------------------------------
-        // Có Code bên trái?
-        //-------------------------------------------------
-
-        bool leftCode =
-            tokens.Any(x =>
-                x.End < mk.Start &&
-                x.Type == TokenType.Code);
-
-        if (leftCode)
             return RuleResult.Fail(
-                "Đã có Code bên trái.");
+                "Không có MK.");
 
-        //-------------------------------------------------
-        // Có Code bên phải?
-        //-------------------------------------------------
+        RuleResult result =
+            RuleResult.Ok(
+                mk.Text,
+                Name);
 
-        bool rightCode =
-            tokens.Any(x =>
-                x.Start > mk.End &&
-                x.Type == TokenType.Code);
+        result.AddLog(
+            $"MK ONLY : {mk.Text}");
 
-        if (rightCode)
-            return RuleResult.Fail(
-                "Đã có Code bên phải.");
-
-        //-------------------------------------------------
-        // Chỉ còn MK
-        //-------------------------------------------------
-
-        return RuleResult.Ok(
-            mk.Text,
-            Name);
-    }
-
-    public bool Match(List<GlassesToken> tokens)
-    {
-        throw new NotImplementedException();
+        return result;
     }
 }

@@ -2,45 +2,46 @@ using KiotVietLabelPrinter.Services.Glasses.Lexer;
 
 namespace KiotVietLabelPrinter.Services.Glasses.Rules;
 
-public class ModelRule : IGlassesRule
+public class ModelRule : RuleBase
 {
-    public string Name => nameof(ModelRule);
+    public override string Name => "ModelRule";
 
-    public int Priority => 10;
+    public override int Priority => 10;
 
-    public bool Match(List<GlassesToken> tokens)
-    {
-        return tokens.Any(t => t.Type == TokenType.Model);
-    }
+    //---------------------------------------------------------
 
-    public RuleResult Execute(List<GlassesToken> tokens)
+    public override RuleResult Execute(
+        IReadOnlyList<GlassesToken> tokens)
     {
         for (int i = 0; i < tokens.Count; i++)
         {
-            if (tokens[i].Type != TokenType.Model)
+            GlassesToken token = tokens[i];
+
+            if (token.Type != TokenType.Model)
                 continue;
 
-            for (int j = i + 1; j < tokens.Count; j++)
-            {
-                GlassesToken token = tokens[j];
+            //-------------------------------------------------
+            // MODEL xxxx
+            //-------------------------------------------------
 
-                switch (token.Type)
-                {
-                    case TokenType.Separator:
-                        continue;
+            GlassesToken? next =
+                Next(tokens, i);
 
-                    case TokenType.Code:
-                    case TokenType.Mk:
-                    case TokenType.K:
-                        return RuleResult.Ok(
-                            token.Text,
-                            Name);
-                }
+            if (!IsCode(next))
+                continue;
 
-                break;
-            }
+            RuleResult result =
+                RuleResult.Ok(
+                    next!.Text,
+                    Name);
+
+            result.AddLog(
+                $"MODEL -> {next.Text}");
+
+            return result;
         }
 
-        return RuleResult.Fail("Không tìm thấy mã sau MODEL.");
+        return RuleResult.Fail(
+            "Không tìm thấy MODEL.");
     }
 }

@@ -8,26 +8,22 @@ namespace KiotVietLabelPrinter.Services.Glasses;
 
 public class GlassesParser
 {
- private readonly List<IGlassesRule> _rules =
-[
-    new ModelRule(),
+    //---------------------------------------------------------
+    // Rule Engine
+    //---------------------------------------------------------
 
-    new KeywordRule(),
-
-    new LeftOfMkRule(),
-
-    new RightOfMkRule(),
-
-    new MkOnlyRule(),
-
-    new KOnlyRule(),
-
-    new PcnRule(),
-
-    new FirstCodeRule(),
-
-    new FallbackRule()
-];
+    private readonly List<IGlassesRule> _rules =
+    [
+        new ModelRule(),
+        new KeywordRule(),
+        new LeftOfMkRule(),
+        new RightOfMkRule(),
+        new MkOnlyRule(),
+        new KOnlyRule(),
+        new PcnRule(),
+        new FirstCodeRule(),
+        new FallbackRule()
+    ];
 
     //---------------------------------------------------------
     // Product
@@ -40,24 +36,31 @@ public class GlassesParser
                 ? product.ProductNameWithAttr
                 : product.ProductName;
 
-        return Parse(text ?? "");
+        return Parse(text);
     }
 
     //---------------------------------------------------------
     // Text
     //---------------------------------------------------------
 
-    public GlassesParserResult Parse(string text)
+    public GlassesParserResult Parse(string? text)
     {
         Stopwatch sw = Stopwatch.StartNew();
 
-        GlassesParserResult result = new()
-        {
-            OriginalText = text
-        };
+        GlassesParserResult result = new();
 
         if (string.IsNullOrWhiteSpace(text))
+        {
+            sw.Stop();
+            result.Elapsed = sw.Elapsed;
             return result;
+        }
+
+        //-----------------------------------------------------
+        // Original
+        //-----------------------------------------------------
+
+        result.OriginalText = text;
 
         //-----------------------------------------------------
         // Normalize
@@ -67,12 +70,16 @@ public class GlassesParser
 
         result.NormalizedText = text;
 
+        result.AddLog("Normalize OK");
+
         //-----------------------------------------------------
         // Lexer
         //-----------------------------------------------------
 
         List<GlassesToken> tokens =
             GlassesLexer.Scan(text);
+
+        result.Tokens = tokens;
 
         result.AddLog($"Token Count : {tokens.Count}");
 
@@ -86,18 +93,37 @@ public class GlassesParser
             RuleResult ruleResult =
                 rule.Execute(tokens);
 
-            if (!ruleResult.Success)
-                continue;
+            if (ruleResult.Success)
+            {
+                result.BaseCode = ruleResult.BaseCode;
 
-            result.BaseCode = ruleResult.BaseCode;
-            result.RuleName = ruleResult.RuleName;
+                result.RuleName = ruleResult.RuleName;
 
-            foreach (string log in ruleResult.Logs)
-                result.AddLog(log);
+                result.AddRuleTrace(
+                    $"✔ {rule.Name}");
 
-            break;
+                foreach (string log in ruleResult.Logs)
+                    result.AddLog(log);
+
+                break;
+            }
+
+            result.AddRuleTrace(
+                $"✘ {rule.Name}");
         }
 
+        //-----------------------------------------------------
+        // Fallback
+        //-----------------------------------------------------
+
+        if (!result.Success)
+        {
+            result.AddLog("Không Rule nào match.");
+        }
+
+        //-----------------------------------------------------
+        // Time
+        //-----------------------------------------------------
 
         sw.Stop();
 

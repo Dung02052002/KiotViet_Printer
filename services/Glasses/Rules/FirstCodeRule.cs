@@ -2,27 +2,33 @@ using KiotVietLabelPrinter.Services.Glasses.Lexer;
 
 namespace KiotVietLabelPrinter.Services.Glasses.Rules;
 
-public class FirstCodeRule : IGlassesRule
+public class FirstCodeRule : RuleBase
 {
-    public string Name => nameof(FirstCodeRule);
+    public override string Name => "FirstCodeRule";
 
-    public int Priority => 999;
+    public override int Priority => 90;
 
-    public bool Match(List<GlassesToken> tokens)
-    {
-        return tokens.Any(x => x.Type == TokenType.Code);
-    }
+    //---------------------------------------------------------
 
-    public RuleResult Execute(List<GlassesToken> tokens)
+    public override RuleResult Execute(
+        IReadOnlyList<GlassesToken> tokens)
     {
         GlassesToken? token =
-            tokens.FirstOrDefault(x => x.Type == TokenType.Code);
+            tokens.FirstOrDefault(
+                x => x.Type == TokenType.Code);
 
         if (token == null)
-            return RuleResult.Fail("Không tìm thấy Code.");
+            return RuleResult.Fail(
+                "Không có CODE.");
 
-        return RuleResult.Ok(
-            token.Text,
-            Name);
+        RuleResult result =
+            RuleResult.Ok(
+                token.Text,
+                Name);
+
+        result.AddLog(
+            $"FIRST CODE : {token.Text}");
+
+        return result;
     }
 }

@@ -2,48 +2,69 @@ using KiotVietLabelPrinter.Services.Glasses.Lexer;
 
 namespace KiotVietLabelPrinter.Services.Glasses.Rules;
 
-public class KeywordRule : IGlassesRule
+public class KeywordRule : RuleBase
 {
-    public string Name => nameof(KeywordRule);
+    public override string Name => "KeywordRule";
 
-    public int Priority => 20;
+    public override int Priority => 20;
 
-    public bool Match(List<GlassesToken> tokens)
-    {
-        return tokens.Any(t =>
-            t.Type == TokenType.Keyword ||
-            t.Type == TokenType.Model);
-    }
+    //---------------------------------------------------------
 
-    public RuleResult Execute(List<GlassesToken> tokens)
+    public override RuleResult Execute(
+        IReadOnlyList<GlassesToken> tokens)
     {
         for (int i = 0; i < tokens.Count; i++)
         {
-            if (tokens[i].Type != TokenType.Keyword &&
-                tokens[i].Type != TokenType.Model)
+            GlassesToken token = tokens[i];
+
+            if (!IsKeyword(token))
                 continue;
 
-            for (int j = i + 1; j < tokens.Count; j++)
+            //-------------------------------------------------
+            // KEYWORD CODE
+            //-------------------------------------------------
+
+            GlassesToken? next = Next(tokens, i);
+
+            if (IsCode(next))
             {
-                GlassesToken token = tokens[j];
+                RuleResult result =
+                    RuleResult.Ok(
+                        next!.Text,
+                        Name);
 
-                switch (token.Type)
+                result.AddLog(
+                    $"{token.Text} -> {next.Text}");
+
+                return result;
+            }
+
+            //-------------------------------------------------
+            // KEYWORD : CODE
+            //-------------------------------------------------
+
+            if (next?.Type == TokenType.Separator &&
+                next.Text == ":")
+            {
+                GlassesToken? next2 =
+                    Next(tokens, i + 1);
+
+                if (IsCode(next2))
                 {
-                    case TokenType.Separator:
-                        continue;
-
-                    case TokenType.Code:
-                    case TokenType.Mk:
-                    case TokenType.K:
-                        return RuleResult.Ok(
-                            token.Text,
+                    RuleResult result =
+                        RuleResult.Ok(
+                            next2!.Text,
                             Name);
-                }
 
-                break;
+                    result.AddLog(
+                        $"{token.Text}: {next2.Text}");
+
+                    return result;
+                }
             }
         }
 
-        return RuleResult.Fail("Không tìm thấy mã sau Keyword.");
+        return RuleResult.Fail(
+            "Không tìm thấy Keyword.");
     }
 }

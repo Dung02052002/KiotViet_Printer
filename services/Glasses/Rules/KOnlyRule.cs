@@ -1,29 +1,34 @@
-using KiotVietLabelPrinter.Models;
 using KiotVietLabelPrinter.Services.Glasses.Lexer;
 
 namespace KiotVietLabelPrinter.Services.Glasses.Rules;
 
-public class KOnlyRule : IGlassesRule
+public class KOnlyRule : RuleBase
 {
-    public string Name => nameof(KOnlyRule);
+    public override string Name => "KOnlyRule";
 
-    public int Priority => 60;
+    public override int Priority => 60;
 
-    public RuleResult Execute(List<GlassesToken> tokens)
+    //---------------------------------------------------------
+
+    public override RuleResult Execute(
+        IReadOnlyList<GlassesToken> tokens)
     {
         GlassesToken? token =
-            tokens.FirstOrDefault(x => x.Type == TokenType.K);
+            tokens.FirstOrDefault(
+                x => x.Type == TokenType.K);
 
         if (token == null)
-            return RuleResult.Fail("Không tìm thấy K.");
+            return RuleResult.Fail(
+                "Không tìm thấy K.");
 
-        return RuleResult.Ok(
-            token.Text,
-            Name);
-    }
+        RuleResult result =
+            RuleResult.Ok(
+                token.Text,
+                Name);
 
-    public bool Match(List<GlassesToken> tokens)
-    {
-        throw new NotImplementedException();
+        result.AddLog(
+            $"K ONLY : {token.Text}");
+
+        return result;
     }
 }

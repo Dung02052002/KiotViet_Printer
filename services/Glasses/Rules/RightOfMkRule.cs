@@ -2,43 +2,42 @@ using KiotVietLabelPrinter.Services.Glasses.Lexer;
 
 namespace KiotVietLabelPrinter.Services.Glasses.Rules;
 
-public class RightOfMkRule : IGlassesRule
+public class RightOfMkRule : RuleBase
 {
-    public string Name => nameof(RightOfMkRule);
+    public override string Name => "RightOfMkRule";
 
-    public int Priority => 40;
+    public override int Priority => 40;
 
-    public bool Match(List<GlassesToken> tokens)
-    {
-        return tokens.Any(t => t.Type == TokenType.Mk);
-    }
+    //---------------------------------------------------------
 
-    public RuleResult Execute(List<GlassesToken> tokens)
+    public override RuleResult Execute(
+        IReadOnlyList<GlassesToken> tokens)
     {
         for (int i = 0; i < tokens.Count - 1; i++)
         {
-            if (tokens[i].Type != TokenType.Mk)
+            GlassesToken current = tokens[i];
+
+            if (!IsMk(current))
                 continue;
 
-            for (int j = i + 1; j < tokens.Count; j++)
-            {
-                GlassesToken token = tokens[j];
+            GlassesToken? right =
+                Next(tokens, i);
 
-                switch (token.Type)
-                {
-                    case TokenType.Separator:
-                        continue;
+            if (!IsCode(right))
+                continue;
 
-                    case TokenType.Code:
-                        return RuleResult.Ok(
-                            token.Text,
-                            Name);
-                }
+            RuleResult result =
+                RuleResult.Ok(
+                    right!.Text,
+                    Name);
 
-                break;
-            }
+            result.AddLog(
+                $"RIGHT OF MK : {right.Text}");
+
+            return result;
         }
 
-        return RuleResult.Fail("Không tìm thấy Code bên phải MK.");
+        return RuleResult.Fail(
+            "Không có CODE bên phải MK.");
     }
 }

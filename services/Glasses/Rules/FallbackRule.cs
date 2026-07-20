@@ -1,54 +1,32 @@
-using KiotVietLabelPrinter.Models;
 using KiotVietLabelPrinter.Services.Glasses.Lexer;
 
 namespace KiotVietLabelPrinter.Services.Glasses.Rules;
 
-public class FallbackRule : IGlassesRule
+public class FallbackRule : RuleBase
 {
-    public string Name => nameof(FallbackRule);
+    public override string Name => "FallbackRule";
 
-    public int Priority => int.MaxValue;
+    public override int Priority => 999;
 
-    public RuleResult Execute(List<GlassesToken> tokens)
+    //---------------------------------------------------------
+
+    public override RuleResult Execute(
+        IReadOnlyList<GlassesToken> tokens)
     {
-        GlassesToken? token =
-            tokens.FirstOrDefault(x =>
-                x.Type == TokenType.Code);
+        if (tokens.Count == 0)
+            return RuleResult.Fail(
+                "Không có token.");
 
-        if (token != null)
-        {
-            return RuleResult.Ok(
+        GlassesToken token = tokens[0];
+
+        RuleResult result =
+            RuleResult.Ok(
                 token.Text,
                 Name);
-        }
 
-        token =
-            tokens.FirstOrDefault(x =>
-                x.Type == TokenType.Mk);
+        result.AddLog(
+            $"FALLBACK : {token.Text}");
 
-        if (token != null)
-        {
-            return RuleResult.Ok(
-                token.Text,
-                Name);
-        }
-
-        token =
-            tokens.FirstOrDefault(x =>
-                x.Type == TokenType.K);
-
-        if (token != null)
-        {
-            return RuleResult.Ok(
-                token.Text,
-                Name);
-        }
-
-        return RuleResult.Fail("Không tìm thấy mã.");
-    }
-
-    public bool Match(List<GlassesToken> tokens)
-    {
-        throw new NotImplementedException();
+        return result;
     }
 }
