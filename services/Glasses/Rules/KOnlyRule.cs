@@ -8,8 +8,6 @@ public class KOnlyRule : RuleBase
 
     public override int Priority => 60;
 
-    //---------------------------------------------------------
-
     public override RuleResult Execute(
         IReadOnlyList<GlassesToken> tokens)
     {
@@ -18,8 +16,7 @@ public class KOnlyRule : RuleBase
                 x => x.Type == TokenType.K);
 
         if (token == null)
-            return RuleResult.Fail(
-                "Không tìm thấy K.");
+            return RuleResult.Fail();
 
         RuleResult result =
             RuleResult.Ok(
@@ -27,7 +24,7 @@ public class KOnlyRule : RuleBase
                 Name);
 
         result.AddLog(
-            $"K ONLY : {token.Text}");
+            $"K -> {token.Text}");
 
         return result;
     }

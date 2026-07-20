@@ -22,7 +22,7 @@ public static partial class GlassesLexer
             // WhiteSpace
             //-------------------------------------------------
 
-            if (IsWhiteSpace(c))
+            if (char.IsWhiteSpace(c))
             {
                 Flush(builder, tokens, i);
                 continue;
@@ -38,8 +38,8 @@ public static partial class GlassesLexer
 
                 tokens.Add(new GlassesToken
                 {
-                    Type = TokenType.Separator,
                     Text = c.ToString(),
+                    Type = TokenType.Separator,
                     Start = i,
                     End = i
                 });
@@ -53,14 +53,22 @@ public static partial class GlassesLexer
 
             if (c == '-')
             {
-                if (IsHyphenSeparator(text, i))
+                string current =
+                    builder.HasValue
+                        ? builder.Build()
+                        : "";
+
+                if (IsHyphenSeparator(
+                    text,
+                    i,
+                    current))
                 {
                     Flush(builder, tokens, i);
 
                     tokens.Add(new GlassesToken
                     {
-                        Type = TokenType.Separator,
                         Text = "-",
+                        Type = TokenType.Separator,
                         Start = i,
                         End = i
                     });
@@ -81,14 +89,14 @@ public static partial class GlassesLexer
 
         Flush(builder, tokens, text.Length);
 
-        //--------------------------------------------
+        //-------------------------------------------------
         // Debug
-        //--------------------------------------------
+        //-------------------------------------------------
 
         foreach (GlassesToken token in tokens)
         {
             GlassesDebug.Info(
-                $"[{token.Index}] {token.Type,-10} {token.Text}");
+                $"{token.Type,-10} {token.Text}");
         }
     }
 }

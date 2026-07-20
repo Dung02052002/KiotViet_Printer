@@ -118,54 +118,63 @@ public class FormPreview : Form
 
     private void FormatGrid()
     {
-        if (dgvPreview.Columns["ProductCode"] != null)
-            dgvPreview.Columns["ProductCode"].HeaderText = "Mã hàng";
+        var cProductCode = dgvPreview.Columns["ProductCode"];
+        if (cProductCode != null)
+            cProductCode.HeaderText = "Mã hàng";
 
-        if (dgvPreview.Columns["ProductName"] != null)
-            dgvPreview.Columns["ProductName"].HeaderText = "Tên hàng";
+        var cProductName = dgvPreview.Columns["ProductName"];
+        if (cProductName != null)
+            cProductName.HeaderText = "Tên hàng";
 
-        if (dgvPreview.Columns["ProductNameWithAttr"] != null)
-            dgvPreview.Columns["ProductNameWithAttr"].HeaderText = "Tên hàng (thuộc tính)";
+        var cProductNameAttr = dgvPreview.Columns["ProductNameWithAttr"];
+        if (cProductNameAttr != null)
+            cProductNameAttr.HeaderText = "Tên hàng (thuộc tính)";
 
-        if (dgvPreview.Columns["ParsedBarcodeCode"] != null)
-            dgvPreview.Columns["ParsedBarcodeCode"].HeaderText = "Mã parser";
+        var cParsedBarcode = dgvPreview.Columns["ParsedBarcodeCode"];
+        if (cParsedBarcode != null)
+            cParsedBarcode.HeaderText = "Mã parser";
 
-        if (dgvPreview.Columns["FinalBarcodeCode"] != null)
-            dgvPreview.Columns["FinalBarcodeCode"].HeaderText = "Mã in cuối";
+        var cFinalBarcode = dgvPreview.Columns["FinalBarcodeCode"];
+        if (cFinalBarcode != null)
+            cFinalBarcode.HeaderText = "Mã in cuối";
 
-        if (dgvPreview.Columns["Quantity"] != null)
-            dgvPreview.Columns["Quantity"].HeaderText = "Số lượng";
+        var cQuantity = dgvPreview.Columns["Quantity"];
+        if (cQuantity != null)
+            cQuantity.HeaderText = "Số lượng";
 
-        if (dgvPreview.Columns["Price"] != null)
-            dgvPreview.Columns["Price"].HeaderText = "Giá";
+        var cPrice = dgvPreview.Columns["Price"];
+        if (cPrice != null)
+            cPrice.HeaderText = "Giá";
 
-        if (dgvPreview.Columns["IsFullLabel"] != null)
-            dgvPreview.Columns["IsFullLabel"].Visible = false;
+        var cIsFull = dgvPreview.Columns["IsFullLabel"];
+        if (cIsFull != null)
+            cIsFull.Visible = false;
 
-        if (dgvPreview.Columns["IsBarcodeLabel"] != null)
-            dgvPreview.Columns["IsBarcodeLabel"].Visible = false;
+        var cIsBarcode = dgvPreview.Columns["IsBarcodeLabel"];
+        if (cIsBarcode != null)
+            cIsBarcode.Visible = false;
 
         // Width tương đối cho dễ nhìn
-        if (dgvPreview.Columns["ProductCode"] != null)
-            dgvPreview.Columns["ProductCode"].FillWeight = 90;
+        if (cProductCode != null)
+            cProductCode.FillWeight = 90;
 
-        if (dgvPreview.Columns["ProductName"] != null)
-            dgvPreview.Columns["ProductName"].FillWeight = 150;
+        if (cProductName != null)
+            cProductName.FillWeight = 150;
 
-        if (dgvPreview.Columns["ProductNameWithAttr"] != null)
-            dgvPreview.Columns["ProductNameWithAttr"].FillWeight = 220;
+        if (cProductNameAttr != null)
+            cProductNameAttr.FillWeight = 220;
 
-        if (dgvPreview.Columns["ParsedBarcodeCode"] != null)
-            dgvPreview.Columns["ParsedBarcodeCode"].FillWeight = 110;
+        if (cParsedBarcode != null)
+            cParsedBarcode.FillWeight = 110;
 
-        if (dgvPreview.Columns["FinalBarcodeCode"] != null)
-            dgvPreview.Columns["FinalBarcodeCode"].FillWeight = 140;
+        if (cFinalBarcode != null)
+            cFinalBarcode.FillWeight = 140;
 
-        if (dgvPreview.Columns["Quantity"] != null)
-            dgvPreview.Columns["Quantity"].FillWeight = 70;
+        if (cQuantity != null)
+            cQuantity.FillWeight = 70;
 
-        if (dgvPreview.Columns["Price"] != null)
-            dgvPreview.Columns["Price"].FillWeight = 90;
+        if (cPrice != null)
+            cPrice.FillWeight = 90;
 
         dgvPreview.AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.AllCells;
         dgvPreview.DefaultCellStyle.WrapMode = DataGridViewTriState.False;

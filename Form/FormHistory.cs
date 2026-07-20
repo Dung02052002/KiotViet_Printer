@@ -92,18 +92,41 @@ public class FormHistory : Form
             dgvHistory.DataSource = null;
             dgvHistory.DataSource = rows;
 
-            if (dgvHistory.Columns.Count > 0)
-            {
-                dgvHistory.Columns["ThoiGian"].HeaderText = "Thời gian";
-                dgvHistory.Columns["LoaiTem"].HeaderText = "Loại tem";
-                dgvHistory.Columns["MaTem"].HeaderText = "Mã tem";
-                dgvHistory.Columns["MaNhanVien"].HeaderText = "Mã nhân viên";
-                dgvHistory.Columns["SoSanPham"].HeaderText = "Số sản phẩm";
-                dgvHistory.Columns["TongSoTem"].HeaderText = "Tổng số tem";
-                dgvHistory.Columns["FileExcel"].HeaderText = "File Excel";
-                dgvHistory.Columns["MayTinh"].HeaderText = "Máy tính";
-                dgvHistory.Columns["NguoiDung"].HeaderText = "Người dùng";
-            }
+            var cThoiGian = dgvHistory.Columns["ThoiGian"];
+            if (cThoiGian != null)
+                cThoiGian.HeaderText = "Thời gian";
+
+            var cLoaiTem = dgvHistory.Columns["LoaiTem"];
+            if (cLoaiTem != null)
+                cLoaiTem.HeaderText = "Loại tem";
+
+            var cMaTem = dgvHistory.Columns["MaTem"];
+            if (cMaTem != null)
+                cMaTem.HeaderText = "Mã tem";
+
+            var cMaNhanVien = dgvHistory.Columns["MaNhanVien"];
+            if (cMaNhanVien != null)
+                cMaNhanVien.HeaderText = "Mã nhân viên";
+
+            var cSoSanPham = dgvHistory.Columns["SoSanPham"];
+            if (cSoSanPham != null)
+                cSoSanPham.HeaderText = "Số sản phẩm";
+
+            var cTongSoTem = dgvHistory.Columns["TongSoTem"];
+            if (cTongSoTem != null)
+                cTongSoTem.HeaderText = "Tổng số tem";
+
+            var cFileExcel = dgvHistory.Columns["FileExcel"];
+            if (cFileExcel != null)
+                cFileExcel.HeaderText = "File Excel";
+
+            var cMayTinh = dgvHistory.Columns["MayTinh"];
+            if (cMayTinh != null)
+                cMayTinh.HeaderText = "Máy tính";
+
+            var cNguoiDung = dgvHistory.Columns["NguoiDung"];
+            if (cNguoiDung != null)
+                cNguoiDung.HeaderText = "Người dùng";
         }
         catch (Exception ex)
         {

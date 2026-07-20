@@ -8,8 +8,6 @@ public class MkOnlyRule : RuleBase
 
     public override int Priority => 50;
 
-    //---------------------------------------------------------
-
     public override RuleResult Execute(
         IReadOnlyList<GlassesToken> tokens)
     {
@@ -18,8 +16,7 @@ public class MkOnlyRule : RuleBase
                 x => x.Type == TokenType.Mk);
 
         if (mk == null)
-            return RuleResult.Fail(
-                "Không có MK.");
+            return RuleResult.Fail();
 
         RuleResult result =
             RuleResult.Ok(
@@ -27,7 +24,7 @@ public class MkOnlyRule : RuleBase
                 Name);
 
         result.AddLog(
-            $"MK ONLY : {mk.Text}");
+            $"MK -> {mk.Text}");
 
         return result;
     }

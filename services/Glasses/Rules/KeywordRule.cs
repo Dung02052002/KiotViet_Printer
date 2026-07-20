@@ -8,8 +8,6 @@ public class KeywordRule : RuleBase
 
     public override int Priority => 20;
 
-    //---------------------------------------------------------
-
     public override RuleResult Execute(
         IReadOnlyList<GlassesToken> tokens)
     {
@@ -20,51 +18,23 @@ public class KeywordRule : RuleBase
             if (!IsKeyword(token))
                 continue;
 
-            //-------------------------------------------------
-            // KEYWORD CODE
-            //-------------------------------------------------
+            GlassesToken? next =
+                NextMeaningful(tokens, i);
 
-            GlassesToken? next = Next(tokens, i);
+            if (!IsCode(next))
+                continue;
 
-            if (IsCode(next))
-            {
-                RuleResult result =
-                    RuleResult.Ok(
-                        next!.Text,
-                        Name);
+            RuleResult result =
+                RuleResult.Ok(
+                    next!.Text,
+                    Name);
 
-                result.AddLog(
-                    $"{token.Text} -> {next.Text}");
+            result.AddLog(
+                $"{token.Text} -> {next.Text}");
 
-                return result;
-            }
-
-            //-------------------------------------------------
-            // KEYWORD : CODE
-            //-------------------------------------------------
-
-            if (next?.Type == TokenType.Separator &&
-                next.Text == ":")
-            {
-                GlassesToken? next2 =
-                    Next(tokens, i + 1);
-
-                if (IsCode(next2))
-                {
-                    RuleResult result =
-                        RuleResult.Ok(
-                            next2!.Text,
-                            Name);
-
-                    result.AddLog(
-                        $"{token.Text}: {next2.Text}");
-
-                    return result;
-                }
-            }
+            return result;
         }
 
-        return RuleResult.Fail(
-            "Không tìm thấy Keyword.");
+        return RuleResult.Fail();
     }
 }

@@ -8,8 +8,6 @@ public class FirstCodeRule : RuleBase
 
     public override int Priority => 90;
 
-    //---------------------------------------------------------
-
     public override RuleResult Execute(
         IReadOnlyList<GlassesToken> tokens)
     {
@@ -18,8 +16,7 @@ public class FirstCodeRule : RuleBase
                 x => x.Type == TokenType.Code);
 
         if (token == null)
-            return RuleResult.Fail(
-                "Không có CODE.");
+            return RuleResult.Fail();
 
         RuleResult result =
             RuleResult.Ok(
@@ -27,7 +24,7 @@ public class FirstCodeRule : RuleBase
                 Name);
 
         result.AddLog(
-            $"FIRST CODE : {token.Text}");
+            $"FIRST CODE -> {token.Text}");
 
         return result;
     }

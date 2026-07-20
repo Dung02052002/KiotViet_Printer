@@ -13,6 +13,9 @@ public static partial class GlassesLexer
     {
         value = value.Trim().ToUpper();
 
+        if (value == "-")
+            return TokenType.Separator;
+
         if (string.IsNullOrWhiteSpace(value))
             return TokenType.Word;
 
@@ -104,6 +107,17 @@ public static partial class GlassesLexer
         if (Regex.IsMatch(
             value,
             @"^[A-Z]{1,6}\d+$"))
+        {
+            return TokenType.Code;
+        }
+
+        //-----------------------------------------------------
+        // P850-01 (letters+digits-hyphen-digits)
+        //-----------------------------------------------------
+
+        if (Regex.IsMatch(
+            value,
+            @"^[A-Z]{1,6}\d+-\d+$"))
         {
             return TokenType.Code;
         }

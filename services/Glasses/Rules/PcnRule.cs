@@ -8,8 +8,6 @@ public class PcnRule : RuleBase
 
     public override int Priority => 70;
 
-    //---------------------------------------------------------
-
     public override RuleResult Execute(
         IReadOnlyList<GlassesToken> tokens)
     {
@@ -18,8 +16,7 @@ public class PcnRule : RuleBase
                 x => x.Type == TokenType.Pcn);
 
         if (token == null)
-            return RuleResult.Fail(
-                "Không tìm thấy PCN.");
+            return RuleResult.Fail();
 
         RuleResult result =
             RuleResult.Ok(
@@ -27,7 +24,7 @@ public class PcnRule : RuleBase
                 Name);
 
         result.AddLog(
-            $"PCN : {token.Text}");
+            $"PCN -> {token.Text}");
 
         return result;
     }

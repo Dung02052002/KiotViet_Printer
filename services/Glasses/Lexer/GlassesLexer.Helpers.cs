@@ -3,23 +3,6 @@ namespace KiotVietLabelPrinter.Services.Glasses.Lexer;
 public static partial class GlassesLexer
 {
     //---------------------------------------------------------
-    // Peek
-    //---------------------------------------------------------
-
-    private static char? Peek(
-        string text,
-        int index)
-    {
-        if (index < 0)
-            return null;
-
-        if (index >= text.Length)
-            return null;
-
-        return text[index];
-    }
-
-    //---------------------------------------------------------
     // WhiteSpace
     //---------------------------------------------------------
 
@@ -29,42 +12,8 @@ public static partial class GlassesLexer
     }
 
     //---------------------------------------------------------
-    // Digit
-    //---------------------------------------------------------
-
-    private static bool IsDigit(char? c)
-    {
-        return
-            c != null &&
-            char.IsDigit(c.Value);
-    }
-
-    //---------------------------------------------------------
-    // Letter
-    //---------------------------------------------------------
-
-    private static bool IsLetter(char? c)
-    {
-        return
-            c != null &&
-            char.IsLetter(c.Value);
-    }
-
-    //---------------------------------------------------------
-    // Token Char
-    //---------------------------------------------------------
-
-    private static bool IsTokenChar(char c)
-    {
-        return
-            char.IsLetterOrDigit(c)
-            || c == '/'
-            || c == '-'
-            || c == '_';
-    }
-
-    //---------------------------------------------------------
     // Separator
+    // Có tạo Token
     //---------------------------------------------------------
 
     private static bool IsSeparator(char c)
@@ -78,46 +27,79 @@ public static partial class GlassesLexer
     }
 
     //---------------------------------------------------------
-    // Hyphen có phải separator không
+    // Delimiter
+    // Chỉ cắt token
+    //---------------------------------------------------------
+
+    private static bool IsDelimiter(char c)
+    {
+        return c is
+            '-'
+            or '+';
+    }
+
+    //---------------------------------------------------------
+    // Hyphen handling
     //---------------------------------------------------------
 
     private static bool IsHyphenSeparator(
         string text,
-        int index)
+        int hyphenIndex,
+        string current)
     {
-        char? left = Peek(text, index - 1);
-        char? right = Peek(text, index + 1);
+        if (hyphenIndex + 1 >= text.Length)
+            return true;
 
-        //------------------------------------
-        // 9805-01
-        //------------------------------------
+        char next = text[hyphenIndex + 1];
 
-        if (IsDigit(left) && IsDigit(right))
+        if (char.IsWhiteSpace(next) || IsSeparator(next))
+            return true;
+
+        if (string.IsNullOrEmpty(current))
+            return true;
+
+        char prev = current[^1];
+
+        bool prevToken = char.IsLetterOrDigit(prev) || prev == '/' || prev == '_';
+        bool nextToken = char.IsLetterOrDigit(next) || next == '/' || next == '_';
+
+        // Extract next meaningful segment (until whitespace or separator)
+        int j = hyphenIndex + 1;
+        Span<char> buf = stackalloc char[32];
+        int bi = 0;
+
+        while (j < text.Length && !char.IsWhiteSpace(text[j]) && !IsSeparator(text[j]))
+        {
+            if (bi < buf.Length) buf[bi++] = text[j];
+            j++;
+        }
+
+        string nextSeg = bi == 0 ? "" : new string(buf.Slice(0, bi));
+
+        // If next segment starts with MK (e.g., MK221), treat hyphen as separator
+        if (nextSeg.Length >= 2 && (nextSeg.StartsWith("MK", StringComparison.InvariantCultureIgnoreCase)))
+            return true;
+
+        // If current starts with MK (e.g., MK109-P8315), treat hyphen as separator
+        if (current.Length >= 2 && current.StartsWith("MK", StringComparison.InvariantCultureIgnoreCase))
+            return true;
+
+        // If both sides are alnum (or / or _) keep hyphen inside token (not a separator)
+        if (prevToken && nextToken)
             return false;
 
-        //------------------------------------
-        // B305/147-MK220
-        //------------------------------------
-
-        if (IsDigit(left)
-            && right != null
-            && char.ToUpper(right.Value) == 'M')
-            return true;
-
-        //------------------------------------
-        // MK109-P8315
-        //------------------------------------
-
-        if (left != null
-            && char.ToUpper(left.Value) == '9'
-            && IsLetter(right))
-            return true;
-
-        //------------------------------------
-        // mặc định
-        //------------------------------------
-
         return true;
+    }
+
+    //---------------------------------------------------------
+    // Token Char
+    //---------------------------------------------------------
+
+    private static bool IsTokenChar(char c)
+    {
+        return char.IsLetterOrDigit(c)
+            || c == '/'
+            || c == '_';
     }
 
     //---------------------------------------------------------
@@ -132,17 +114,21 @@ public static partial class GlassesLexer
         if (!builder.HasValue)
             return;
 
-        string value = builder.Build();
+        string value = builder.Build().Trim();
 
-        GlassesToken token = new()
+        if (value.Length == 0)
+        {
+            builder.Clear();
+            return;
+        }
+
+        tokens.Add(new GlassesToken
         {
             Text = value,
             Type = DetectType(value),
             Start = builder.StartIndex,
             End = endIndex - 1
-        };
-
-        tokens.Add(token);
+        });
 
         builder.Clear();
     }

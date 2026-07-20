@@ -4,6 +4,8 @@ namespace KiotVietLabelPrinter.Services.Glasses.Rules;
 
 public abstract class RuleBase : IGlassesRule
 {
+    //---------------------------------------------------------
+
     public abstract string Name { get; }
 
     public abstract int Priority { get; }
@@ -11,31 +13,57 @@ public abstract class RuleBase : IGlassesRule
     public abstract RuleResult Execute(
         IReadOnlyList<GlassesToken> tokens);
 
-    //-----------------------------------------------------
+    //---------------------------------------------------------
+    // Previous Meaningful
+    //---------------------------------------------------------
 
-    protected static GlassesToken? Next(
+    protected static GlassesToken? PreviousMeaningful(
         IReadOnlyList<GlassesToken> tokens,
         int index)
     {
-        if (index + 1 >= tokens.Count)
-            return null;
+        for (int i = index - 1; i >= 0; i--)
+        {
+            GlassesToken token = tokens[i];
 
-        return tokens[index + 1];
+            if (Ignore(token))
+                continue;
+
+            return token;
+        }
+
+        return null;
     }
 
-    //-----------------------------------------------------
+    //---------------------------------------------------------
+    // Next Meaningful
+    //---------------------------------------------------------
 
-    protected static GlassesToken? Previous(
+    protected static GlassesToken? NextMeaningful(
         IReadOnlyList<GlassesToken> tokens,
         int index)
     {
-        if (index <= 0)
-            return null;
+        for (int i = index + 1; i < tokens.Count; i++)
+        {
+            GlassesToken token = tokens[i];
 
-        return tokens[index - 1];
+            if (Ignore(token))
+                continue;
+
+            return token;
+        }
+
+        return null;
     }
 
-    //-----------------------------------------------------
+    //---------------------------------------------------------
+
+    protected static bool Ignore(
+        GlassesToken token)
+    {
+        return token.Type == TokenType.Separator;
+    }
+
+    //---------------------------------------------------------
 
     protected static bool IsCode(
         GlassesToken? token)
@@ -44,7 +72,7 @@ public abstract class RuleBase : IGlassesRule
                token.Type == TokenType.Code;
     }
 
-    //-----------------------------------------------------
+    //---------------------------------------------------------
 
     protected static bool IsMk(
         GlassesToken? token)
@@ -53,7 +81,7 @@ public abstract class RuleBase : IGlassesRule
                token.Type == TokenType.Mk;
     }
 
-    //-----------------------------------------------------
+    //---------------------------------------------------------
 
     protected static bool IsKeyword(
         GlassesToken? token)

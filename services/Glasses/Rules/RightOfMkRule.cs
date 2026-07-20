@@ -8,20 +8,16 @@ public class RightOfMkRule : RuleBase
 
     public override int Priority => 40;
 
-    //---------------------------------------------------------
-
     public override RuleResult Execute(
         IReadOnlyList<GlassesToken> tokens)
     {
-        for (int i = 0; i < tokens.Count - 1; i++)
+        for (int i = 0; i < tokens.Count; i++)
         {
-            GlassesToken current = tokens[i];
-
-            if (!IsMk(current))
+            if (tokens[i].Type != TokenType.Mk)
                 continue;
 
             GlassesToken? right =
-                Next(tokens, i);
+                NextMeaningful(tokens, i);
 
             if (!IsCode(right))
                 continue;
@@ -32,12 +28,11 @@ public class RightOfMkRule : RuleBase
                     Name);
 
             result.AddLog(
-                $"RIGHT OF MK : {right.Text}");
+                $"RIGHT OF MK -> {right.Text}");
 
             return result;
         }
 
-        return RuleResult.Fail(
-            "Không có CODE bên phải MK.");
+        return RuleResult.Fail();
     }
 }

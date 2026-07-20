@@ -8,8 +8,6 @@ public class ModelRule : RuleBase
 
     public override int Priority => 10;
 
-    //---------------------------------------------------------
-
     public override RuleResult Execute(
         IReadOnlyList<GlassesToken> tokens)
     {
@@ -20,12 +18,8 @@ public class ModelRule : RuleBase
             if (token.Type != TokenType.Model)
                 continue;
 
-            //-------------------------------------------------
-            // MODEL xxxx
-            //-------------------------------------------------
-
             GlassesToken? next =
-                Next(tokens, i);
+                NextMeaningful(tokens, i);
 
             if (!IsCode(next))
                 continue;
@@ -41,7 +35,6 @@ public class ModelRule : RuleBase
             return result;
         }
 
-        return RuleResult.Fail(
-            "Không tìm thấy MODEL.");
+        return RuleResult.Fail();
     }
 }

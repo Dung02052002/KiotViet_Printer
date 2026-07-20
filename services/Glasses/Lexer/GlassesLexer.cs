@@ -13,23 +13,35 @@ public static partial class GlassesLexer
         if (string.IsNullOrWhiteSpace(text))
             return tokens;
 
-        //------------------------------------------
+        //-------------------------------------------------
         // Normalize
-        //------------------------------------------
+        //-------------------------------------------------
 
         text = Normalize(text);
 
-        GlassesDebug.Info(text);
+        GlassesDebug.Info($"INPUT : {text}");
 
-        //------------------------------------------
+        //-------------------------------------------------
         // Scan
-        //------------------------------------------
+        //-------------------------------------------------
 
         ScanCore(text, tokens);
 
-        //------------------------------------------
+        //-------------------------------------------------
+        // Detect Type
+        //-------------------------------------------------
+
+        foreach (GlassesToken token in tokens)
+        {
+            token.Type = DetectType(token.Text);
+
+            GlassesDebug.Info(
+                $"{token.Index,-2} {token.Type,-10} {token.Text}");
+        }
+
+        //-------------------------------------------------
         // Index
-        //------------------------------------------
+        //-------------------------------------------------
 
         for (int i = 0; i < tokens.Count; i++)
         {
@@ -42,13 +54,14 @@ public static partial class GlassesLexer
         return tokens;
     }
 
-    //------------------------------------------------
+    //-------------------------------------------------
 
     private static string Normalize(string text)
     {
         return text
             .Trim()
             .Replace("\r", " ")
-            .Replace("\n", " ");
+            .Replace("\n", " ")
+            .Replace("\t", " ");
     }
 }
