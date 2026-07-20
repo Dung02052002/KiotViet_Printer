@@ -1,31 +1,44 @@
+using System.Text;
+
 namespace KiotVietLabelPrinter.Services.Glasses.Lexer;
 
-internal sealed class TokenBuilder
+public class TokenBuilder
 {
-    private readonly List<char> _buffer = [];
+    private readonly StringBuilder _builder = new();
+
+    public bool HasValue =>
+        _builder.Length > 0;
 
     public int StartIndex { get; private set; }
 
-    public bool HasValue => _buffer.Count > 0;
+    //------------------------------------
 
     public void Begin(int index)
     {
-        if (_buffer.Count == 0)
+        if (_builder.Length == 0)
             StartIndex = index;
     }
 
+    //------------------------------------
+
     public void Append(char c)
     {
-        _buffer.Add(c);
+        _builder.Append(c);
     }
+
+    //------------------------------------
 
     public string Build()
     {
-        return new string(_buffer.ToArray());
+        return _builder.ToString();
     }
+
+    //------------------------------------
 
     public void Clear()
     {
-        _buffer.Clear();
+        _builder.Clear();
+
+        StartIndex = 0;
     }
 }

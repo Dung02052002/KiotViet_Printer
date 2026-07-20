@@ -8,14 +8,26 @@ namespace KiotVietLabelPrinter.Services.Glasses;
 
 public class GlassesParser
 {
-    private readonly List<IGlassesRule> _rules =
-    [
-        new ModelRule(),
-        new KeywordRule(),
-        new LeftOfMkRule(),
-        new RightOfMkRule(),
-        new FirstCodeRule()
-    ];
+ private readonly List<IGlassesRule> _rules =
+[
+    new ModelRule(),
+
+    new KeywordRule(),
+
+    new LeftOfMkRule(),
+
+    new RightOfMkRule(),
+
+    new MkOnlyRule(),
+
+    new KOnlyRule(),
+
+    new PcnRule(),
+
+    new FirstCodeRule(),
+
+    new FallbackRule()
+];
 
     //---------------------------------------------------------
     // Product

@@ -2,27 +2,39 @@ namespace KiotVietLabelPrinter.Services.Glasses.Lexer;
 
 public enum TokenType
 {
-    Unknown,
+    Unknown = 0,
+
+    //------------------------------------
+    // Common
+    //------------------------------------
 
     Word,
 
+    Number,
+
     Code,
+
+    Separator,
+
+    //------------------------------------
+    // Keyword
+    //------------------------------------
+
+    Keyword,
+
+    Model,
+
+    //------------------------------------
+    // Glasses
+    //------------------------------------
 
     Mk,
 
     K,
 
-    Model,
-
-    Keyword,
-
-    Color,
-
     Pcn,
 
-    Sample,
+    Brand,
 
-    Ignore,
-
-    Separator
+    Color
 }

@@ -1,3 +1,4 @@
+
 using KiotVietLabelPrinter.Models;
 using KiotVietLabelPrinter.Services;
 
@@ -29,6 +30,7 @@ public class FormMain : Form
     private readonly Button btnChooseExcel = new();
     private readonly Button btnConfig = new();
     private readonly Button btnHistory = new();
+     private readonly Button btnParserLab = new();
     private readonly Button btnPreview = new();
     private readonly Button btnPrint = new();
 
@@ -325,6 +327,15 @@ public class FormMain : Form
         btnHistory.Click += BtnHistory_Click;
         pnlWorkspace.Controls.Add(btnHistory);
 
+
+        btnParserLab.Text = "Parser Lab";
+        btnParserLab.Left = 360;
+        btnParserLab.Top = 280;
+        btnParserLab.Width = 140;
+        btnParserLab.Height = 42;
+        btnParserLab.Click += BtnParserLab_Click;
+        pnlWorkspace.Controls.Add(btnParserLab);
+
         btnPreview.Text = "Xem trước";
         btnPreview.Left = 360;
         btnPreview.Top = 220;
@@ -501,6 +512,12 @@ public class FormMain : Form
         history.ShowDialog();
     }
 
+    private void BtnParserLab_Click(object? sender, EventArgs e)
+{
+    using FormParserLab form = new();
+    form.ShowDialog();
+}
+
     private void BtnPreview_Click(object? sender, EventArgs e)
     {
         try
@@ -559,5 +576,13 @@ public class FormMain : Form
       
 
     }
+    private void btnParserLab_Click(
+    object sender,
+    EventArgs e)
+{
+    FormParserLab form = new();
+
+    form.ShowDialog();
+}
     #endregion
 }
