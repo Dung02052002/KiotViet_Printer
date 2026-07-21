@@ -12,15 +12,26 @@ public class GlassesExcelService
         if (!File.Exists(dataFile))
             throw new FileNotFoundException(dataFile);
 
-        using FileStream stream = new(
+        // Đọc toàn bộ file vào MemoryStream trước, KHÔNG dùng chung FileStream
+        // để vừa đọc vừa ghi (NPOI vẫn cần đọc lazy các phần chưa parse của
+        // workbook gốc khi Write(), nếu dùng chung stream mà đã SetLength(0)
+        // trước đó sẽ gây lỗi "Cannot access a closed file").
+        using MemoryStream memoryStream = new();
+
+        using (FileStream readStream = new(
             dataFile,
             FileMode.Open,
-            FileAccess.ReadWrite,
-            FileShare.ReadWrite);
+            FileAccess.Read,
+            FileShare.ReadWrite))
+        {
+            readStream.CopyTo(memoryStream);
+        }
+
+        memoryStream.Position = 0;
 
         // Tự nhận diện xls / xlsx theo nội dung thật của file
         // (file data tem kính thường là .xls định dạng cũ, không phải .xlsx)
-        IWorkbook workbook = WorkbookFactory.Create(stream);
+        IWorkbook workbook = WorkbookFactory.Create(memoryStream);
         ISheet sheet = workbook.GetSheetAt(0);
 
         //=========================================
@@ -72,10 +83,14 @@ public class GlassesExcelService
         // Save
         //=========================================
 
-        stream.SetLength(0);
-        stream.Position = 0;
-
-        workbook.Write(stream);
+        using (FileStream writeStream = new(
+            dataFile,
+            FileMode.Create,
+            FileAccess.Write,
+            FileShare.ReadWrite))
+        {
+            workbook.Write(writeStream);
+        }
 
         workbook.Close();
     }
