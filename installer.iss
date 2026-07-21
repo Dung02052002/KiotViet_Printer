@@ -16,7 +16,8 @@ SolidCompression=yes
 WizardStyle=modern
 
 ; Cho phép cài đè / update
-CloseApplications=yes
+AppMutex=KiotVietLabelPrinterProV2Mutex
+CloseApplications=force
 RestartApplications=no
 
 ; Gỡ bản cũ theo cùng AppId trước khi cài bản mới
