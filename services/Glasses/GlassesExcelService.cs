@@ -16,9 +16,14 @@ public class GlassesExcelService
         // để vừa đọc vừa ghi (NPOI vẫn cần đọc lazy các phần chưa parse của
         // workbook gốc khi Write(), nếu dùng chung stream mà đã SetLength(0)
         // trước đó sẽ gây lỗi "Cannot access a closed file").
+        //
+        // Khi in liên tiếp nhiều mã (mỗi mã ghi đè + gọi BarTender 1 lần),
+        // BarTender có thể vẫn còn đang mở/đọc file data của lượt in trước
+        // trong vài trăm ms → dùng OpenWithRetry để không bị lỗi "file đang
+        // được sử dụng bởi tiến trình khác" làm gãy cả loạt in.
         using MemoryStream memoryStream = new();
 
-        using (FileStream readStream = new(
+        using (FileStream readStream = OpenWithRetry(
             dataFile,
             FileMode.Open,
             FileAccess.Read,
@@ -83,7 +88,7 @@ public class GlassesExcelService
         // Save
         //=========================================
 
-        using (FileStream writeStream = new(
+        using (FileStream writeStream = OpenWithRetry(
             dataFile,
             FileMode.Create,
             FileAccess.Write,
@@ -93,6 +98,35 @@ public class GlassesExcelService
         }
 
         workbook.Close();
+    }
+
+    /// <summary>
+    /// Mở file với retry/backoff — dùng khi in nhiều mã liên tiếp, tránh
+    /// lỗi "file đang được BarTender sử dụng" do tiến trình in trước chưa
+    /// kịp giải phóng file data.
+    /// </summary>
+    private static FileStream OpenWithRetry(
+        string path,
+        FileMode mode,
+        FileAccess access,
+        FileShare share,
+        int maxAttempts = 10,
+        int delayMs = 250)
+    {
+        for (int attempt = 1; attempt <= maxAttempts; attempt++)
+        {
+            try
+            {
+                return new FileStream(path, mode, access, share);
+            }
+            catch (IOException) when (attempt < maxAttempts)
+            {
+                Thread.Sleep(delayMs);
+            }
+        }
+
+        // Lần thử cuối cùng: để lỗi thật ném ra nếu vẫn thất bại
+        return new FileStream(path, mode, access, share);
     }
 
     private static void SetCell(

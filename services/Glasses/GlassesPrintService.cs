@@ -64,6 +64,13 @@ public class GlassesPrintService
             product,
             employeeCode);
 
+    // Mã hàng / Mã vạch ghi ra file data (cột C/D BarTender đọc để in
+    // text + barcode) PHẢI lấy từ mã đã parse (BaseCode/BarcodeCode),
+    // không dùng mã gốc thô trong Excel import — tránh lệch giữa chữ
+    // "Mã vạch: xxx" với số thực sự được encode trong hình mã vạch.
+    document.Product.ProductCode = document.BaseCode;
+    document.Product.Barcode = document.Barcode;
+
     _excelService.WriteSingleProduct(
         document.Product,
         label.DataFilePath);
