@@ -1,6 +1,5 @@
 using KiotVietLabelPrinter.Models;
 using NPOI.SS.UserModel;
-using NPOI.XSSF.UserModel;
 
 namespace KiotVietLabelPrinter.Services.Glasses;
 
@@ -16,9 +15,12 @@ public class GlassesExcelService
         using FileStream stream = new(
             dataFile,
             FileMode.Open,
-            FileAccess.ReadWrite);
+            FileAccess.ReadWrite,
+            FileShare.ReadWrite);
 
-        IWorkbook workbook = new XSSFWorkbook(stream);
+        // Tự nhận diện xls / xlsx theo nội dung thật của file
+        // (file data tem kính thường là .xls định dạng cũ, không phải .xlsx)
+        IWorkbook workbook = WorkbookFactory.Create(stream);
         ISheet sheet = workbook.GetSheetAt(0);
 
         //=========================================
