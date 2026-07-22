@@ -22,6 +22,13 @@ public static class ParserSamples
 
             new()
             {
+                Name="MODEL-3",
+                Input="model 3162p-01 (MK293 BLACK BROWN)",
+                Expected="3162P-01"
+            },
+
+            new()
+            {
                 Name="LEFT MK",
                 Input="2113-MK108",
                 Expected="2113"

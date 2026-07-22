@@ -100,6 +100,7 @@ public class ConfigService
         {
             BarTenderExe = "",
             LastFolder = "",
+            LastExcelFile = "",
             AutoOpenLastFolder = true,
             RememberEmployee = true,
             DefaultEmployee = "",

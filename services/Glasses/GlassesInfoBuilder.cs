@@ -108,10 +108,15 @@ public static class GlassesInfoBuilder
     {
         return string.Join(
             Environment.NewLine,
-            "KÍNH MÁT",
+            "KÍNH MẮT",
             $"Mã hàng: {baseCode}",
-            "Nhập từ:",
-            "Đ/c:",
+            "Nhập từ: Công ty CP XNK",
+            "Trung Quốc Đại Dương.",
+            "Đ/c: Số 321, đ.Trường",
+            "Chinh,P.Khương Trung,",
+            "Q.Thanh Xuân,TP Hà Nội,Việt",
+            "Nam",
+            "Thông số kỹ thuật: 16*16*7",
             "Thông số kỹ thuật:",
             $"Mã vạch: {barcode}");
     }

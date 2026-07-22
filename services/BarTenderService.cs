@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Drawing.Printing;
 using System.Text;
 using System.Windows.Forms;
 
@@ -27,7 +28,12 @@ public class BarTenderService
         if (!File.Exists(btwFile))
             throw new Exception($"Không tìm thấy file tem:\n{btwFile}");
 
-        string xmlPath = CreatePrintXmlNearApp(btwFile, namedSubStrings);
+        string printerName = GetDefaultPrinterName();
+
+        string xmlPath = CreatePrintXmlNearApp(
+            btwFile,
+            namedSubStrings,
+            printerName);
 
         // Popup để biết chắc app đang chạy đúng code mới
         // MessageBox.Show($"XML vừa tạo:\n{xmlPath}", "DEBUG BarTender XML");
@@ -56,6 +62,7 @@ public class BarTenderService
             throw new Exception(
                 "BarTender xử lý lệnh in quá thời gian chờ (30 giây).\n\n" +
                 $"Template: {btwFile}\n" +
+                $"Printer: {printerName}\n" +
                 $"XML: {xmlPath}\n\n" +
                 "Vui lòng kiểm tra BarTender có đang bị treo hoặc đang chờ hộp thoại xác nhận.");
 
@@ -69,6 +76,7 @@ public class BarTenderService
             throw new Exception(
                 "BarTender báo lỗi khi xử lý XML in.\n\n" +
                 $"Template: {btwFile}\n" +
+                $"Printer: {printerName}\n" +
                 $"XML: {xmlPath}\n" +
                 $"ExitCode: {process.ExitCode}\n\n" +
                 $"STDERR:\n{stdErr}\n\n" +
@@ -79,7 +87,8 @@ public class BarTenderService
 
     private static string CreatePrintXmlNearApp(
         string btwFile,
-        Dictionary<string, string>? namedSubStrings)
+            Dictionary<string, string>? namedSubStrings,
+            string printerName)
     {
         string appFolder = AppDomain.CurrentDomain.BaseDirectory;
         string debugFolder = Path.Combine(appFolder, "debug_xml");
@@ -96,6 +105,10 @@ public class BarTenderService
         sb.AppendLine("""  <Command>""");
         sb.AppendLine("""    <Print>""");
         sb.AppendLine($"      <Format>{EscapeXml(btwFile)}</Format>");
+        sb.AppendLine("""      <PrintSetup>""");
+        sb.AppendLine($"        <Printer>{EscapeXml(printerName)}</Printer>");
+        sb.AppendLine("""        <EnablePrompting>false</EnablePrompting>""");
+        sb.AppendLine("""      </PrintSetup>""");
 
         if (namedSubStrings != null && namedSubStrings.Count > 0)
         {
@@ -129,6 +142,19 @@ public class BarTenderService
         File.WriteAllText(Path.Combine(debugFolder, "last_print_debug.xml"), xml, new UTF8Encoding(false));
 
         return xmlPath;
+    }
+
+    private static string GetDefaultPrinterName()
+    {
+        PrinterSettings settings = new();
+
+        if (string.IsNullOrWhiteSpace(settings.PrinterName))
+            throw new Exception("Không xác định được máy in mặc định của Windows.");
+
+        if (!settings.IsValid)
+            throw new Exception($"Máy in mặc định không hợp lệ: {settings.PrinterName}");
+
+        return settings.PrinterName;
     }
 
     private static string EscapeXml(string value)

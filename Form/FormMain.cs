@@ -380,6 +380,13 @@ public class FormMain : Form
         lblSubtitle.Text = $"Danh mục: {label.Name}";
         lblCurrentCategory.Text = $"Danh mục: {label.Name} ({label.Code})";
 
+        if (string.IsNullOrWhiteSpace(txtExcelFile.Text) &&
+            !string.IsNullOrWhiteSpace(ConfigService.Instance.Config.LastExcelFile) &&
+            File.Exists(ConfigService.Instance.Config.LastExcelFile))
+        {
+            txtExcelFile.Text = ConfigService.Instance.Config.LastExcelFile;
+        }
+
         ApplyEmployeeCodeMode(label);
     }
 
@@ -481,6 +488,8 @@ public class FormMain : Form
         if (dialog.ShowDialog() == DialogResult.OK)
         {
             txtExcelFile.Text = dialog.FileName;
+
+            ConfigService.Instance.Config.LastExcelFile = dialog.FileName;
 
             string? folder = Path.GetDirectoryName(dialog.FileName);
             if (!string.IsNullOrWhiteSpace(folder))

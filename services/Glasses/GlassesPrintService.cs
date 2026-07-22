@@ -80,9 +80,17 @@ public class GlassesPrintService
     // qua Print XML Script dưới dạng Named Sub-String "GLASSES_INFO"
     // (đã quét parser và thay sẵn 2 dòng "Mã hàng"/"Mã vạch" bằng mã
     // ĐÃ PARSE) — không cần ghi ra file data nữa.
-    _excelService.WriteSingleProduct(
-        document.Product,
-        label.DataFilePath);
+    try
+    {
+        _excelService.WriteSingleProduct(
+            document.Product,
+            label.DataFilePath);
+    }
+    catch (IOException)
+    {
+        // Khi file data đang bị app khác giữ lock, vẫn cho phép in bằng
+        // dữ liệu Named Sub-String để không làm gián đoạn thao tác in.
+    }
 
     _barTenderService.Print(
         label,
