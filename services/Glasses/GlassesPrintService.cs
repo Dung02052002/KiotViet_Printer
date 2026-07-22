@@ -57,19 +57,18 @@ public class GlassesPrintService
     private void PrintSingle(
     ProductRow product,
     LabelDefinition label,
-    string employeeCode)
+    string colorCode)
 {
     GlassesDocument document =
         GlassesDocumentBuilder.Build(
             product,
-            employeeCode);
+            colorCode);
 
-    // Mã hàng / Mã vạch ghi ra file data (cột C/D BarTender đọc để in
-    // text + barcode) PHẢI lấy từ mã đã parse (BaseCode/BarcodeCode),
-    // không dùng mã gốc thô trong Excel import — tránh lệch giữa chữ
-    // "Mã vạch: xxx" với số thực sự được encode trong hình mã vạch.
-    document.Product.ProductCode = document.BaseCode;
-    document.Product.Barcode = document.Barcode;
+    // File data (.xls) GIỮ NGUYÊN dữ liệu gốc từ Excel import — KHÔNG
+    // ghi đè Mã hàng / Mã vạch bằng mã đã parse. Mã đã parse
+    // (BaseCode/BarcodeCode) chỉ được dùng để encode hình mã vạch và
+    // gửi qua GLASSES_INFO cho BarTender, không đụng vào cột dữ liệu
+    // gốc trong file data.
 
     // KHÔNG đụng vào ProductNameWithAttr (cột F) — đây là text thuộc
     // tính hiển thị riêng bên phải tem VÀ cũng là nguồn để parser cắt

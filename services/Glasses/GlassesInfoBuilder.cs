@@ -6,23 +6,23 @@ namespace KiotVietLabelPrinter.Services.Glasses;
 public static class GlassesInfoBuilder
 {
     //---------------------------------------------------------
-    // Barcode
+    // Barcode = mã parse + mã màu
     //---------------------------------------------------------
 
     public static string BuildBarcode(
         string baseCode,
-        string employeeCode)
+        string colorCode)
     {
         baseCode = baseCode?.Trim().ToUpper() ?? "";
-        employeeCode = employeeCode?.Trim().ToUpper() ?? "";
+        colorCode = colorCode?.Trim().ToUpper() ?? "";
 
         if (string.IsNullOrWhiteSpace(baseCode))
             return "";
 
-        if (string.IsNullOrWhiteSpace(employeeCode))
+        if (string.IsNullOrWhiteSpace(colorCode))
             return baseCode;
 
-        return $"{baseCode}{employeeCode}";
+        return $"{baseCode}{NormalizeColorCode(colorCode)}";
     }
 
     //---------------------------------------------------------
@@ -35,17 +35,8 @@ public static class GlassesInfoBuilder
     }
 
     //---------------------------------------------------------
-    // Chuỗi thông tin kính
+    // Chuỗi GLASSES_INFO (runtime, không ghi vào file data)
     //---------------------------------------------------------
-
-    // Ưu tiên lấy nguyên văn nội dung đã có sẵn trong Excel (cột Mô tả,
-    // hoặc Tên hàng hiển thị/thuộc tính) — đây là đoạn text đầy đủ
-    // (KÍNH MÁT / Mã hàng / Nhập từ / Đvc / Thông số kỹ thuật / Mã vạch...)
-    // do người nhập liệu soạn sẵn cho từng sản phẩm.
-    // Chỉ khi không có nội dung nào mới rơi về fallback hiển thị mã, và
-    // trong trường hợp đó KHÔNG lặp lại mã trong ngoặc nếu barcode trùng
-    // hệt baseCode (không có mã NV/màu) — vẫn giữ định dạng "mã (mã vạch)"
-    // cho trường hợp barcode khác baseCode.
     public static string BuildInfo(
         ProductRow product,
         string baseCode,
@@ -54,28 +45,19 @@ public static class GlassesInfoBuilder
         baseCode = baseCode?.Trim() ?? "";
         barcode = barcode?.Trim() ?? "";
 
-        string text = !string.IsNullOrWhiteSpace(product?.Description)
-            ? product!.Description.Trim()
-            : product?.ProductNameWithAttr?.Trim() ?? "";
+        string text = product?.Description?.Trim() ?? "";
 
         if (!string.IsNullOrWhiteSpace(text))
         {
-            // Giữ nguyên toàn bộ nội dung Mô tả (thông tin công ty, xuất xứ,
-            // nhập từ, thông số kỹ thuật...) — chỉ thay riêng phần mã nằm
-            // trên dòng "Mã hàng" và "Mã vạch" bằng mã ĐÃ PARSE (baseCode/
-            // barcode), tránh in ra mã gốc thô của KiotViet không khớp với
-            // mã vạch thực sự được encode trên hình.
-            return ReplaceCodeLines(text, baseCode, barcode);
+            // Nếu có sẵn block mô tả thì chỉ thay dòng mã hàng/mã vạch bằng mã parse.
+            // Nếu thiếu 1 trong 2 dòng thì bổ sung để đảm bảo GLASSES_INFO luôn đầy đủ.
+            return EnsureRequiredLines(
+                ReplaceCodeLines(text, baseCode, barcode),
+                baseCode,
+                barcode);
         }
 
-        if (string.IsNullOrWhiteSpace(baseCode))
-            return "";
-
-        if (string.IsNullOrWhiteSpace(barcode) ||
-            string.Equals(barcode, baseCode, StringComparison.OrdinalIgnoreCase))
-            return baseCode;
-
-        return $"{baseCode} ({barcode})";
+        return BuildDefaultInfoBlock(baseCode, barcode);
     }
 
     private static string ReplaceCodeLines(
@@ -102,10 +84,59 @@ public static class GlassesInfoBuilder
         return text;
     }
 
+    private static string EnsureRequiredLines(
+        string text,
+        string baseCode,
+        string barcode)
+    {
+        if (!Regex.IsMatch(text, @"(?im)^\s*Mã\s*hàng\s*:?"))
+        {
+            text += Environment.NewLine + $"Mã hàng: {baseCode}";
+        }
+
+        if (!Regex.IsMatch(text, @"(?im)^\s*Mã\s*vạch\s*:?"))
+        {
+            text += Environment.NewLine + $"Mã vạch: {barcode}";
+        }
+
+        return text.TrimEnd();
+    }
+
+    private static string BuildDefaultInfoBlock(
+        string baseCode,
+        string barcode)
+    {
+        return string.Join(
+            Environment.NewLine,
+            "KÍNH MÁT",
+            $"Mã hàng: {baseCode}",
+            "Nhập từ:",
+            "Đ/c:",
+            "Thông số kỹ thuật:",
+            $"Mã vạch: {barcode}");
+    }
+
+    private static string NormalizeColorCode(string colorCode)
+    {
+        if (string.IsNullOrWhiteSpace(colorCode))
+            return "";
+
+        colorCode = colorCode.Trim().ToUpper();
+
+        // Hỗ trợ nhập nhanh "1" thành "-1" theo thói quen nhập mã màu.
+        if (!colorCode.StartsWith("-") &&
+            Regex.IsMatch(colorCode, @"^[0-9]+$"))
+        {
+            return $"-{colorCode}";
+        }
+
+        return colorCode;
+    }
+
     public static BarcodeParseResult Build(
     ProductRow product,
     string baseCode,
-    string employeeCode)
+    string colorCode)
 {
     BarcodeParseResult result = new();
 
@@ -114,7 +145,7 @@ public static class GlassesInfoBuilder
     result.BarcodeCode =
         BuildBarcode(
             baseCode,
-            employeeCode);
+            colorCode);
 
     result.AttributeText =
         BuildAttribute(product);

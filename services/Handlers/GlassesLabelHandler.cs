@@ -15,6 +15,8 @@ public class GlassesLabelHandler : ILabelHandler
         LabelDefinition label,
         string employeeCode)
     {
+        string colorCode = employeeCode;
+
         List<PreviewRow> rows = new();
 
         foreach (ProductRow item in products)
@@ -28,7 +30,7 @@ string baseCode = parse.BaseCode;
 string barcode =
     GlassesInfoBuilder.BuildBarcode(
         baseCode,
-        employeeCode);
+        colorCode);
 
 rows.Add(new PreviewRow
 {
@@ -55,6 +57,8 @@ rows.Add(new PreviewRow
         LabelDefinition label,
         string employeeCode)
     {
+        string colorCode = employeeCode;
+
         if (string.IsNullOrWhiteSpace(label.DataFilePath))
             throw new Exception("Chưa cấu hình file Data.");
 
@@ -72,6 +76,6 @@ rows.Add(new PreviewRow
         _printService.Print(
             products,
             label,
-            employeeCode);
+            colorCode);
     }
 }
