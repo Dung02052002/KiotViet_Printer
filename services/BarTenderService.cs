@@ -35,7 +35,9 @@ public class BarTenderService
         ProcessStartInfo psi = new()
         {
             FileName = bartenderExe,
-            Arguments = $"/XMLScript=\"{xmlPath}\"",
+            // /X: yêu cầu BarTender thoát sau khi xử lý XML script,
+            // giúp tiến trình kết thúc xác định để bắt lỗi chính xác.
+            Arguments = $"/XMLScript=\"{xmlPath}\" /X",
             UseShellExecute = false,
             CreateNoWindow = true,
             WindowStyle = ProcessWindowStyle.Hidden,
@@ -48,10 +50,14 @@ public class BarTenderService
         if (process == null)
             throw new Exception("Không thể gửi lệnh in tới BarTender.");
 
-        bool exited = process.WaitForExit(8000);
+        bool exited = process.WaitForExit(30000);
 
         if (!exited)
-            return;
+            throw new Exception(
+                "BarTender xử lý lệnh in quá thời gian chờ (30 giây).\n\n" +
+                $"Template: {btwFile}\n" +
+                $"XML: {xmlPath}\n\n" +
+                "Vui lòng kiểm tra BarTender có đang bị treo hoặc đang chờ hộp thoại xác nhận.");
 
         string stdOut = process.StandardOutput.ReadToEnd();
         string stdErr = process.StandardError.ReadToEnd();
