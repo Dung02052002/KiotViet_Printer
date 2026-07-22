@@ -28,9 +28,9 @@ public class GlassesBarTenderService
         //   chỉ dùng 1 object text duy nhất.
         Dictionary<string, string> namedSubStrings = new()
         {
+            ["GLASSES_TITLE"] = document.GlassesTitle ?? "",
             ["MA_HANG"] = document.BaseCode ?? "",
             ["MA_VACH"] = document.Barcode ?? "",
-            ["GLASSES_TITLE"] = document.GlassesTitle ?? "",
             ["GLASSES_INFO_LEFT"] = document.GlassesInfoLeft ?? "",
             ["GLASSES_INFO_RIGHT"] = document.GlassesInfoRight ?? "",
             ["GLASSES_INFO"] = document.GlassesInfo ?? ""

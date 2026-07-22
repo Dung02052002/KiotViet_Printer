@@ -121,15 +121,12 @@ public static class GlassesInfoBuilder
     {
         return
         [
+            GlassesTitle,
             $"Mã hàng: {baseCode}",
-            "Nhập từ: Công ty CP XNK",
-            "Trung Quốc Đại Dương.",
-            "Đ/c: Số 321, đ.Trường",
-            "Chinh,P.Khương Trung,",
-            "Q.Thanh Xuân,TP Hà Nội,Việt",
-            "Nam",
+            "Nhập từ: Công ty CP XNK Trung Quốc Đại Dương",
+            "Đ/c: Số 321, d.Trường Chinh, P.Khương Trung,",
+            "Q.Thanh Xuân, TP Hà Nội, Việt Nam",
             "Thông số kỹ thuật: 16*16*7",
-            "Thông số kỹ thuật",
             $"Mã vạch: {barcode}"
         ];
     }
@@ -152,39 +149,39 @@ public static class GlassesInfoBuilder
     }
 
     public static BarcodeParseResult Build(
-    ProductRow product,
-    string baseCode,
-    string colorCode)
-{
-    BarcodeParseResult result = new();
+        ProductRow product,
+        string baseCode,
+        string colorCode)
+    {
+        BarcodeParseResult result = new();
 
-    result.BaseCode = baseCode;
+        result.BaseCode = baseCode;
 
-    result.BarcodeCode =
-        BuildBarcode(
-            baseCode,
-            colorCode);
+        result.BarcodeCode =
+            BuildBarcode(
+                baseCode,
+                colorCode);
 
-    result.AttributeText =
-        BuildAttribute(product);
+        result.AttributeText =
+            BuildAttribute(product);
 
-    result.GlassesTitle =
-        BuildTitle();
+        result.GlassesTitle =
+            BuildTitle();
 
-    result.GlassesInfoLeft =
-        BuildLeftColumn(
-            baseCode,
-            result.BarcodeCode);
+        result.GlassesInfoLeft =
+            BuildLeftColumn(
+                baseCode,
+                result.BarcodeCode);
 
-    result.GlassesInfoRight =
-        BuildRightColumn();
+        result.GlassesInfoRight =
+            BuildRightColumn();
 
-    result.GlassesInfo =
-        BuildInfo(
-            product,
-            baseCode,
-            result.BarcodeCode);
+        result.GlassesInfo =
+            BuildInfo(
+                product,
+                baseCode,
+                result.BarcodeCode);
 
-    return result;
-}
+        return result;
+    }
 }
