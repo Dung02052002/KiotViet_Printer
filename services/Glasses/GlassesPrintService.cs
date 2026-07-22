@@ -77,6 +77,7 @@ public class GlassesPrintService
 
     _barTenderService.Print(
         label,
-        document.GlassesInfo);
+        document.BaseCode,
+        document.Barcode);
 }
 }

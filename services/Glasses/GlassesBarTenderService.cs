@@ -8,7 +8,8 @@ public class GlassesBarTenderService
 
     public void Print(
         LabelDefinition label,
-        string glassesInfo)
+        string maHang,
+        string maVach)
     {
         if (string.IsNullOrWhiteSpace(label.TemplatePath))
             throw new Exception("Chưa cấu hình file BarTender.");
@@ -17,9 +18,15 @@ public class GlassesBarTenderService
             throw new Exception(
                 $"Không tìm thấy file:\n{label.TemplatePath}");
 
+        // CHỈ set 2 mã đã parse (MA_HANG / MA_VACH) — đây là 2 Named
+        // Sub-String NHỎ chèn ngay tại vị trí số trong khối text tĩnh
+        // (KÍNH MÁT / Nhập từ / Đ/c / Thông số kỹ thuật...), KHÔNG ghi đè
+        // nguyên khối GLASSES_INFO nữa để giữ nguyên toàn bộ thông tin có
+        // sẵn trong template BarTender.
         Dictionary<string, string> namedSubStrings = new()
         {
-            ["GLASSES_INFO"] = glassesInfo
+            ["MA_HANG"] = maHang ?? "",
+            ["MA_VACH"] = maVach ?? ""
         };
 
         _barTenderService.Print(
