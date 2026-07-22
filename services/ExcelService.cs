@@ -28,6 +28,7 @@ public class ExcelService
             string productNameWithAttr = GetCellString(row, 5); // F - Tên hàng (thuộc tính)
             double quantity = GetCellDouble(row, 7);            // H - Số lượng
             double price = GetCellDouble(row, 8);               // I - Giá bán
+            string description = GetCellString(row, 9);         // J - Mô tả
 
             if (string.IsNullOrWhiteSpace(productCode) &&
                 string.IsNullOrWhiteSpace(productName) &&
@@ -43,7 +44,8 @@ public class ExcelService
                 ProductName = productName,
                 ProductNameWithAttr = productNameWithAttr,
                 Quantity = quantity <= 0 ? 1 : quantity,
-                Price = price
+                Price = price,
+                Description = description
             });
         }
 

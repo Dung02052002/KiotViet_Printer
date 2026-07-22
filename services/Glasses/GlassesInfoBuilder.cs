@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using KiotVietLabelPrinter.Models;
 
 namespace KiotVietLabelPrinter.Services.Glasses;
@@ -50,15 +51,22 @@ public static class GlassesInfoBuilder
         string baseCode,
         string barcode)
     {
+        baseCode = baseCode?.Trim() ?? "";
+        barcode = barcode?.Trim() ?? "";
+
         string text = !string.IsNullOrWhiteSpace(product?.Description)
             ? product!.Description.Trim()
             : product?.ProductNameWithAttr?.Trim() ?? "";
 
         if (!string.IsNullOrWhiteSpace(text))
-            return text;
-
-        baseCode = baseCode?.Trim() ?? "";
-        barcode = barcode?.Trim() ?? "";
+        {
+            // Giữ nguyên toàn bộ nội dung Mô tả (thông tin công ty, xuất xứ,
+            // nhập từ, thông số kỹ thuật...) — chỉ thay riêng phần mã nằm
+            // trên dòng "Mã hàng" và "Mã vạch" bằng mã ĐÃ PARSE (baseCode/
+            // barcode), tránh in ra mã gốc thô của KiotViet không khớp với
+            // mã vạch thực sự được encode trên hình.
+            return ReplaceCodeLines(text, baseCode, barcode);
+        }
 
         if (string.IsNullOrWhiteSpace(baseCode))
             return "";
@@ -68,6 +76,30 @@ public static class GlassesInfoBuilder
             return baseCode;
 
         return $"{baseCode} ({barcode})";
+    }
+
+    private static string ReplaceCodeLines(
+        string text,
+        string baseCode,
+        string barcode)
+    {
+        if (!string.IsNullOrWhiteSpace(baseCode))
+        {
+            text = Regex.Replace(
+                text,
+                @"(?im)^(\s*Mã\s*hàng\s*:?\s*).*$",
+                m => m.Groups[1].Value + baseCode);
+        }
+
+        if (!string.IsNullOrWhiteSpace(barcode))
+        {
+            text = Regex.Replace(
+                text,
+                @"(?im)^(\s*Mã\s*vạch\s*:?\s*).*$",
+                m => m.Groups[1].Value + barcode);
+        }
+
+        return text;
     }
 
     public static BarcodeParseResult Build(
