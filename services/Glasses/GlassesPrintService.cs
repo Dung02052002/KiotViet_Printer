@@ -71,15 +71,16 @@ public class GlassesPrintService
     document.Product.ProductCode = document.BaseCode;
     document.Product.Barcode = document.Barcode;
 
-    // Cột F (ProductNameWithAttr) là nội dung khối GLASSES_INFO ghi ra
-    // file data — PHẢI dùng document.GlassesInfo (đã thay riêng 2 dòng
-    // "Mã hàng"/"Mã vạch" bằng mã ĐÃ PARSE), KHÔNG dùng nguyên văn F gốc
-    // từ Excel, nếu không khối info sẽ hiển thị mã thô không khớp với
-    // mã vạch/mã hàng thực in ra. Toàn bộ phần còn lại của khối text
-    // (tên công ty, xuất xứ, nhập từ, thông số kỹ thuật...) vẫn giữ
-    // nguyên như trong file data vì GlassesInfo chỉ thay 2 dòng đó.
-    document.Product.ProductNameWithAttr = document.GlassesInfo;
-
+    // KHÔNG đụng vào ProductNameWithAttr (cột F) — đây là text thuộc
+    // tính hiển thị riêng bên phải tem VÀ cũng là nguồn để parser cắt
+    // mã, ghi đè nó sẽ vừa phá parse vừa phá nội dung hiển thị đó.
+    //
+    // File data (.xls) GIỮ NGUYÊN 100% — không ghi thêm cột nào khác,
+    // không đụng Description. Khối GLASSES_INFO (KÍNH MÁT / Mã hàng /
+    // Nhập từ / Đ/c / Thông số kỹ thuật / Mã vạch...) được gửi thẳng
+    // qua Print XML Script dưới dạng Named Sub-String "GLASSES_INFO"
+    // (đã quét parser và thay sẵn 2 dòng "Mã hàng"/"Mã vạch" bằng mã
+    // ĐÃ PARSE) — không cần ghi ra file data nữa.
     _excelService.WriteSingleProduct(
         document.Product,
         label.DataFilePath);
@@ -87,6 +88,7 @@ public class GlassesPrintService
     _barTenderService.Print(
         label,
         document.BaseCode,
-        document.Barcode);
+        document.Barcode,
+        document.GlassesInfo);
 }
 }

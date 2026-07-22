@@ -9,7 +9,8 @@ public class GlassesBarTenderService
     public void Print(
         LabelDefinition label,
         string maHang,
-        string maVach)
+        string maVach,
+        string glassesInfo)
     {
         if (string.IsNullOrWhiteSpace(label.TemplatePath))
             throw new Exception("Chưa cấu hình file BarTender.");
@@ -18,15 +19,23 @@ public class GlassesBarTenderService
             throw new Exception(
                 $"Không tìm thấy file:\n{label.TemplatePath}");
 
-        // CHỈ set 2 mã đã parse (MA_HANG / MA_VACH) — đây là 2 Named
-        // Sub-String NHỎ chèn ngay tại vị trí số trong khối text tĩnh
-        // (KÍNH MÁT / Nhập từ / Đ/c / Thông số kỹ thuật...), KHÔNG ghi đè
-        // nguyên khối GLASSES_INFO nữa để giữ nguyên toàn bộ thông tin có
-        // sẵn trong template BarTender.
+        // Gửi qua Print XML Script bằng Named Sub-String — KHÔNG đụng gì
+        // tới file data (.xls), file data giữ nguyên 100% dữ liệu gốc.
+        //
+        // - MA_HANG / MA_VACH: mã đã parse, dùng cho các object nhỏ (nếu
+        //   template có object riêng lẻ đang trỏ 2 tên này).
+        // - GLASSES_INFO: nguyên khối text tĩnh (KÍNH MÁT / Mã hàng /
+        //   Nhập từ / Đ/c / Thông số kỹ thuật / Mã vạch...) đã được
+        //   GlassesInfoBuilder quét parser và thay sẵn 2 dòng "Mã hàng"/
+        //   "Mã vạch" bằng mã ĐÃ PARSE — bên BarTender chỉ cần đổi Type
+        //   của object GLASSES_INFO thành "Named Sub-String", Name =
+        //   GLASSES_INFO là nhận đúng toàn bộ nội dung này, không cần
+        //   tách nhỏ nhiều Data Source nữa.
         Dictionary<string, string> namedSubStrings = new()
         {
             ["MA_HANG"] = maHang ?? "",
-            ["MA_VACH"] = maVach ?? ""
+            ["MA_VACH"] = maVach ?? "",
+            ["GLASSES_INFO"] = glassesInfo ?? ""
         };
 
         _barTenderService.Print(
