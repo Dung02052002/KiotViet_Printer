@@ -8,9 +8,7 @@ public class GlassesBarTenderService
 
     public void Print(
         LabelDefinition label,
-        string maHang,
-        string maVach,
-        string glassesInfo)
+        GlassesDocument document)
     {
         if (string.IsNullOrWhiteSpace(label.TemplatePath))
             throw new Exception("Chưa cấu hình file BarTender.");
@@ -24,18 +22,18 @@ public class GlassesBarTenderService
         //
         // - MA_HANG / MA_VACH: mã đã parse, dùng cho các object nhỏ (nếu
         //   template có object riêng lẻ đang trỏ 2 tên này).
-        // - GLASSES_INFO: nguyên khối text tĩnh (KÍNH MÁT / Mã hàng /
-        //   Nhập từ / Đ/c / Thông số kỹ thuật / Mã vạch...) đã được
-        //   GlassesInfoBuilder quét parser và thay sẵn 2 dòng "Mã hàng"/
-        //   "Mã vạch" bằng mã ĐÃ PARSE — bên BarTender chỉ cần đổi Type
-        //   của object GLASSES_INFO thành "Named Sub-String", Name =
-        //   GLASSES_INFO là nhận đúng toàn bộ nội dung này, không cần
-        //   tách nhỏ nhiều Data Source nữa.
+        // - GLASSES_TITLE / GLASSES_INFO_LEFT / GLASSES_INFO_RIGHT: tách
+        //   sẵn các phần để template tem kính có thể dàn đúng bố cục mẫu.
+        // - GLASSES_INFO: block gộp để tương thích các template cũ đang
+        //   chỉ dùng 1 object text duy nhất.
         Dictionary<string, string> namedSubStrings = new()
         {
-            ["MA_HANG"] = maHang ?? "",
-            ["MA_VACH"] = maVach ?? "",
-            ["GLASSES_INFO"] = glassesInfo ?? ""
+            ["MA_HANG"] = document.BaseCode ?? "",
+            ["MA_VACH"] = document.Barcode ?? "",
+            ["GLASSES_TITLE"] = document.GlassesTitle ?? "",
+            ["GLASSES_INFO_LEFT"] = document.GlassesInfoLeft ?? "",
+            ["GLASSES_INFO_RIGHT"] = document.GlassesInfoRight ?? "",
+            ["GLASSES_INFO"] = document.GlassesInfo ?? ""
         };
 
         _barTenderService.Print(

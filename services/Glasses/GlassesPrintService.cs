@@ -94,8 +94,6 @@ public class GlassesPrintService
 
     _barTenderService.Print(
         label,
-        document.BaseCode,
-        document.Barcode,
-        document.GlassesInfo);
+        document);
 }
 }

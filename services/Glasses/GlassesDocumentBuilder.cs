@@ -34,7 +34,13 @@ return new GlassesDocument
 
     AttributeText = barcode.AttributeText,
 
-    GlassesInfo = barcode.GlassesInfo
+    GlassesInfo = barcode.GlassesInfo,
+
+    GlassesTitle = barcode.GlassesTitle,
+
+    GlassesInfoLeft = barcode.GlassesInfoLeft,
+
+    GlassesInfoRight = barcode.GlassesInfoRight
 };
     }
 }

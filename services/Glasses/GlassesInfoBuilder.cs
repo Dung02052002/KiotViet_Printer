@@ -5,6 +5,20 @@ namespace KiotVietLabelPrinter.Services.Glasses;
 
 public static class GlassesInfoBuilder
 {
+    private const string GlassesTitle = "KÍNH MẮT";
+
+    private static readonly string[] RightColumnLines =
+    [
+        "PP: Công ty TNHH Pucini Việt Nam",
+        "Đ/c: Tầng 7, số 113-115 Lê",
+        "Duẩn, P.Cửa Nam,",
+        "Q.Hoàn Kiếm, TP.Hà Nội",
+        "Xuất xứ: Trung Quốc",
+        "Nhãn hiệu Pucini",
+        "Thành phần: kim loại/nhựa",
+        "HDSD: Bảo quản nơi khô ráo"
+    ];
+
     //---------------------------------------------------------
     // Barcode = mã parse + mã màu
     //---------------------------------------------------------
@@ -45,70 +59,68 @@ public static class GlassesInfoBuilder
         baseCode = baseCode?.Trim() ?? "";
         barcode = barcode?.Trim() ?? "";
 
-        string text = product?.Description?.Trim() ?? "";
-
-        if (!string.IsNullOrWhiteSpace(text))
-        {
-            // Nếu có sẵn block mô tả thì chỉ thay dòng mã hàng/mã vạch bằng mã parse.
-            // Nếu thiếu 1 trong 2 dòng thì bổ sung để đảm bảo GLASSES_INFO luôn đầy đủ.
-            return EnsureRequiredLines(
-                ReplaceCodeLines(text, baseCode, barcode),
-                baseCode,
-                barcode);
-        }
-
-        return BuildDefaultInfoBlock(baseCode, barcode);
+        // Tem kính dùng block text chuẩn cố định để luôn ra đúng mẫu,
+        // không phụ thuộc nội dung Description từ file import.
+        return BuildCombinedInfoBlock(baseCode, barcode);
     }
 
-    private static string ReplaceCodeLines(
-        string text,
-        string baseCode,
-        string barcode)
+    public static string BuildTitle()
     {
-        if (!string.IsNullOrWhiteSpace(baseCode))
-        {
-            text = Regex.Replace(
-                text,
-                @"(?im)^(\s*Mã\s*hàng\s*:?\s*).*$",
-                m => m.Groups[1].Value + baseCode);
-        }
-
-        if (!string.IsNullOrWhiteSpace(barcode))
-        {
-            text = Regex.Replace(
-                text,
-                @"(?im)^(\s*Mã\s*vạch\s*:?\s*).*$",
-                m => m.Groups[1].Value + barcode);
-        }
-
-        return text;
+        return GlassesTitle;
     }
 
-    private static string EnsureRequiredLines(
-        string text,
-        string baseCode,
-        string barcode)
-    {
-        if (!Regex.IsMatch(text, @"(?im)^\s*Mã\s*hàng\s*:?"))
-        {
-            text += Environment.NewLine + $"Mã hàng: {baseCode}";
-        }
-
-        if (!Regex.IsMatch(text, @"(?im)^\s*Mã\s*vạch\s*:?"))
-        {
-            text += Environment.NewLine + $"Mã vạch: {barcode}";
-        }
-
-        return text.TrimEnd();
-    }
-
-    private static string BuildDefaultInfoBlock(
+    public static string BuildLeftColumn(
         string baseCode,
         string barcode)
     {
         return string.Join(
             Environment.NewLine,
-            "KÍNH MẮT",
+            BuildLeftColumnLines(baseCode, barcode));
+    }
+
+    public static string BuildRightColumn()
+    {
+        return string.Join(Environment.NewLine, RightColumnLines);
+    }
+
+    private static string BuildCombinedInfoBlock(
+        string baseCode,
+        string barcode)
+    {
+        List<string> lines = [GlassesTitle];
+
+        string[] leftLines = BuildLeftColumnLines(baseCode, barcode);
+        int maxLines = Math.Max(leftLines.Length, RightColumnLines.Length);
+
+        for (int index = 0; index < maxLines; index++)
+        {
+            string left = index < leftLines.Length ? leftLines[index] : "";
+            string right = index < RightColumnLines.Length ? RightColumnLines[index] : "";
+
+            if (string.IsNullOrWhiteSpace(right))
+            {
+                lines.Add(left);
+                continue;
+            }
+
+            if (string.IsNullOrWhiteSpace(left))
+            {
+                lines.Add(right);
+                continue;
+            }
+
+            lines.Add($"{left}\t{right}");
+        }
+
+        return string.Join(Environment.NewLine, lines);
+    }
+
+    private static string[] BuildLeftColumnLines(
+        string baseCode,
+        string barcode)
+    {
+        return
+        [
             $"Mã hàng: {baseCode}",
             "Nhập từ: Công ty CP XNK",
             "Trung Quốc Đại Dương.",
@@ -117,8 +129,9 @@ public static class GlassesInfoBuilder
             "Q.Thanh Xuân,TP Hà Nội,Việt",
             "Nam",
             "Thông số kỹ thuật: 16*16*7",
-            "Thông số kỹ thuật:",
-            $"Mã vạch: {barcode}");
+            "Thông số kỹ thuật",
+            $"Mã vạch: {barcode}"
+        ];
     }
 
     private static string NormalizeColorCode(string colorCode)
@@ -154,6 +167,17 @@ public static class GlassesInfoBuilder
 
     result.AttributeText =
         BuildAttribute(product);
+
+    result.GlassesTitle =
+        BuildTitle();
+
+    result.GlassesInfoLeft =
+        BuildLeftColumn(
+            baseCode,
+            result.BarcodeCode);
+
+    result.GlassesInfoRight =
+        BuildRightColumn();
 
     result.GlassesInfo =
         BuildInfo(

@@ -11,4 +11,10 @@ public class GlassesDocument
     public string AttributeText { get; set; } = "";
 
     public string GlassesInfo { get; set; } = "";
+
+    public string GlassesTitle { get; set; } = "";
+
+    public string GlassesInfoLeft { get; set; } = "";
+
+    public string GlassesInfoRight { get; set; } = "";
 }
