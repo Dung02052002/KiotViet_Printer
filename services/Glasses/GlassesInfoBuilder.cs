@@ -5,7 +5,7 @@ namespace KiotVietLabelPrinter.Services.Glasses;
 
 public static class GlassesInfoBuilder
 {
-    private const string GlassesTitle = "KÍNH MẮT";
+    private const string GlassesTitle = "                 KÍNH MẮT";
 
     private static readonly string[] RightColumnLines =
     [
@@ -61,7 +61,7 @@ public static class GlassesInfoBuilder
 
         // Tem kính dùng block text chuẩn cố định để luôn ra đúng mẫu,
         // không phụ thuộc nội dung Description từ file import.
-        return BuildCombinedInfoBlock(baseCode, barcode);
+        return BuildLegacyInfoBlock(baseCode, barcode);
     }
 
     public static string BuildTitle()
@@ -83,53 +83,36 @@ public static class GlassesInfoBuilder
         return string.Join(Environment.NewLine, RightColumnLines);
     }
 
-    private static string BuildCombinedInfoBlock(
+    private static string BuildLegacyInfoBlock(
         string baseCode,
         string barcode)
     {
-        List<string> lines = [GlassesTitle];
-
-        string[] leftLines = BuildLeftColumnLines(baseCode, barcode);
-        int maxLines = Math.Max(leftLines.Length, RightColumnLines.Length);
-
-        for (int index = 0; index < maxLines; index++)
-        {
-            string left = index < leftLines.Length ? leftLines[index] : "";
-            string right = index < RightColumnLines.Length ? RightColumnLines[index] : "";
-
-            if (string.IsNullOrWhiteSpace(right))
-            {
-                lines.Add(left);
-                continue;
-            }
-
-            if (string.IsNullOrWhiteSpace(left))
-            {
-                lines.Add(right);
-                continue;
-            }
-
-            lines.Add($"{left}\t{right}");
-        }
-
-        return string.Join(Environment.NewLine, lines);
+        return string.Join(
+            Environment.NewLine,
+            [
+                       GlassesTitle,
+                $"Mã hàng:{baseCode}",
+                "Nhập từ: Công ty CP XNK Trung Quốc Đại Dương.",
+                "Đ/c: Số 321, đ.Trường Chinh,P.Khương Trung, Q.Thanh Xuân,TP Hà Nội,Việt Nam",
+                "Thông số kỹ thuật: 16*16*7",
+                $"Mã vạch:{barcode}"
+            ]);
     }
 
-    private static string[] BuildLeftColumnLines(
-        string baseCode,
-        string barcode)
-    {
-        return
-        [
-            GlassesTitle,
-            $"Mã hàng: {baseCode}",
-            "Nhập từ: Công ty CP XNK Trung Quốc Đại Dương",
-            "Đ/c: Số 321, d.Trường Chinh, P.Khương Trung,",
-            "Q.Thanh Xuân, TP Hà Nội, Việt Nam",
-            "Thông số kỹ thuật: 16*16*7",
-            $"Mã vạch: {barcode}"
-        ];
-    }
+   private static string[] BuildLeftColumnLines(
+    string baseCode,
+    string barcode)
+{
+    return
+    [
+        $"Mã hàng: {baseCode}",
+        "Nhập từ: Công ty CP XNK Trung Quốc Đại Dương",
+        "Đ/c: Số 321, d.Trường Chinh, P.Khương Trung,",
+        "Q.Thanh Xuân, TP Hà Nội, Việt Nam",
+        "Thông số kỹ thuật: 16*16*7",
+        $"Mã vạch: {barcode}"
+    ];
+}
 
     private static string NormalizeColorCode(string colorCode)
     {

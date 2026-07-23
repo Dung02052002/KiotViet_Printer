@@ -27,14 +27,17 @@ public class GlassesBarTenderService
         // - GLASSES_INFO: block gộp để tương thích các template cũ đang
         //   chỉ dùng 1 object text duy nhất.
         Dictionary<string, string> namedSubStrings = new()
-        {
-            ["GLASSES_TITLE"] = document.GlassesTitle ?? "",
-            ["MA_HANG"] = document.BaseCode ?? "",
-            ["MA_VACH"] = document.Barcode ?? "",
-            ["GLASSES_INFO_LEFT"] = document.GlassesInfoLeft ?? "",
-            ["GLASSES_INFO_RIGHT"] = document.GlassesInfoRight ?? "",
-            ["GLASSES_INFO"] = document.GlassesInfo ?? ""
-        };
+{
+    ["GLASSES_TITLE"] = document.GlassesTitle ?? string.Empty,
+    ["GLASSES_INFO_LEFT"] = document.GlassesInfoLeft ?? string.Empty,
+    ["GLASSES_INFO_RIGHT"] = document.GlassesInfoRight ?? string.Empty,
+    // Backward compatibility: many templates still bind a single text object
+    // to GLASSES_INFO instead of using LEFT/RIGHT split fields.
+    ["GLASSES_INFO"] = document.GlassesInfo ?? string.Empty,
+
+    ["MA_HANG"] = document.BaseCode ?? string.Empty,
+    ["MA_VACH"] = document.Barcode ?? string.Empty
+};
 
         _barTenderService.Print(
             label.TemplatePath,

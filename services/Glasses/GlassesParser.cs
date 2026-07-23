@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Text.RegularExpressions;
 using KiotVietLabelPrinter.Models;
 using KiotVietLabelPrinter.Models.Glasses;
 using KiotVietLabelPrinter.Services.Glasses.Lexer;
@@ -95,7 +96,7 @@ public class GlassesParser
 
             if (ruleResult.Success)
             {
-                result.BaseCode = ruleResult.BaseCode;
+                result.BaseCode = NormalizeBaseCode(ruleResult.BaseCode);
 
                 result.RuleName = ruleResult.RuleName;
 
@@ -130,5 +131,24 @@ public class GlassesParser
         result.Elapsed = sw.Elapsed;
 
         return result;
+    }
+
+    private static string NormalizeBaseCode(string? baseCode)
+    {
+        string value = (baseCode ?? string.Empty).Trim().ToUpperInvariant();
+
+        if (value.Length == 0)
+            return value;
+
+        // D2823-K026 -> D2823
+        Match match = Regex.Match(
+            value,
+            @"^([A-Z]{1,6}\d+)-K\d+$",
+            RegexOptions.CultureInvariant);
+
+        if (match.Success)
+            return match.Groups[1].Value;
+
+        return value;
     }
 }

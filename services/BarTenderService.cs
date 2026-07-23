@@ -35,15 +35,27 @@ public class BarTenderService
             namedSubStrings,
             printerName);
 
+        string processName =
+            Path.GetFileNameWithoutExtension(bartenderExe);
+
+        bool hasRunningBarTender =
+            Process.GetProcessesByName(processName).Length > 0;
+
+        // Nếu BarTender đã mở sẵn (có thể đang mở nhiều file), chỉ gửi
+        // XML để instance hiện tại xử lý; không dùng /X vì /X yêu cầu đóng
+        // app và có thể bị kẹt bởi các tài liệu đang mở/chờ xác nhận.
+        string arguments = $"/XMLScript=\"{xmlPath}\"";
+
+        if (!hasRunningBarTender)
+            arguments += " /X";
+
         // Popup để biết chắc app đang chạy đúng code mới
         // MessageBox.Show($"XML vừa tạo:\n{xmlPath}", "DEBUG BarTender XML");
 
         ProcessStartInfo psi = new()
         {
             FileName = bartenderExe,
-            // /X: yêu cầu BarTender thoát sau khi xử lý XML script,
-            // giúp tiến trình kết thúc xác định để bắt lỗi chính xác.
-            Arguments = $"/XMLScript=\"{xmlPath}\" /X",
+            Arguments = arguments,
             UseShellExecute = false,
             CreateNoWindow = true,
             WindowStyle = ProcessWindowStyle.Hidden,
@@ -57,6 +69,14 @@ public class BarTenderService
             throw new Exception("Không thể gửi lệnh in tới BarTender.");
 
         bool exited = process.WaitForExit(30000);
+
+        if (!exited && hasRunningBarTender)
+        {
+            // Chế độ handoff: có instance BarTender đang chạy nhận lệnh in.
+            // Tiến trình gọi lệnh có thể không thoát ngay, nhưng lệnh in vẫn
+            // đã được gửi, nên không fail giả.
+            return;
+        }
 
         if (!exited)
             throw new Exception(

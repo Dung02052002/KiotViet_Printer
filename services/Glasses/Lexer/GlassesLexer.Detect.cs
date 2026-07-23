@@ -123,6 +123,19 @@ public static partial class GlassesLexer
         }
 
         //-----------------------------------------------------
+        // D2823-K026
+        // AB102-K20
+        // letters+digits-hyphen-letters+digits
+        //-----------------------------------------------------
+
+        if (Regex.IsMatch(
+            value,
+            @"^[A-Z]{1,6}\d+-[A-Z]{1,6}\d+$"))
+        {
+            return TokenType.Code;
+        }
+
+        //-----------------------------------------------------
         // 3162P-01 (digits+letters-hyphen-digits)
         //-----------------------------------------------------
 
