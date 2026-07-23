@@ -4,6 +4,8 @@ namespace KiotVietLabelPrinter.Services.Glasses;
 
 public class GlassesPrintService
 {
+    private static readonly SemaphoreSlim PrintSequenceGate = new(1, 1);
+
     private readonly GlassesExcelService _excelService = new();
     private readonly GlassesBarTenderService  _barTenderService = new();
 
@@ -59,6 +61,10 @@ public class GlassesPrintService
     LabelDefinition label,
     string colorCode)
 {
+    PrintSequenceGate.Wait();
+
+    try
+    {
     GlassesDocument document =
         GlassesDocumentBuilder.Build(
             product,
@@ -95,5 +101,10 @@ public class GlassesPrintService
     _barTenderService.Print(
         label,
         document);
+    }
+    finally
+    {
+        PrintSequenceGate.Release();
+    }
 }
 }

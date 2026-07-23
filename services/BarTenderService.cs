@@ -7,6 +7,8 @@ namespace KiotVietLabelPrinter.Services;
 
 public class BarTenderService
 {
+    private static readonly SemaphoreSlim PrintGate = new(1, 1);
+
     public void Print(string btwFile)
     {
         Print(btwFile, null);
@@ -14,6 +16,10 @@ public class BarTenderService
 
     public void Print(string btwFile, Dictionary<string, string>? namedSubStrings)
     {
+        PrintGate.Wait();
+
+        try
+        {
         string bartenderExe = ConfigService.Instance.Config.BarTenderExe;
 
         if (string.IsNullOrWhiteSpace(bartenderExe))
@@ -70,13 +76,10 @@ public class BarTenderService
 
         bool exited = process.WaitForExit(30000);
 
+        // Khi BarTender đã mở sẵn, tiến trình handoff có thể thoát chậm.
+        // Chờ thêm để đảm bảo lệnh in hiện tại hoàn tất trước khi tem kế tiếp chạy.
         if (!exited && hasRunningBarTender)
-        {
-            // Chế độ handoff: có instance BarTender đang chạy nhận lệnh in.
-            // Tiến trình gọi lệnh có thể không thoát ngay, nhưng lệnh in vẫn
-            // đã được gửi, nên không fail giả.
-            return;
-        }
+            exited = process.WaitForExit(90000);
 
         if (!exited)
             throw new Exception(
@@ -102,6 +105,15 @@ public class BarTenderService
                 $"STDERR:\n{stdErr}\n\n" +
                 $"STDOUT:\n{stdOut}\n\n" +
                 $"Nội dung XML:\n{xmlContent}");
+        }
+
+        // Đệm ngắn giữa 2 lệnh in giúp tránh va chạm dữ liệu file data
+        // với template đang xử lý ngay sau khi job trước vừa kết thúc.
+        Thread.Sleep(150);
+        }
+        finally
+        {
+            PrintGate.Release();
         }
     }
 

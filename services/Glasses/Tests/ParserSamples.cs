@@ -123,6 +123,13 @@ public static class ParserSamples
                 Name="GLASSES NAME D-CODE",
                 Input="KÍNH PUCINI D2823-K026 - WHITE (Chiếc)",
                 Expected="D2823"
+            },
+
+            new()
+            {
+                Name="MK WITH CODE PAIR",
+                Input="KÍNH PUCINI MK101 - H008 X H019 - BLACK - PCN2 (Chiếc)",
+                Expected="H008xH019"
             }
         ];
     }

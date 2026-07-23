@@ -149,6 +149,15 @@ public class GlassesParser
         if (match.Success)
             return match.Groups[1].Value;
 
+        // H008XH019 -> H008xH019
+        match = Regex.Match(
+            value,
+            @"^([A-Z]{1,6}\d+)X([A-Z]{1,6}\d+)$",
+            RegexOptions.CultureInvariant);
+
+        if (match.Success)
+            return $"{match.Groups[1].Value}x{match.Groups[2].Value}";
+
         return value;
     }
 }
