@@ -47,12 +47,33 @@ public class GlassesPrintService
         // nhiều sản phẩm
         //============================
 
+        // KHÔNG được để 1 mã lỗi giữa chừng (kẹt máy in, file data đang
+        // khoá quá lâu, BarTender báo lỗi tạm thời...) làm dừng luôn cả
+        // những mã còn lại phía sau — đó chính là nguyên nhân "in thiếu
+        // mã" khi in nhiều mã, mỗi mã số lượng lớn. Vẫn in tiếp các mã còn
+        // lại rồi báo cáo đầy đủ mã nào bị lỗi để người dùng in bù.
+        List<string> failedProducts = new();
+
         foreach (ProductRow product in products)
         {
-            PrintSingle(
-                product,
-                label,
-                colorCode);
+            try
+            {
+                PrintSingle(
+                    product,
+                    label,
+                    colorCode);
+            }
+            catch (Exception ex)
+            {
+                failedProducts.Add($"{product.ProductCode}: {ex.Message}");
+            }
+        }
+
+        if (failedProducts.Count > 0)
+        {
+            throw new Exception(
+                $"In thiếu {failedProducts.Count}/{products.Count} mã do lỗi:\n\n" +
+                string.Join("\n", failedProducts));
         }
     }
 

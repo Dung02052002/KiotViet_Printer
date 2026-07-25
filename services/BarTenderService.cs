@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Drawing.Printing;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Windows.Forms;
 
@@ -107,6 +108,19 @@ public class BarTenderService
                 $"Nội dung XML:\n{xmlContent}");
         }
 
+        // process.WaitForExit ở trên chỉ đảm bảo tiến trình HAND-OFF lệnh
+        // /XMLScript đã thoát — khi BarTender đã mở sẵn, tiến trình đó chỉ
+        // chuyển lệnh cho instance đang chạy rồi thoát gần như ngay lập
+        // tức, KHÔNG chờ BarTender in xong thật sự. Nếu code tiếp tục ghi
+        // đè file data / gửi lệnh in kế tiếp trong lúc BarTender vẫn còn
+        // đang tạo/spool số lượng lớn nhãn của lệnh này, dữ liệu dùng chung
+        // (đặc biệt là tem kính: 1 dòng data ghi đè liên tục mỗi mã) sẽ bị
+        // ghi đè giữa chừng → thiếu tem hoặc lẫn mã. Chờ hàng đợi máy in
+        // thật sự rỗng trở lại trước khi trả quyền điều khiển, để lệnh in
+        // kế tiếp (nếu có, ví dụ vòng lặp in nhiều mã tem kính) chỉ bắt đầu
+        // sau khi lệnh này đã spool xong hoàn toàn.
+        WaitForPrintJobToFinish(printerName);
+
         // Đệm ngắn giữa 2 lệnh in giúp tránh va chạm dữ liệu file data
         // với template đang xử lý ngay sau khi job trước vừa kết thúc.
         Thread.Sleep(150);
@@ -116,6 +130,117 @@ public class BarTenderService
             PrintGate.Release();
         }
     }
+
+    //---------------------------------------------------------
+    // Chờ máy in xử lý xong job (dựa vào hàng đợi Windows Spooler)
+    //---------------------------------------------------------
+
+    private static void WaitForPrintJobToFinish(
+        string printerName,
+        int startupGraceMs = 8000,
+        int maxWaitMs = 600000,
+        int pollIntervalMs = 200)
+    {
+        if (!OpenPrinter(printerName, out IntPtr hPrinter, IntPtr.Zero))
+            return; // Không lấy được handle máy in — bỏ qua, không chặn luồng in
+
+        try
+        {
+            Stopwatch sw = Stopwatch.StartNew();
+            bool sawJob = false;
+
+            // 1) Chờ job thực sự xuất hiện trong hàng đợi (BarTender vừa
+            // nhận lệnh và bắt đầu tạo job). Nếu không thấy trong khoảng
+            // grace này thì có thể job đã in xong quá nhanh (số lượng nhỏ)
+            // — bỏ qua bước chờ rỗng để không trễ vô ích.
+            while (sw.ElapsedMilliseconds < startupGraceMs)
+            {
+                if (GetQueuedJobCount(hPrinter) > 0)
+                {
+                    sawJob = true;
+                    break;
+                }
+
+                Thread.Sleep(pollIntervalMs);
+            }
+
+            if (!sawJob)
+                return;
+
+            // 2) Chờ hàng đợi rỗng trở lại = máy in đã nhận xong toàn bộ
+            // số lượng nhãn của job này.
+            while (sw.ElapsedMilliseconds < maxWaitMs)
+            {
+                if (GetQueuedJobCount(hPrinter) == 0)
+                    return;
+
+                Thread.Sleep(pollIntervalMs);
+            }
+        }
+        finally
+        {
+            ClosePrinter(hPrinter);
+        }
+    }
+
+    private static int GetQueuedJobCount(IntPtr hPrinter)
+    {
+        GetPrinter(hPrinter, 2, IntPtr.Zero, 0, out uint neededBytes);
+
+        if (neededBytes == 0)
+            return 0;
+
+        IntPtr buffer = Marshal.AllocHGlobal((int)neededBytes);
+
+        try
+        {
+            if (!GetPrinter(hPrinter, 2, buffer, neededBytes, out _))
+                return 0;
+
+            PRINTER_INFO_2 info = Marshal.PtrToStructure<PRINTER_INFO_2>(buffer);
+
+            return (int)info.cJobs;
+        }
+        finally
+        {
+            Marshal.FreeHGlobal(buffer);
+        }
+    }
+
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
+    private struct PRINTER_INFO_2
+    {
+        public string? pServerName;
+        public string? pPrinterName;
+        public string? pShareName;
+        public string? pPortName;
+        public string? pDriverName;
+        public string? pComment;
+        public string? pLocation;
+        public IntPtr pDevMode;
+        public string? pSepFile;
+        public string? pPrintProcessor;
+        public string? pDatatype;
+        public string? pParameters;
+        public IntPtr pSecurityDescriptor;
+        public uint Attributes;
+        public uint Priority;
+        public uint DefaultPriority;
+        public uint StartTime;
+        public uint UntilTime;
+        public uint Status;
+        public uint cJobs;
+        public uint AveragePPM;
+    }
+
+    [DllImport("winspool.drv", CharSet = CharSet.Auto, SetLastError = true)]
+    private static extern bool OpenPrinter(string pPrinterName, out IntPtr phPrinter, IntPtr pDefault);
+
+    [DllImport("winspool.drv", SetLastError = true)]
+    private static extern bool ClosePrinter(IntPtr hPrinter);
+
+    [DllImport("winspool.drv", CharSet = CharSet.Auto, SetLastError = true)]
+    private static extern bool GetPrinter(IntPtr hPrinter, uint dwLevel, IntPtr pPrinter, uint cbBuf, out uint pcbNeeded);
 
     private static string CreatePrintXmlNearApp(
         string btwFile,

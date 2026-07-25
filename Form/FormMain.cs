@@ -546,7 +546,7 @@ public class FormMain : Form
         }
     }
 
-    private void BtnPrint_Click(object? sender, EventArgs e)
+    private async void BtnPrint_Click(object? sender, EventArgs e)
     {
         try
         {
@@ -556,12 +556,30 @@ public class FormMain : Form
             string labelCode = _selectedLabel!.Code;
             string employeeCode = txtEmployeeCode.Text.Trim();
 
-            int productCount = _labelService.Print(
-                sourceExcelFile,
-                labelCode,
-                employeeCode);
+            // In số lượng lớn có thể mất nhiều phút (phải chờ máy in xử lý
+            // xong từng mã trước khi in mã kế tiếp — xem BarTenderService).
+            // Chạy trên UI thread sẽ làm app "Not Responding", khiến người
+            // dùng tưởng treo rồi tắt app giữa chừng → mất tem đã in dở.
+            btnPrint.Enabled = false;
+            string originalText = btnPrint.Text;
+            btnPrint.Text = "Đang in...";
+            Cursor = Cursors.WaitCursor;
 
-            MessageBox.Show($"In thành công.\nSố sản phẩm: {productCount}", "Thông báo");
+            try
+            {
+                int productCount = await Task.Run(() => _labelService.Print(
+                    sourceExcelFile,
+                    labelCode,
+                    employeeCode));
+
+                MessageBox.Show($"In thành công.\nSố sản phẩm: {productCount}", "Thông báo");
+            }
+            finally
+            {
+                Cursor = Cursors.Default;
+                btnPrint.Text = originalText;
+                btnPrint.Enabled = true;
+            }
         }
         catch (Exception ex)
         {

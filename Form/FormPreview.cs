@@ -180,14 +180,24 @@ public class FormPreview : Form
         dgvPreview.DefaultCellStyle.WrapMode = DataGridViewTriState.False;
     }
 
-    private void BtnPrint_Click(object? sender, EventArgs e)
+    private async void BtnPrint_Click(object? sender, EventArgs e)
     {
+        // In số lượng lớn có thể mất nhiều phút (phải chờ máy in xử lý
+        // xong từng mã trước khi in mã kế tiếp — xem BarTenderService).
+        // Chạy trên UI thread sẽ làm app "Not Responding", khiến người
+        // dùng tưởng treo rồi tắt app giữa chừng → mất tem đã in dở.
+        btnPrint.Enabled = false;
+        btnClose.Enabled = false;
+        string originalText = btnPrint.Text;
+        btnPrint.Text = "Đang in...";
+        Cursor = Cursors.WaitCursor;
+
         try
         {
-            int total = _labelService.Print(
+            int total = await Task.Run(() => _labelService.Print(
                 _sourceExcelFile,
                 _labelCode,
-                _employeeCode);
+                _employeeCode));
 
             MessageBox.Show($"Đã xử lý {total} sản phẩm.", "Thành công");
             DialogResult = DialogResult.OK;
@@ -196,6 +206,13 @@ public class FormPreview : Form
         catch (Exception ex)
         {
             MessageBox.Show(ex.Message, "Lỗi in tem");
+        }
+        finally
+        {
+            Cursor = Cursors.Default;
+            btnPrint.Text = originalText;
+            btnPrint.Enabled = true;
+            btnClose.Enabled = true;
         }
     }
 }
