@@ -199,7 +199,7 @@ public class FormPreview : Form
                 _labelCode,
                 _employeeCode));
 
-            MessageBox.Show($"Đã xử lý {total} sản phẩm.", "Thành công");
+            ToastForm.ShowSuccess($"Đã xử lý {total} sản phẩm.");
             DialogResult = DialogResult.OK;
             Close();
         }

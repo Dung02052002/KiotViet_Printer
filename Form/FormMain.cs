@@ -572,7 +572,7 @@ public class FormMain : Form
                     labelCode,
                     employeeCode));
 
-                MessageBox.Show($"In thành công.\nSố sản phẩm: {productCount}", "Thông báo");
+                ToastForm.ShowSuccess($"In thành công. Số sản phẩm: {productCount}");
             }
             finally
             {

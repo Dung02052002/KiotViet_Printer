@@ -313,7 +313,7 @@ public class FormConfig : Form
 
             ConfigService.Instance.Save();
 
-            MessageBox.Show("Đã lưu cấu hình.", "Thông báo");
+            ToastForm.ShowSuccess("Đã lưu cấu hình.");
             DialogResult = DialogResult.OK;
             Close();
         }

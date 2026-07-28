@@ -19,6 +19,8 @@ public class BarTenderService
     {
         PrintGate.Wait();
 
+        Stopwatch printStopwatch = Stopwatch.StartNew();
+
         try
         {
         string bartenderExe = ConfigService.Instance.Config.BarTenderExe;
@@ -119,11 +121,24 @@ public class BarTenderService
         // thật sự rỗng trở lại trước khi trả quyền điều khiển, để lệnh in
         // kế tiếp (nếu có, ví dụ vòng lặp in nhiều mã tem kính) chỉ bắt đầu
         // sau khi lệnh này đã spool xong hoàn toàn.
-        WaitForPrintJobToFinish(printerName);
+        string confirmStatus = WaitForPrintJobToFinish(printerName);
 
         // Đệm ngắn giữa 2 lệnh in giúp tránh va chạm dữ liệu file data
         // với template đang xử lý ngay sau khi job trước vừa kết thúc.
         Thread.Sleep(150);
+
+        // Log chẩn đoán: giúp truy vết những lần "báo thành công nhưng
+        // không có tem ra" — xem services/PrintDiagnosticsLog.cs.
+        PrintDiagnosticsLog.Write(
+            $"OK template={btwFile} printer={printerName} " +
+            $"hasRunningBarTender={hasRunningBarTender} confirmStatus={confirmStatus} " +
+            $"elapsedMs={printStopwatch.ElapsedMilliseconds}");
+        }
+        catch (Exception ex)
+        {
+            PrintDiagnosticsLog.Write(
+                $"FAIL template={btwFile} elapsedMs={printStopwatch.ElapsedMilliseconds} error={ex.Message}");
+            throw;
         }
         finally
         {
@@ -135,14 +150,16 @@ public class BarTenderService
     // Chờ máy in xử lý xong job (dựa vào hàng đợi Windows Spooler)
     //---------------------------------------------------------
 
-    private static void WaitForPrintJobToFinish(
+    // Giá trị trả về chỉ dùng để ghi log chẩn đoán — không làm thay đổi
+    // luồng in hiện tại (xem PrintDiagnosticsLog).
+    private static string WaitForPrintJobToFinish(
         string printerName,
         int startupGraceMs = 8000,
         int maxWaitMs = 600000,
         int pollIntervalMs = 200)
     {
         if (!OpenPrinter(printerName, out IntPtr hPrinter, IntPtr.Zero))
-            return; // Không lấy được handle máy in — bỏ qua, không chặn luồng in
+            return "no-printer-handle"; // Không lấy được handle máy in — bỏ qua, không chặn luồng in
 
         try
         {
@@ -165,17 +182,19 @@ public class BarTenderService
             }
 
             if (!sawJob)
-                return;
+                return "no-job-seen"; // đáng ngờ nếu lặp lại nhiều lần: có thể lệnh in đã bị "nuốt"
 
             // 2) Chờ hàng đợi rỗng trở lại = máy in đã nhận xong toàn bộ
             // số lượng nhãn của job này.
             while (sw.ElapsedMilliseconds < maxWaitMs)
             {
                 if (GetQueuedJobCount(hPrinter) == 0)
-                    return;
+                    return "confirmed-empty";
 
                 Thread.Sleep(pollIntervalMs);
             }
+
+            return "timeout-still-queued";
         }
         finally
         {
