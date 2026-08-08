@@ -322,6 +322,18 @@ public class BarTenderService
 
     private static string GetDefaultPrinterName()
     {
+        string configuredPrinter = ConfigService.Instance.Config.PrinterName;
+
+        if (!string.IsNullOrWhiteSpace(configuredPrinter))
+        {
+            PrinterSettings configuredSettings = new() { PrinterName = configuredPrinter };
+
+            if (!configuredSettings.IsValid)
+                throw new Exception($"Máy in đã cấu hình không hợp lệ hoặc không còn kết nối: {configuredPrinter}");
+
+            return configuredPrinter;
+        }
+
         PrinterSettings settings = new();
 
         if (string.IsNullOrWhiteSpace(settings.PrinterName))

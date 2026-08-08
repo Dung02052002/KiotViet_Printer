@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Drawing.Printing;
 using KiotVietLabelPrinter.Models;
 using KiotVietLabelPrinter.Services;
 
@@ -7,6 +8,7 @@ namespace KiotVietLabelPrinter.Forms;
 public class FormConfig : Form
 {
     private readonly TextBox txtBarTender = new();
+    private readonly ComboBox cboPrinter = new();
     private readonly CheckBox chkRememberEmployee = new();
     private readonly TextBox txtDefaultEmployee = new();
 
@@ -23,7 +25,7 @@ public class FormConfig : Form
     {
         Text = "Cấu hình phần mềm";
         Width = 1400;
-        Height = 760;
+        Height = 800;
         StartPosition = FormStartPosition.CenterScreen;
         FormBorderStyle = FormBorderStyle.FixedDialog;
         MaximizeBox = false;
@@ -48,7 +50,7 @@ public class FormConfig : Form
             Left = 20,
             Top = 20,
             Width = 1340,
-            Height = 150
+            Height = 190
         };
         Controls.Add(grpGeneral);
 
@@ -69,9 +71,33 @@ public class FormConfig : Form
         btnBrowseBarTender.Click += (_, _) => BrowseFile(txtBarTender, "Executable|*.exe");
         grpGeneral.Controls.Add(btnBrowseBarTender);
 
+        Label lblPrinter = new()
+        {
+            Text = "Máy in tem",
+            Left = 20,
+            Top = 75,
+            Width = 120
+        };
+        grpGeneral.Controls.Add(lblPrinter);
+
+        cboPrinter.SetBounds(150, 70, 500, 28);
+        cboPrinter.DropDownStyle = ComboBoxStyle.DropDownList;
+        LoadPrinterList();
+        grpGeneral.Controls.Add(cboPrinter);
+
+        Label lblPrinterHint = new()
+        {
+            Text = "Cố định máy in để tránh bị đổi sang máy in khác khi in.",
+            Left = 660,
+            Top = 75,
+            Width = 400,
+            ForeColor = Color.DimGray
+        };
+        grpGeneral.Controls.Add(lblPrinterHint);
+
         chkRememberEmployee.Text = "Ghi nhớ mã nhân viên mặc định";
         chkRememberEmployee.Left = 20;
-        chkRememberEmployee.Top = 80;
+        chkRememberEmployee.Top = 120;
         chkRememberEmployee.Width = 260;
         grpGeneral.Controls.Add(chkRememberEmployee);
 
@@ -79,23 +105,33 @@ public class FormConfig : Form
         {
             Text = "Mã NV mặc định",
             Left = 320,
-            Top = 82,
+            Top = 122,
             Width = 120
         };
         grpGeneral.Controls.Add(lblDefaultEmployee);
 
-        txtDefaultEmployee.SetBounds(450, 78, 220, 28);
+        txtDefaultEmployee.SetBounds(450, 118, 220, 28);
         grpGeneral.Controls.Add(txtDefaultEmployee);
 
         Label lblHint = new()
         {
             Text = "Ví dụ: H020 hoặc H020-K026",
             Left = 690,
-            Top = 82,
+            Top = 122,
             Width = 250,
             ForeColor = Color.DimGray
         };
         grpGeneral.Controls.Add(lblHint);
+    }
+
+    private void LoadPrinterList()
+    {
+        cboPrinter.Items.Clear();
+
+        foreach (string printer in PrinterSettings.InstalledPrinters)
+        {
+            cboPrinter.Items.Add(printer);
+        }
     }
     #endregion
 
@@ -106,7 +142,7 @@ public class FormConfig : Form
         {
             Text = "Danh sách loại tem",
             Left = 20,
-            Top = 190,
+            Top = 230,
             Width = 1340,
             Height = 470
         };
@@ -243,7 +279,7 @@ public class FormConfig : Form
     private void BuildBottomButtons()
     {
         btnSave.Text = "Lưu cấu hình";
-        btnSave.SetBounds(590, 675, 180, 42);
+        btnSave.SetBounds(590, 715, 180, 42);
         btnSave.Font = new Font("Segoe UI", 10, FontStyle.Bold);
         btnSave.Click += BtnSave_Click;
         Controls.Add(btnSave);
@@ -258,6 +294,18 @@ public class FormConfig : Form
         txtBarTender.Text = config.BarTenderExe;
         chkRememberEmployee.Checked = config.RememberEmployee;
         txtDefaultEmployee.Text = config.DefaultEmployee;
+
+        if (!string.IsNullOrWhiteSpace(config.PrinterName))
+        {
+            if (!cboPrinter.Items.Contains(config.PrinterName))
+                cboPrinter.Items.Add(config.PrinterName);
+
+            cboPrinter.SelectedItem = config.PrinterName;
+        }
+        else if (cboPrinter.Items.Count > 0)
+        {
+            cboPrinter.SelectedIndex = 0;
+        }
 
         _labels = new BindingList<LabelDefinition>(
             config.Labels
@@ -290,6 +338,7 @@ public class FormConfig : Form
             AppConfig config = ConfigService.Instance.Config;
 
             config.BarTenderExe = txtBarTender.Text.Trim();
+            config.PrinterName = cboPrinter.SelectedItem as string ?? "";
             config.RememberEmployee = chkRememberEmployee.Checked;
             config.DefaultEmployee = txtDefaultEmployee.Text.Trim();
 
@@ -327,6 +376,9 @@ public class FormConfig : Form
     {
         if (string.IsNullOrWhiteSpace(txtBarTender.Text))
             throw new Exception("Vui lòng nhập đường dẫn BarTender.exe.");
+
+        if (cboPrinter.SelectedItem is not string)
+            throw new Exception("Vui lòng chọn máy in tem.");
 
         if (_labels.Count == 0)
             throw new Exception("Phải có ít nhất 1 loại tem.");
