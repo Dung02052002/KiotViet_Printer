@@ -130,6 +130,13 @@ public static class ParserSamples
                 Name="MK WITH CODE PAIR",
                 Input="KÍNH PUCINI MK101 - H008 X H019 - BLACK - PCN2 (Chiếc)",
                 Expected="H008xH019"
+            },
+
+            new()
+            {
+                Name="MODEL WITH TRAILING MK",
+                Input="Kính râm, gọng bằng nhựa + sắt, mắt kính bằng mica, không phải kính thuốc, kt(16*16*7)cm(+/-10%), model 6215P, nhãn hiệu PUCINI, mới 100% - ( MK262 GREY )",
+                Expected="6215P"
             }
         ];
     }
