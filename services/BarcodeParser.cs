@@ -128,21 +128,34 @@ public static class BarcodeParser
 {
     Match m = Regex.Match(
         text,
-        $@"{Regex.Escape(keyword)}\s*[:\-]?\s*([A-Za-z0-9\-]+)",
+        $@"{Regex.Escape(keyword)}\s*[:\-]?\s*([A-Za-z0-9\-]+)(?:\s+([A-Za-z0-9\-]+))?",
         RegexOptions.IgnoreCase);
 
     if (!m.Success)
         return "";
 
-    string value = Regex.Replace(
+    string first = Regex.Replace(
         m.Groups[1].Value,
         @"[^A-Za-z0-9\-]",
         "");
 
-    if (!Regex.IsMatch(value, @"\d"))
-        return "";
+    if (Regex.IsMatch(first, @"\d"))
+        return first.ToUpper();
 
-    return value.ToUpper();
+    // Mã bị tách làm 2 phần bởi khoảng trắng (VD "model BD 6337"),
+    // phần đầu không có số nên ghép thêm từ kế tiếp nếu từ đó có số.
+    if (first.Length is >= 1 and <= 5 && m.Groups[2].Success)
+    {
+        string second = Regex.Replace(
+            m.Groups[2].Value,
+            @"[^A-Za-z0-9\-]",
+            "");
+
+        if (Regex.IsMatch(second, @"\d"))
+            return (first + second).ToUpper();
+    }
+
+    return "";
 }
 
     private static string ExtractAttributeFallback(string text)
