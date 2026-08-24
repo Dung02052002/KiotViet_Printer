@@ -147,6 +147,19 @@ public static partial class GlassesLexer
         }
 
         //-----------------------------------------------------
+        // 999K, 500K -> viết tắt tiền tệ (nghìn đồng), KHÔNG phải mã
+        // sản phẩm (VD "KÍNH TẶNG HÓA ĐƠN 999K"). Chỉ loại riêng suffix
+        // "K"; các suffix khác (P, R...) vẫn là mã hợp lệ như 6215P.
+        //-----------------------------------------------------
+
+        if (Regex.IsMatch(
+            value,
+            @"^\d+K$"))
+        {
+            return TokenType.Word;
+        }
+
+        //-----------------------------------------------------
         // 6215P (digits+letters, no hyphen)
         //-----------------------------------------------------
 

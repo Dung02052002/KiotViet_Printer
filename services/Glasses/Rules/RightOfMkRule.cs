@@ -51,6 +51,25 @@ public class RightOfMkRule : RuleBase
                 }
             }
 
+            // Cặp mã nối trực tiếp bằng "-" thay vì chữ "X" tường minh,
+            // VD "MK107 - 8616- 8615" -> giống pattern "MK101 - H008 X H019"
+            if (xIndex >= 0 &&
+                IsCode(tokens[xIndex]))
+            {
+                string merged =
+                    $"{right.Text}x{tokens[xIndex].Text}";
+
+                RuleResult mergedResult =
+                    RuleResult.Ok(
+                        merged,
+                        Name);
+
+                mergedResult.AddLog(
+                    $"RIGHT OF MK (PAIR, -) -> {merged}");
+
+                return mergedResult;
+            }
+
             RuleResult result =
                 RuleResult.Ok(
                     right.Text,
