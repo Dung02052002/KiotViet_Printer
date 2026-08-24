@@ -32,6 +32,7 @@ public class FormMain : Form
     private readonly Button btnHistory = new();
      private readonly Button btnParserLab = new();
     private readonly Button btnPreview = new();
+    private readonly Button btnCheckParse = new();
     private readonly Button btnPrint = new();
 
     private LabelDefinition? _selectedLabel;
@@ -344,8 +345,16 @@ public class FormMain : Form
         btnPreview.Click += BtnPreview_Click;
         pnlWorkspace.Controls.Add(btnPreview);
 
+        btnCheckParse.Text = "Kiểm tra mã";
+        btnCheckParse.Left = 530;
+        btnCheckParse.Top = 220;
+        btnCheckParse.Width = 140;
+        btnCheckParse.Height = 42;
+        btnCheckParse.Click += BtnCheckParse_Click;
+        pnlWorkspace.Controls.Add(btnCheckParse);
+
         btnPrint.Text = "IN TEM";
-        btnPrint.Left = 530;
+        btnPrint.Left = 700;
         btnPrint.Top = 220;
         btnPrint.Width = 160;
         btnPrint.Height = 42;
@@ -539,6 +548,25 @@ public class FormMain : Form
                 txtEmployeeCode.Text.Trim());
 
             preview.ShowDialog();
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(ex.Message, "Lỗi");
+        }
+    }
+
+    private void BtnCheckParse_Click(object? sender, EventArgs e)
+    {
+        try
+        {
+            EnsureReadyToProcess();
+
+            using FormParseCheck check = new(
+                txtExcelFile.Text.Trim(),
+                _selectedLabel!.Code,
+                txtEmployeeCode.Text.Trim());
+
+            check.ShowDialog();
         }
         catch (Exception ex)
         {
