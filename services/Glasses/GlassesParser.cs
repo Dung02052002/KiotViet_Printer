@@ -16,12 +16,14 @@ public class GlassesParser
     private readonly List<IGlassesRule> _rules =
     [
         new ModelRule(),
+        new BeltMauRule(),
         new KeywordRule(),
         new LeftOfMkRule(),
         new RightOfMkRule(),
         new MkOnlyRule(),
         new KOnlyRule(),
         new PcnRule(),
+        new MuHatRule(),
         new FirstCodeRule()
 
         // Không có FallbackRule: mọi rule phía trên đều quét TOÀN BỘ

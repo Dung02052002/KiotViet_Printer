@@ -21,7 +21,7 @@ public class KeywordRule : RuleBase
             GlassesToken? next =
                 NextMeaningful(tokens, i);
 
-            if (!IsCode(next))
+            if (!IsCodeAfterKeyword(next))
                 continue;
 
             RuleResult result =

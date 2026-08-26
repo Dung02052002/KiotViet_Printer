@@ -122,6 +122,28 @@ public static partial class GlassesLexer
             return;
         }
 
+        // "1806#", "6982#"... -> dấu # cuối chỉ là ký hiệu đánh dấu "còn thay
+        // đổi theo màu" trong tên hàng, không thuộc về mã sản phẩm thật. Nếu
+        // phần trước dấu # đã là một mã hợp lệ thì bỏ hẳn dấu # đi.
+        if (value.Length > 1 && value[^1] == '#')
+        {
+            string withoutHash = value[..^1];
+
+            if (DetectType(withoutHash) == TokenType.Code)
+            {
+                tokens.Add(new GlassesToken
+                {
+                    Text = withoutHash,
+                    Type = TokenType.Code,
+                    Start = builder.StartIndex,
+                    End = endIndex - 1
+                });
+
+                builder.Clear();
+                return;
+            }
+        }
+
         tokens.Add(new GlassesToken
         {
             Text = value,

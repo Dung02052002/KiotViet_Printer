@@ -17,7 +17,7 @@ public class LeftOfMkRule : RuleBase
                 continue;
 
             GlassesToken? left =
-                PreviousMeaningful(tokens, i);
+                PreviousMeaningfulSkipColor(tokens, i);
 
             if (!IsCode(left))
                 continue;

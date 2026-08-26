@@ -90,7 +90,7 @@ public class RightOfMkRule : RuleBase
     {
         for (int i = index + 1; i < tokens.Count; i++)
         {
-            if (Ignore(tokens[i]))
+            if (Ignore(tokens[i]) || tokens[i].Type == TokenType.Color)
                 continue;
 
             return i;
