@@ -1,5 +1,4 @@
 using System.ComponentModel;
-using System.Drawing.Drawing2D;
 
 namespace KiotVietLabelPrinter.UI;
 
@@ -86,32 +85,33 @@ public class ToggleSwitch : CheckBox
 
     protected override void OnPaintBackground(PaintEventArgs pevent)
     {
-        pevent.Graphics.Clear(ContainerColor);
+        AppTheme.PaintContainerBackground(this, pevent, ContainerColor);
     }
 
     protected override void OnPaint(PaintEventArgs e)
     {
         Graphics g = e.Graphics;
-        g.SmoothingMode = SmoothingMode.AntiAlias;
-        g.PixelOffsetMode = PixelOffsetMode.HighQuality;
+        AppTheme.PrepareSmoothing(g);
 
         const int trackWidth = 44;
         const int trackHeight = 24;
         const int knobSize = 18;
 
-        int trackY = Math.Max(0, (Height - trackHeight) / 2);
-        Rectangle trackRect = new(0, trackY, trackWidth, trackHeight);
+        // Chừa 2px bên trái để vòng focus (vẽ rộng hơn track 2px) không bị cắt cụt
+        // ở mép trái control.
+        const int trackX = 2;
+
+        int trackY = Math.Max(2, (Height - trackHeight) / 2);
+        RectangleF trackRect = new(trackX, trackY, trackWidth, trackHeight);
 
         Color offColor = _hover ? AppTheme.Colors.BorderStrong : AppTheme.Colors.Border;
         Color trackColor = Enabled
             ? AppTheme.Blend(offColor, AppTheme.Colors.Primary, _position)
             : AppTheme.Colors.Disabled;
 
-        using (GraphicsPath trackPath = AppTheme.RoundedRect(trackRect, trackHeight / 2))
-        using (SolidBrush trackBrush = new(trackColor))
-            g.FillPath(trackBrush, trackPath);
+        AppTheme.FillRounded(g, trackRect, trackHeight / 2f, trackColor);
 
-        float knobX = 3f + ((trackWidth - knobSize - 6f) * _position);
+        float knobX = trackX + 3f + ((trackWidth - knobSize - 6f) * _position);
         RectangleF knobRect = new(knobX, trackY + 3, knobSize, knobSize);
 
         using (SolidBrush shadowBrush = new(Color.FromArgb(28, 45, 36, 56)))
@@ -122,10 +122,12 @@ public class ToggleSwitch : CheckBox
 
         if (Focused && ShowFocusCues)
         {
-            Rectangle focusRect = Rectangle.Inflate(trackRect, 2, 2);
-            using GraphicsPath focusPath = AppTheme.RoundedRect(focusRect, (trackHeight / 2) + 2);
-            using Pen focusPen = new(AppTheme.Colors.FocusRing, 1.4f);
-            g.DrawPath(focusPen, focusPath);
+            AppTheme.DrawRoundedBorder(
+                g,
+                RectangleF.Inflate(trackRect, 2f, 2f),
+                (trackHeight / 2f) + 2f,
+                AppTheme.Colors.FocusRing,
+                1.4f);
         }
 
         Rectangle textRect = new(54, 0, Math.Max(0, Width - 54), Height);

@@ -189,24 +189,127 @@ public static class AppTheme
 
     public static GraphicsPath RoundedRect(Rectangle bounds, int radius)
     {
+        return RoundedRect((RectangleF)bounds, radius);
+    }
+
+    public static GraphicsPath RoundedRect(RectangleF bounds, float radius)
+    {
         GraphicsPath path = new();
 
-        if (radius <= 0 || bounds.Width <= 0 || bounds.Height <= 0)
+        if (bounds.Width <= 0 || bounds.Height <= 0)
+            return path;
+
+        // Bán kính không được vượt quá nửa cạnh ngắn: nếu vượt, hai cung tròn
+        // đối diện chồng lên nhau và GDI+ vẽ ra hình méo có gai ở chỗ giao.
+        float diameter = Math.Min(radius, Math.Min(bounds.Width, bounds.Height) / 2f) * 2f;
+
+        if (diameter <= 0)
         {
             path.AddRectangle(bounds);
             return path;
         }
 
-        int d = radius * 2;
-        d = Math.Min(d, Math.Min(bounds.Width, bounds.Height));
-
         path.StartFigure();
-        path.AddArc(bounds.X, bounds.Y, d, d, 180, 90);
-        path.AddArc(bounds.Right - d, bounds.Y, d, d, 270, 90);
-        path.AddArc(bounds.Right - d, bounds.Bottom - d, d, d, 0, 90);
-        path.AddArc(bounds.X, bounds.Bottom - d, d, d, 90, 90);
+        path.AddArc(bounds.X, bounds.Y, diameter, diameter, 180, 90);
+        path.AddArc(bounds.Right - diameter, bounds.Y, diameter, diameter, 270, 90);
+        path.AddArc(bounds.Right - diameter, bounds.Bottom - diameter, diameter, diameter, 0, 90);
+        path.AddArc(bounds.X, bounds.Bottom - diameter, diameter, diameter, 90, 90);
         path.CloseFigure();
 
         return path;
+    }
+
+    public static void PrepareSmoothing(Graphics g)
+    {
+        g.SmoothingMode = SmoothingMode.AntiAlias;
+        g.PixelOffsetMode = PixelOffsetMode.HighQuality;
+    }
+
+    // Tô khối bo góc. Nhận RectangleF full-size (0,0,Width,Height) chứ không
+    // phải Width-1/Height-1: trừ 1px sẽ chừa lại một sọc chưa tô ở cạnh phải và
+    // cạnh dưới, nhìn như cạnh bị rách.
+    public static void FillRounded(Graphics g, RectangleF bounds, float radius, Color color)
+    {
+        if (color.A == 0 || bounds.Width <= 0 || bounds.Height <= 0)
+            return;
+
+        using GraphicsPath path = RoundedRect(bounds, radius);
+        using SolidBrush brush = new(color);
+        g.FillPath(brush, path);
+    }
+
+    // Vẽ viền bo góc. Hai chi tiết quyết định việc viền có bị "tua tủa" hay không:
+    //  - LineJoin.Round: mặc định GDI+ nối nét kiểu Miter. Ở 4 chỗ cung tròn tiếp
+    //    giáp đoạn thẳng, sai số số thực làm góc nối lệch khỏi 180° một chút và
+    //    Miter kéo dài mối nối thành gai nhọn chĩa ra ngoài.
+    //  - Thụt vào nửa độ dày nét: nét vẽ nằm giữa đường path, không thụt thì một
+    //    nửa nét tràn ra ngoài control rồi bị cắt cụt, để lại cạnh lởm chởm.
+    public static void DrawRoundedBorder(Graphics g, RectangleF bounds, float radius, Color color, float thickness)
+    {
+        if (color.A == 0 || thickness <= 0 || bounds.Width <= 0 || bounds.Height <= 0)
+            return;
+
+        float inset = thickness / 2f;
+        RectangleF stroke = RectangleF.Inflate(bounds, -inset, -inset);
+
+        if (stroke.Width <= 0 || stroke.Height <= 0)
+            return;
+
+        using GraphicsPath path = RoundedRect(stroke, Math.Max(0f, radius - inset));
+        using Pen pen = new(color, thickness)
+        {
+            LineJoin = LineJoin.Round,
+            Alignment = PenAlignment.Center
+        };
+
+        g.DrawPath(pen, path);
+    }
+
+    // Vẽ đúng phần nền mà control cha đang hiển thị ở vị trí control này chiếm chỗ.
+    //
+    // Các control tự vẽ chỉ tô phần bên trong đường bo tròn, nên 4 góc nằm ngoài
+    // đường bo vẫn phải hiện thứ ở phía sau. Trước đây chỗ đó được tô bằng một màu
+    // phẳng đoán trước (ContainerColor); chỉ cần đoán lệch là thấy ngay một ô vuông
+    // khác màu bao quanh khối bo tròn. Ở đây ta bảo chính control cha vẽ lại lát
+    // cắt đó nên màu luôn khớp tuyệt đối — kể cả khi cha cũng là control tự vẽ
+    // hoặc đang trong lúc đổi màu hover.
+    public static void PaintContainerBackground(Control control, PaintEventArgs e, Color fallback)
+    {
+        if (control.Parent is not { } parent)
+        {
+            e.Graphics.Clear(fallback);
+            return;
+        }
+
+        GraphicsState state = e.Graphics.Save();
+
+        try
+        {
+            e.Graphics.TranslateTransform(-control.Left, -control.Top);
+
+            Rectangle slice = new(control.Left, control.Top, control.Width, control.Height);
+            using PaintEventArgs args = new(e.Graphics, slice);
+
+            PaintProxy.Shared.PaintInto(parent, args);
+        }
+        finally
+        {
+            e.Graphics.Restore(state);
+        }
+    }
+
+    // InvokePaintBackground/InvokePaint là protected trên Control nên chỉ gọi được
+    // từ bên trong một lớp con của Control. Lớp rỗng này tồn tại chỉ để "mượn"
+    // quyền gọi đó cho PaintContainerBackground, thay vì phải chép lại đoạn
+    // compose nền ở từng control tự vẽ.
+    private sealed class PaintProxy : Control
+    {
+        public static readonly PaintProxy Shared = new();
+
+        public void PaintInto(Control source, PaintEventArgs e)
+        {
+            InvokePaintBackground(source, e);
+            InvokePaint(source, e);
+        }
     }
 }

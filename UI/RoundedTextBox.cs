@@ -1,6 +1,5 @@
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
-using System.Drawing.Drawing2D;
 
 namespace KiotVietLabelPrinter.UI;
 
@@ -166,7 +165,7 @@ public class RoundedTextBox : UserControl
 
     protected override void OnPaintBackground(PaintEventArgs e)
     {
-        e.Graphics.Clear(ContainerColor);
+        AppTheme.PaintContainerBackground(this, e, ContainerColor);
     }
 
     protected override void OnPaint(PaintEventArgs e)
@@ -174,16 +173,12 @@ public class RoundedTextBox : UserControl
         EnsureVisualState();
 
         Graphics g = e.Graphics;
-        g.SmoothingMode = SmoothingMode.AntiAlias;
-        g.PixelOffsetMode = PixelOffsetMode.HighQuality;
+        AppTheme.PrepareSmoothing(g);
 
-        Rectangle rect = new(0, 0, Width - 1, Height - 1);
-        using GraphicsPath path = AppTheme.RoundedRect(rect, CornerRadius);
-        using SolidBrush fillBrush = new(_currentFill);
-        using Pen borderPen = new(_currentBorder, _editor.Focused ? 1.6f : 1f);
+        RectangleF bounds = new(0, 0, Width, Height);
 
-        g.FillPath(fillBrush, path);
-        g.DrawPath(borderPen, path);
+        AppTheme.FillRounded(g, bounds, CornerRadius, _currentFill);
+        AppTheme.DrawRoundedBorder(g, bounds, CornerRadius, _currentBorder, _editor.Focused ? 1.6f : 1f);
     }
 
     private void LayoutEditor()

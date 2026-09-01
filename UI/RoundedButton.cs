@@ -1,5 +1,4 @@
 using System.ComponentModel;
-using System.Drawing.Drawing2D;
 
 namespace KiotVietLabelPrinter.UI;
 
@@ -15,12 +14,10 @@ public enum ButtonVariant
 // Button bo góc, phẳng (flat), có hiệu ứng hover/pressed mượt — thay cho
 // System.Windows.Forms.Button mặc định (vuông cạnh, style Windows cũ).
 //
-// Không dùng ControlStyles.SupportsTransparentBackColor (kiểu "nền trong suốt"
-// của WinForms): cơ chế đó nhờ control cha tự vẽ lại phần nền phía sau, nhưng
-// khi control cha cũng là control tự vẽ (RoundedPanel) thì việc phối hợp vẽ
-// dễ bị lỗi (còn sót lại nét vẽ cũ ở góc bo tròn). Thay vào đó, ta biết trước
-// màu nền của nơi đặt control (ContainerColor) và tự tô nó lên trước, sau đó
-// vẽ khối bo góc chống răng cưa đè lên trên — chắc chắn không bị "ma hình".
+// Phần nền ngoài đường bo tròn được lấy bằng cách nhờ chính control cha vẽ lại
+// lát cắt tương ứng (AppTheme.PaintContainerBackground), nên 4 góc luôn khớp
+// màu với thứ nằm phía sau. ContainerColor giờ chỉ còn là màu dự phòng cho
+// trường hợp control chưa được gắn vào cha nào.
 public class RoundedButton : Button
 {
     [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
@@ -145,38 +142,32 @@ public class RoundedButton : Button
 
     protected override void OnPaintBackground(PaintEventArgs pevent)
     {
-        pevent.Graphics.Clear(ContainerColor);
+        AppTheme.PaintContainerBackground(this, pevent, ContainerColor);
     }
 
     protected override void OnPaint(PaintEventArgs pevent)
     {
         Graphics g = pevent.Graphics;
-        g.SmoothingMode = SmoothingMode.AntiAlias;
-        g.PixelOffsetMode = PixelOffsetMode.HighQuality;
+        AppTheme.PrepareSmoothing(g);
 
         EnsureVisualState();
 
-        Rectangle rect = new(0, 0, Width - 1, Height - 1);
-        using GraphicsPath path = AppTheme.RoundedRect(rect, CornerRadius);
+        RectangleF bounds = new(0, 0, Width, Height);
 
-        using (SolidBrush brush = new(_currentFill))
-            g.FillPath(brush, path);
-
-        if (_currentBorder.A > 0)
-        {
-            using Pen pen = new(_currentBorder, 1f);
-            g.DrawPath(pen, path);
-        }
+        AppTheme.FillRounded(g, bounds, CornerRadius, _currentFill);
+        AppTheme.DrawRoundedBorder(g, bounds, CornerRadius, _currentBorder, 1f);
 
         if (Focused && ShowFocusCues && Enabled)
         {
-            Rectangle focusRect = Rectangle.Inflate(rect, -2, -2);
-            using GraphicsPath focusPath = AppTheme.RoundedRect(focusRect, Math.Max(1, CornerRadius - 2));
-            using Pen focusPen = new(AppTheme.Colors.FocusRing, 1.5f);
-            g.DrawPath(focusPen, focusPath);
+            AppTheme.DrawRoundedBorder(
+                g,
+                RectangleF.Inflate(bounds, -3f, -3f),
+                Math.Max(1, CornerRadius - 3),
+                AppTheme.Colors.FocusRing,
+                1.5f);
         }
 
-        Rectangle textRect = rect;
+        Rectangle textRect = new(0, 0, Width, Height);
         if (_pressed)
             textRect.Offset(0, 1);
 
@@ -254,13 +245,16 @@ public class RoundedButton : Button
                 Color.Transparent,
                 Color.White),
 
+            // Lúc nghỉ, Outline/Ghost không tô nền: để nguyên phần nền của control
+            // cha đã được compose sẵn ở OnPaintBackground. Tô đè bằng ContainerColor
+            // như trước sẽ tạo một mảng màu hơi lệch nằm lọt trong đường bo tròn.
             ButtonVariant.Outline => (
-                _pressed ? AppTheme.Colors.PrimaryLight : _hover ? AppTheme.Colors.PrimaryLight : ContainerColor,
+                _pressed || _hover ? AppTheme.Colors.PrimaryLight : Color.Transparent,
                 AppTheme.Colors.Primary,
                 AppTheme.Colors.Primary),
 
             ButtonVariant.Ghost => (
-                _pressed ? AppTheme.Colors.SurfacePressed : _hover ? AppTheme.Colors.SurfaceHover : ContainerColor,
+                _pressed ? AppTheme.Colors.SurfacePressed : _hover ? AppTheme.Colors.SurfaceHover : Color.Transparent,
                 Color.Transparent,
                 AppTheme.Colors.TextSecondary),
 

@@ -1,14 +1,14 @@
 using System.ComponentModel;
-using System.Drawing.Drawing2D;
 
 namespace KiotVietLabelPrinter.UI;
 
 // Panel bo góc dùng làm "card" (khối nội dung nổi trên nền xám của form).
 // Hỗ trợ hiệu ứng đổi viền/nền khi hover, dùng cho các card có thể bấm được.
 //
-// ContainerColor = màu nền của nơi đặt panel này (form/panel cha), được tô
-// trước để lấp phần góc ngoài khối bo tròn — xem ghi chú trong RoundedButton
-// về lý do không dùng ControlStyles.SupportsTransparentBackColor.
+// Phần góc nằm ngoài đường bo tròn được lấy từ chính control cha
+// (AppTheme.PaintContainerBackground); ContainerColor chỉ là màu dự phòng khi
+// panel chưa có cha. Label con được đặt nền trong suốt để không tự tô ô vuông
+// đè lên mặt card — xem BlendChildBackground.
 public class RoundedPanel : Panel
 {
     [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
@@ -117,62 +117,71 @@ public class RoundedPanel : Panel
     protected override void OnControlAdded(ControlEventArgs e)
     {
         if (e.Control != null)
-            AttachHoverHandlers(e.Control);
+            PrepareChild(e.Control);
 
         base.OnControlAdded(e);
     }
 
     protected override void OnPaintBackground(PaintEventArgs pevent)
     {
-        pevent.Graphics.Clear(ContainerColor);
+        AppTheme.PaintContainerBackground(this, pevent, ContainerColor);
     }
 
     protected override void OnPaint(PaintEventArgs e)
     {
         Graphics g = e.Graphics;
-        g.SmoothingMode = SmoothingMode.AntiAlias;
-        g.PixelOffsetMode = PixelOffsetMode.HighQuality;
+        AppTheme.PrepareSmoothing(g);
 
         EnsureVisualState();
 
-        Rectangle rect = new(0, 0, Width - 1, Height - 1);
-        using GraphicsPath path = AppTheme.RoundedRect(rect, CornerRadius);
+        RectangleF bounds = new(0, 0, Width, Height);
 
-        using (SolidBrush brush = new(_currentFill))
-            g.FillPath(brush, path);
+        AppTheme.FillRounded(g, bounds, CornerRadius, _currentFill);
 
-        if (BorderThickness > 0 && _currentBorder.A > 0)
-        {
-            using Pen pen = new(_currentBorder, BorderThickness);
-            g.DrawPath(pen, path);
-        }
+        if (BorderThickness > 0)
+            AppTheme.DrawRoundedBorder(g, bounds, CornerRadius, _currentBorder, BorderThickness);
 
         if (HoverEffect && Focused && ShowFocusCues)
         {
-            Rectangle focusRect = Rectangle.Inflate(rect, -3, -3);
-            using GraphicsPath focusPath = AppTheme.RoundedRect(focusRect, Math.Max(1, CornerRadius - 3));
-            using Pen focusPen = new(AppTheme.Colors.FocusRing, 1.5f);
-            g.DrawPath(focusPen, focusPath);
+            AppTheme.DrawRoundedBorder(
+                g,
+                RectangleF.Inflate(bounds, -4f, -4f),
+                Math.Max(1, CornerRadius - 4),
+                AppTheme.Colors.FocusRing,
+                1.5f);
         }
 
         base.OnPaint(e);
     }
 
-    private void AttachHoverHandlers(Control control)
+    private void PrepareChild(Control control)
     {
+        BlendChildBackground(control);
+
         control.MouseEnter += ChildMouseEnter;
         control.MouseLeave += ChildMouseLeave;
         control.MouseDown += ChildMouseDown;
         control.ControlAdded += ChildControlAdded;
 
         foreach (Control child in control.Controls)
-            AttachHoverHandlers(child);
+            PrepareChild(child);
+    }
+
+    // Panel mặc định mang BackColor = SystemColors.Control (xám). Label đặt trên
+    // card kế thừa đúng màu xám đó rồi tô kín ô chữ nhật của nó, thành ra chữ nào
+    // cũng nằm trong một ô vuông xám đè lên mặt card mà RoundedPanel vẽ ra.
+    // Đặt Transparent để Label lấy lại đúng nền đã vẽ (kể cả màu hover), thay vì
+    // tự tô một hình chữ nhật lệch màu.
+    private static void BlendChildBackground(Control control)
+    {
+        if (control is Label && control.BackColor != Color.Transparent)
+            control.BackColor = Color.Transparent;
     }
 
     private void ChildControlAdded(object? sender, ControlEventArgs e)
     {
         if (e.Control != null)
-            AttachHoverHandlers(e.Control);
+            PrepareChild(e.Control);
     }
 
     private void ChildMouseEnter(object? sender, EventArgs e)
@@ -212,7 +221,7 @@ public class RoundedPanel : Panel
 
         if (!_visualStateInitialized)
         {
-            Invalidate();
+            Invalidate(true);
             return;
         }
 
@@ -221,7 +230,7 @@ public class RoundedPanel : Panel
         if (!AppTheme.MotionEnabled)
         {
             (_currentFill, _currentBorder) = (_targetFill, _targetBorder);
-            Invalidate();
+            Invalidate(true);
             return;
         }
 
@@ -247,7 +256,9 @@ public class RoundedPanel : Panel
             _animationTimer.Stop();
         }
 
-        Invalidate();
+        // Invalidate(true): các Label con để nền trong suốt nên phải vẽ lại cùng
+        // nhịp với mặt card, nếu không chúng giữ lại màu nền của khung hình trước.
+        Invalidate(true);
     }
 
     protected override void Dispose(bool disposing)

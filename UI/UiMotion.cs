@@ -47,6 +47,7 @@ public static class UiMotion
         {
             control.Left = targetLeft;
             control.Visible = true;
+            control.Invalidate(true);
             return;
         }
 
@@ -110,6 +111,12 @@ public static class UiMotion
                 _control.Left = _targetLeft;
                 _timer.Stop();
             }
+
+            // Khi control di chuyển, Windows chỉ blit lại pixel cũ và chỉ vẽ lại
+            // phần vừa lộ ra. Các control con vẽ nền trong suốt (Label trên card)
+            // sẽ giữ nguyên nền đã compose ở vị trí cũ, để lại vệt lem dọc cạnh.
+            // Vẽ lại cả cây con sau mỗi bước để không còn pixel thừa.
+            _control.Invalidate(true);
         }
 
         public void Dispose()
