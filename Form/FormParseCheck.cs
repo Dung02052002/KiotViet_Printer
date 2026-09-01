@@ -6,9 +6,9 @@ namespace KiotVietLabelPrinter.Forms;
 
 public class FormParseCheck : Form
 {
-    private readonly DataGridView dgv = new();
+    private readonly SmoothDataGridView dgv = new();
     private readonly Label lblSummary = new();
-    private readonly CheckBox chkOnlyFlagged = new();
+    private readonly ToggleSwitch chkOnlyFlagged = new();
     private readonly RoundedButton btnClose = new();
 
     private readonly LabelService _labelService = new();
@@ -59,6 +59,7 @@ public class FormParseCheck : Form
         chkOnlyFlagged.Width = 220;
         chkOnlyFlagged.Font = AppTheme.Fonts.Body;
         chkOnlyFlagged.ForeColor = AppTheme.Colors.TextPrimary;
+        chkOnlyFlagged.ContainerColor = AppTheme.Colors.Background;
         chkOnlyFlagged.CheckedChanged += (_, _) => RenderGrid();
         Controls.Add(chkOnlyFlagged);
 
@@ -133,7 +134,7 @@ public class FormParseCheck : Form
         {
             if (shown[i].HasFlag)
             {
-                dgv.Rows[i].DefaultCellStyle.BackColor = Color.FromArgb(255, 236, 236);
+                dgv.Rows[i].DefaultCellStyle.BackColor = AppTheme.Colors.DangerLight;
             }
         }
 

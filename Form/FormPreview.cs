@@ -5,7 +5,7 @@ using KiotVietLabelPrinter.UI;
 namespace KiotVietLabelPrinter.Forms;
 public class FormPreview : Form
 {
-    private readonly DataGridView dgvPreview = new();
+    private readonly SmoothDataGridView dgvPreview = new();
     private readonly Label lblSummary = new();
     private readonly RoundedButton btnPrint = new();
     private readonly RoundedButton btnClose = new();

@@ -26,8 +26,8 @@ public class FormMain : Form
     private readonly RoundedPanel pnlWorkspace = new();
     private readonly Label lblCurrentCategory = new();
 
-    private readonly TextBox txtExcelFile = new();
-    private readonly TextBox txtEmployeeCode = new();
+    private readonly RoundedTextBox txtExcelFile = new();
+    private readonly RoundedTextBox txtEmployeeCode = new();
 
     private readonly RoundedButton btnChooseExcel = new();
     private readonly RoundedButton btnConfig = new();
@@ -42,8 +42,8 @@ public class FormMain : Form
     public FormMain()
     {
         Text = "KiotViet Label Printer";
-        Width = 980;
-        Height = 620;
+        Width = 1000;
+        Height = 650;
         StartPosition = FormStartPosition.CenterScreen;
         FormBorderStyle = FormBorderStyle.FixedSingle;
         MaximizeBox = false;
@@ -69,8 +69,8 @@ public class FormMain : Form
         pnlHeader.Left = 0;
         pnlHeader.Top = 0;
         pnlHeader.Width = ClientSize.Width;
-        pnlHeader.Height = 104;
-        pnlHeader.BackColor = AppTheme.Colors.Surface;
+        pnlHeader.Height = 112;
+        pnlHeader.BackColor = AppTheme.Colors.Background;
         pnlHeader.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
         Controls.Add(pnlHeader);
 
@@ -92,7 +92,7 @@ public class FormMain : Form
         pnlLogoBadge.CornerRadius = 16;
         pnlLogoBadge.FillColor = AppTheme.Colors.PrimaryLight;
         pnlLogoBadge.BorderThickness = 0;
-        pnlLogoBadge.ContainerColor = AppTheme.Colors.Surface;
+        pnlLogoBadge.ContainerColor = AppTheme.Colors.Background;
         pnlHeader.Controls.Add(pnlLogoBadge);
 
         lblLogoIcon.Text = "🏷";
@@ -125,7 +125,7 @@ public class FormMain : Form
         btnBack.Left = pnlHeader.Width - btnBack.Width - 24;
         btnBack.Anchor = AnchorStyles.Top | AnchorStyles.Right;
         btnBack.Variant = ButtonVariant.Ghost;
-        btnBack.ContainerColor = AppTheme.Colors.Surface;
+        btnBack.ContainerColor = AppTheme.Colors.Background;
         btnBack.Font = AppTheme.Fonts.ButtonRegular;
         btnBack.Visible = false;
         btnBack.Click += (_, _) => ShowHome();
@@ -138,7 +138,7 @@ public class FormMain : Form
     {
         pnlCategory.Left = 20;
         pnlCategory.Top = 128;
-        pnlCategory.Width = 924;
+        pnlCategory.Width = ClientSize.Width - 40;
         pnlCategory.Height = 420;
         pnlCategory.BackColor = AppTheme.Colors.Background;
         Controls.Add(pnlCategory);
@@ -167,7 +167,7 @@ public class FormMain : Form
 
         flpCategories.Left = 0;
         flpCategories.Top = 68;
-        flpCategories.Width = 924;
+        flpCategories.Width = pnlCategory.Width;
         flpCategories.Height = 350;
         flpCategories.BackColor = AppTheme.Colors.Background;
         flpCategories.AutoScroll = true;
@@ -210,14 +210,17 @@ public class FormMain : Form
             Width = 280,
             Height = 152,
             Margin = new Padding(0, 0, 16, 16),
-            CornerRadius = 14,
-            FillColor = AppTheme.Colors.Surface,
+            CornerRadius = 18,
+            FillColor = AppTheme.Colors.SurfaceElevated,
             BorderColor = AppTheme.Colors.Border,
             BorderThickness = 1,
             HoverEffect = true,
-            HoverFillColor = AppTheme.Colors.Surface,
-            HoverBorderColor = AppTheme.Colors.Primary,
-            Cursor = Cursors.Hand
+            HoverFillColor = AppTheme.Colors.PrimarySoft,
+            HoverBorderColor = AppTheme.Colors.FocusRing,
+            ContainerColor = AppTheme.Colors.Background,
+            Cursor = Cursors.Hand,
+            AccessibleRole = AccessibleRole.PushButton,
+            AccessibleName = label.Name
         };
 
         RoundedPanel iconBadge = new()
@@ -302,10 +305,10 @@ public class FormMain : Form
     {
         pnlWorkspace.Left = 20;
         pnlWorkspace.Top = 128;
-        pnlWorkspace.Width = 924;
+        pnlWorkspace.Width = ClientSize.Width - 40;
         pnlWorkspace.Height = 360;
-        pnlWorkspace.CornerRadius = 14;
-        pnlWorkspace.FillColor = AppTheme.Colors.Surface;
+        pnlWorkspace.CornerRadius = 18;
+        pnlWorkspace.FillColor = AppTheme.Colors.SurfaceElevated;
         pnlWorkspace.BorderColor = AppTheme.Colors.Border;
         pnlWorkspace.BorderThickness = 1;
         pnlWorkspace.Visible = false;
@@ -324,7 +327,7 @@ public class FormMain : Form
         {
             Left = 28,
             Top = 62,
-            Width = 868,
+            Width = pnlWorkspace.Width - 56,
             Height = 1,
             BackColor = AppTheme.Colors.Border
         };
@@ -353,18 +356,20 @@ public class FormMain : Form
         pnlWorkspace.Controls.Add(lblExcel);
 
         txtExcelFile.Left = 174;
-        txtExcelFile.Top = 104;
+        txtExcelFile.Top = 102;
         txtExcelFile.Width = 526;
-        txtExcelFile.Height = 32;
+        txtExcelFile.Height = 38;
         txtExcelFile.Font = AppTheme.Fonts.Body;
         txtExcelFile.ReadOnly = true;
+        txtExcelFile.PlaceholderText = "Chọn tệp dữ liệu Excel";
+        txtExcelFile.ContainerColor = AppTheme.Colors.Surface;
         pnlWorkspace.Controls.Add(txtExcelFile);
 
         btnChooseExcel.Text = "Chọn file";
         btnChooseExcel.Left = 710;
         btnChooseExcel.Top = 102;
         btnChooseExcel.Width = 110;
-        btnChooseExcel.Height = 34;
+        btnChooseExcel.Height = 38;
         btnChooseExcel.Variant = ButtonVariant.Outline;
         btnChooseExcel.ContainerColor = AppTheme.Colors.Surface;
         btnChooseExcel.Click += BtnChooseExcel_Click;
@@ -383,10 +388,12 @@ public class FormMain : Form
         pnlWorkspace.Controls.Add(lblEmployee);
 
         txtEmployeeCode.Left = 174;
-        txtEmployeeCode.Top = 148;
+        txtEmployeeCode.Top = 146;
         txtEmployeeCode.Width = 300;
-        txtEmployeeCode.Height = 32;
+        txtEmployeeCode.Height = 38;
         txtEmployeeCode.Font = AppTheme.Fonts.Body;
+        txtEmployeeCode.PlaceholderText = "Nhập mã";
+        txtEmployeeCode.ContainerColor = AppTheme.Colors.Surface;
         pnlWorkspace.Controls.Add(txtEmployeeCode);
 
         Label lblEmployeeHint = new()
@@ -405,7 +412,7 @@ public class FormMain : Form
         {
             Left = 28,
             Top = 198,
-            Width = 868,
+            Width = pnlWorkspace.Width - 56,
             Height = 1,
             BackColor = AppTheme.Colors.Border
         };
@@ -494,9 +501,10 @@ public class FormMain : Form
     {
         _selectedLabel = null;
 
-        pnlCategory.Visible = true;
         pnlWorkspace.Visible = false;
         btnBack.Visible = false;
+
+        UiMotion.SlideIn(pnlCategory, 20, -14);
 
         lblSubtitle.Text = "Chọn danh mục tem để bắt đầu";
 
@@ -508,8 +516,9 @@ public class FormMain : Form
         _selectedLabel = label;
 
         pnlCategory.Visible = false;
-        pnlWorkspace.Visible = true;
         btnBack.Visible = true;
+
+        UiMotion.SlideIn(pnlWorkspace, 20, 14);
 
         lblSubtitle.Text = $"Danh mục: {label.Name}";
 
@@ -558,7 +567,6 @@ public class FormMain : Form
 
         txtEmployeeCode.Visible = showInput;
         txtEmployeeCode.Enabled = showInput;
-        txtEmployeeCode.BackColor = showInput ? AppTheme.Colors.Surface : AppTheme.Colors.Disabled;
 
         if (isGlasses)
         {

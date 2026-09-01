@@ -8,7 +8,7 @@ public class FormHistory : Form
 {
     private readonly HistoryService _historyService = new();
 
-    private readonly DataGridView dgvHistory = new();
+    private readonly SmoothDataGridView dgvHistory = new();
     private readonly RoundedButton btnRefresh = new();
     private readonly RoundedButton btnClose = new();
 

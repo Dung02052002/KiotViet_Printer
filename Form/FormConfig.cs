@@ -8,28 +8,29 @@ namespace KiotVietLabelPrinter.Forms;
 
 public class FormConfig : Form
 {
-    private readonly TextBox txtBarTender = new();
+    private readonly RoundedTextBox txtBarTender = new();
     private readonly ComboBox cboPrinter = new();
-    private readonly CheckBox chkRememberEmployee = new();
-    private readonly TextBox txtDefaultEmployee = new();
+    private readonly ToggleSwitch chkRememberEmployee = new();
+    private readonly RoundedTextBox txtDefaultEmployee = new();
 
     private readonly RoundedButton btnBrowseBarTender = new();
     private readonly RoundedButton btnSave = new();
     private readonly RoundedButton btnAddLabel = new();
     private readonly RoundedButton btnDeleteLabel = new();
 
-    private readonly DataGridView dgvLabels = new();
+    private readonly SmoothDataGridView dgvLabels = new();
 
     private BindingList<LabelDefinition> _labels = new();
 
     public FormConfig()
     {
         Text = "Cấu hình phần mềm";
-        Width = 1400;
+        Width = 1280;
         Height = 800;
         StartPosition = FormStartPosition.CenterScreen;
-        FormBorderStyle = FormBorderStyle.FixedDialog;
-        MaximizeBox = false;
+        FormBorderStyle = FormBorderStyle.Sizable;
+        MinimumSize = new Size(1050, 680);
+        MaximizeBox = true;
         DoubleBuffered = true;
 
         AppTheme.StyleForm(this);
@@ -52,11 +53,12 @@ public class FormConfig : Form
         {
             Left = 20,
             Top = 20,
-            Width = 1340,
+            Width = ClientSize.Width - 40,
             Height = 204,
-            CornerRadius = 14,
-            FillColor = AppTheme.Colors.Surface,
-            BorderColor = AppTheme.Colors.Border
+            CornerRadius = 18,
+            FillColor = AppTheme.Colors.SurfaceElevated,
+            BorderColor = AppTheme.Colors.Border,
+            Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right
         };
         Controls.Add(grpGeneral);
 
@@ -75,9 +77,10 @@ public class FormConfig : Form
         {
             Left = 24,
             Top = 46,
-            Width = 1292,
+            Width = grpGeneral.Width - 48,
             Height = 1,
-            BackColor = AppTheme.Colors.Border
+            BackColor = AppTheme.Colors.Border,
+            Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right
         };
         grpGeneral.Controls.Add(divider);
 
@@ -92,14 +95,18 @@ public class FormConfig : Form
         };
         grpGeneral.Controls.Add(lblBarTender);
 
-        txtBarTender.SetBounds(160, 64, 1092, 30);
+        txtBarTender.SetBounds(160, 62, grpGeneral.Width - 248, 38);
         txtBarTender.Font = AppTheme.Fonts.Body;
+        txtBarTender.ContainerColor = AppTheme.Colors.Surface;
+        txtBarTender.PlaceholderText = "Đường dẫn đến BarTender.exe";
+        txtBarTender.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
         grpGeneral.Controls.Add(txtBarTender);
 
         btnBrowseBarTender.Text = "...";
-        btnBrowseBarTender.SetBounds(1266, 64, 50, 30);
+        btnBrowseBarTender.SetBounds(grpGeneral.Width - 74, 62, 50, 38);
         btnBrowseBarTender.Variant = ButtonVariant.Outline;
         btnBrowseBarTender.ContainerColor = AppTheme.Colors.Surface;
+        btnBrowseBarTender.Anchor = AnchorStyles.Top | AnchorStyles.Right;
         btnBrowseBarTender.Click += (_, _) => BrowseFile(txtBarTender, "Executable|*.exe");
         grpGeneral.Controls.Add(btnBrowseBarTender);
 
@@ -114,9 +121,9 @@ public class FormConfig : Form
         };
         grpGeneral.Controls.Add(lblPrinter);
 
-        cboPrinter.SetBounds(160, 108, 500, 30);
-        cboPrinter.Font = AppTheme.Fonts.Body;
+        cboPrinter.SetBounds(160, 108, 500, 34);
         cboPrinter.DropDownStyle = ComboBoxStyle.DropDownList;
+        AppTheme.StyleComboBox(cboPrinter);
         LoadPrinterList();
         grpGeneral.Controls.Add(cboPrinter);
 
@@ -125,9 +132,10 @@ public class FormConfig : Form
             Text = "Cố định máy in để tránh bị đổi sang máy in khác khi in.",
             Left = 676,
             Top = 112,
-            Width = 420,
+            Width = grpGeneral.Width - 700,
             Font = AppTheme.Fonts.Hint,
-            ForeColor = AppTheme.Colors.TextMuted
+            ForeColor = AppTheme.Colors.TextMuted,
+            Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right
         };
         grpGeneral.Controls.Add(lblPrinterHint);
 
@@ -136,6 +144,7 @@ public class FormConfig : Form
         chkRememberEmployee.Top = 158;
         chkRememberEmployee.Width = 280;
         chkRememberEmployee.Font = AppTheme.Fonts.Body;
+        chkRememberEmployee.ContainerColor = AppTheme.Colors.Surface;
         grpGeneral.Controls.Add(chkRememberEmployee);
 
         Label lblDefaultEmployee = new()
@@ -149,8 +158,10 @@ public class FormConfig : Form
         };
         grpGeneral.Controls.Add(lblDefaultEmployee);
 
-        txtDefaultEmployee.SetBounds(468, 156, 220, 30);
+        txtDefaultEmployee.SetBounds(468, 151, 220, 38);
         txtDefaultEmployee.Font = AppTheme.Fonts.Body;
+        txtDefaultEmployee.ContainerColor = AppTheme.Colors.Surface;
+        txtDefaultEmployee.PlaceholderText = "Ví dụ: H020";
         grpGeneral.Controls.Add(txtDefaultEmployee);
 
         Label lblHint = new()
@@ -183,11 +194,12 @@ public class FormConfig : Form
         {
             Left = 20,
             Top = 240,
-            Width = 1340,
-            Height = 460,
-            CornerRadius = 14,
-            FillColor = AppTheme.Colors.Surface,
-            BorderColor = AppTheme.Colors.Border
+            Width = ClientSize.Width - 40,
+            Height = ClientSize.Height - 320,
+            CornerRadius = 18,
+            FillColor = AppTheme.Colors.SurfaceElevated,
+            BorderColor = AppTheme.Colors.Border,
+            Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right
         };
         Controls.Add(grpLabels);
 
@@ -206,9 +218,10 @@ public class FormConfig : Form
         {
             Left = 24,
             Top = 46,
-            Width = 1292,
+            Width = grpLabels.Width - 48,
             Height = 1,
-            BackColor = AppTheme.Colors.Border
+            BackColor = AppTheme.Colors.Border,
+            Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right
         };
         grpLabels.Controls.Add(divider);
 
@@ -231,16 +244,18 @@ public class FormConfig : Form
             Text = "Mỗi dòng là 1 loại tem. Có thể sửa trực tiếp trong bảng rồi bấm Lưu cấu hình.",
             Left = 292,
             Top = 68,
-            Width = 700,
+            Width = grpLabels.Width - 316,
             Font = AppTheme.Fonts.Hint,
-            ForeColor = AppTheme.Colors.TextMuted
+            ForeColor = AppTheme.Colors.TextMuted,
+            Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right
         };
         grpLabels.Controls.Add(lblGridHint);
 
         dgvLabels.Left = 24;
         dgvLabels.Top = 104;
-        dgvLabels.Width = 1292;
-        dgvLabels.Height = 332;
+        dgvLabels.Width = grpLabels.Width - 48;
+        dgvLabels.Height = grpLabels.Height - 128;
+        dgvLabels.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
         dgvLabels.AllowUserToAddRows = false;
         dgvLabels.AllowUserToDeleteRows = false;
         dgvLabels.AutoGenerateColumns = false;
@@ -348,9 +363,10 @@ public class FormConfig : Form
     private void BuildBottomButtons()
     {
         btnSave.Text = "💾 Lưu cấu hình";
-        btnSave.SetBounds(600, 715, 180, 44);
+        btnSave.SetBounds(ClientSize.Width - 200, ClientSize.Height - 62, 180, 44);
         btnSave.Variant = ButtonVariant.Primary;
         btnSave.Font = new Font(AppTheme.Fonts.Button.FontFamily, 10.5f, FontStyle.Bold);
+        btnSave.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
         btnSave.Click += BtnSave_Click;
         Controls.Add(btnSave);
     }
@@ -524,7 +540,7 @@ public class FormConfig : Form
     #endregion
 
     #region Helpers
-    private void BrowseFile(TextBox target, string filter)
+    private void BrowseFile(RoundedTextBox target, string filter)
     {
         using OpenFileDialog dialog = new()
         {

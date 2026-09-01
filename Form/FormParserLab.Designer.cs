@@ -5,7 +5,7 @@ namespace KiotVietLabelPrinter.Forms;
 
 partial class FormParserLab
 {
-    private TextBox txtInput = null!;
+    private RoundedTextBox txtInput = null!;
 
     private RoundedButton btnParse = null!;
 
@@ -19,9 +19,9 @@ partial class FormParserLab
 
     private Label lblTime = null!;
 
-    private DataGridView dgvToken = null!;
+    private SmoothDataGridView dgvToken = null!;
 
-    private DataGridView dgvTest = null!;
+    private SmoothDataGridView dgvTest = null!;
 
     private void InitializeComponent()
     {
@@ -71,6 +71,12 @@ partial class FormParserLab
         txtInput.Height = 70;
 
         txtInput.Font = AppTheme.Fonts.Body;
+
+        txtInput.ContainerColor = AppTheme.Colors.Background;
+
+        txtInput.PlaceholderText = "Nhập tên sản phẩm hoặc chuỗi cần phân tích...";
+
+        txtInput.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
 
         //------------------------------------------
         // Parse
