@@ -1,5 +1,6 @@
 using KiotVietLabelPrinter.Models;
 using KiotVietLabelPrinter.Services;
+using KiotVietLabelPrinter.UI;
 
 namespace KiotVietLabelPrinter.Forms;
 
@@ -8,7 +9,7 @@ public class FormParseCheck : Form
     private readonly DataGridView dgv = new();
     private readonly Label lblSummary = new();
     private readonly CheckBox chkOnlyFlagged = new();
-    private readonly Button btnClose = new();
+    private readonly RoundedButton btnClose = new();
 
     private readonly LabelService _labelService = new();
     private readonly LabelCatalogService _catalogService = new();
@@ -34,6 +35,9 @@ public class FormParseCheck : Form
         StartPosition = FormStartPosition.CenterScreen;
         FormBorderStyle = FormBorderStyle.FixedDialog;
         MaximizeBox = false;
+        DoubleBuffered = true;
+
+        AppTheme.StyleForm(this);
 
         BuildUi();
         LoadData();
@@ -42,21 +46,24 @@ public class FormParseCheck : Form
     private void BuildUi()
     {
         lblSummary.Left = 20;
-        lblSummary.Top = 15;
+        lblSummary.Top = 18;
         lblSummary.Width = 900;
-        lblSummary.Height = 25;
-        lblSummary.Font = new Font("Segoe UI", 10, FontStyle.Bold);
+        lblSummary.Height = 26;
+        lblSummary.Font = AppTheme.Fonts.BodyBold;
+        lblSummary.ForeColor = AppTheme.Colors.TextPrimary;
         Controls.Add(lblSummary);
 
         chkOnlyFlagged.Text = "Chỉ hiện dòng nghi ngờ";
         chkOnlyFlagged.Left = 950;
-        chkOnlyFlagged.Top = 17;
+        chkOnlyFlagged.Top = 20;
         chkOnlyFlagged.Width = 220;
+        chkOnlyFlagged.Font = AppTheme.Fonts.Body;
+        chkOnlyFlagged.ForeColor = AppTheme.Colors.TextPrimary;
         chkOnlyFlagged.CheckedChanged += (_, _) => RenderGrid();
         Controls.Add(chkOnlyFlagged);
 
         dgv.Left = 20;
-        dgv.Top = 50;
+        dgv.Top = 54;
         dgv.Width = 1190;
         dgv.Height = 540;
         dgv.ReadOnly = true;
@@ -65,8 +72,8 @@ public class FormParseCheck : Form
         dgv.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
         dgv.MultiSelect = false;
         dgv.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
-        dgv.RowHeadersVisible = false;
         dgv.AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.AllCells;
+        AppTheme.StyleGrid(dgv);
         dgv.DefaultCellStyle.WrapMode = DataGridViewTriState.False;
         Controls.Add(dgv);
 
@@ -74,7 +81,8 @@ public class FormParseCheck : Form
         btnClose.Left = 1090;
         btnClose.Top = 610;
         btnClose.Width = 120;
-        btnClose.Height = 40;
+        btnClose.Height = 42;
+        btnClose.Variant = ButtonVariant.Secondary;
         btnClose.Click += (_, _) => Close();
         Controls.Add(btnClose);
     }

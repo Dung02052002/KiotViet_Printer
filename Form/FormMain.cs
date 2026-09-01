@@ -1,6 +1,7 @@
 
 using KiotVietLabelPrinter.Models;
 using KiotVietLabelPrinter.Services;
+using KiotVietLabelPrinter.UI;
 
 namespace KiotVietLabelPrinter.Forms;
 
@@ -11,8 +12,9 @@ public class FormMain : Form
 
     // Header
     private readonly Panel pnlHeader = new();
-    private readonly Button btnBack = new();
-    private readonly PictureBox picLogo = new();
+    private readonly RoundedButton btnBack = new();
+    private readonly RoundedPanel pnlLogoBadge = new();
+    private readonly Label lblLogoIcon = new();
     private readonly Label lblTitle = new();
     private readonly Label lblSubtitle = new();
 
@@ -21,19 +23,19 @@ public class FormMain : Form
     private readonly FlowLayoutPanel flpCategories = new();
 
     // Workspace
-    private readonly Panel pnlWorkspace = new();
+    private readonly RoundedPanel pnlWorkspace = new();
     private readonly Label lblCurrentCategory = new();
 
     private readonly TextBox txtExcelFile = new();
     private readonly TextBox txtEmployeeCode = new();
 
-    private readonly Button btnChooseExcel = new();
-    private readonly Button btnConfig = new();
-    private readonly Button btnHistory = new();
-     private readonly Button btnParserLab = new();
-    private readonly Button btnPreview = new();
-    private readonly Button btnCheckParse = new();
-    private readonly Button btnPrint = new();
+    private readonly RoundedButton btnChooseExcel = new();
+    private readonly RoundedButton btnConfig = new();
+    private readonly RoundedButton btnHistory = new();
+    private readonly RoundedButton btnParserLab = new();
+    private readonly RoundedButton btnPreview = new();
+    private readonly RoundedButton btnCheckParse = new();
+    private readonly RoundedButton btnPrint = new();
 
     private LabelDefinition? _selectedLabel;
 
@@ -45,7 +47,9 @@ public class FormMain : Form
         StartPosition = FormStartPosition.CenterScreen;
         FormBorderStyle = FormBorderStyle.FixedSingle;
         MaximizeBox = false;
-        BackColor = Color.White;
+        DoubleBuffered = true;
+
+        AppTheme.StyleForm(this);
 
         BuildUi();
         CheckConfigOnStart();
@@ -65,50 +69,67 @@ public class FormMain : Form
         pnlHeader.Left = 0;
         pnlHeader.Top = 0;
         pnlHeader.Width = ClientSize.Width;
-        pnlHeader.Height = 110;
-        pnlHeader.BackColor = Color.FromArgb(245, 247, 250);
+        pnlHeader.Height = 104;
+        pnlHeader.BackColor = AppTheme.Colors.Surface;
         pnlHeader.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
         Controls.Add(pnlHeader);
 
-        btnBack.Text = "← Back";
-        btnBack.Left = 20;
-        btnBack.Top = 20;
-        btnBack.Width = 90;
-        btnBack.Height = 32;
-        btnBack.Visible = false;
-        btnBack.Click += (_, _) => ShowHome();
-        pnlHeader.Controls.Add(btnBack);
+        Panel headerDivider = new()
+        {
+            Left = 0,
+            Top = pnlHeader.Height - 1,
+            Width = pnlHeader.Width,
+            Height = 1,
+            BackColor = AppTheme.Colors.Border,
+            Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right
+        };
+        pnlHeader.Controls.Add(headerDivider);
 
-        picLogo.Left = 130;
-        picLogo.Top = 18;
-        picLogo.Width = 64;
-        picLogo.Height = 64;
-        picLogo.SizeMode = PictureBoxSizeMode.Zoom;
-        picLogo.BorderStyle = BorderStyle.FixedSingle;
+        pnlLogoBadge.Left = 24;
+        pnlLogoBadge.Top = 24;
+        pnlLogoBadge.Width = 56;
+        pnlLogoBadge.Height = 56;
+        pnlLogoBadge.CornerRadius = 16;
+        pnlLogoBadge.FillColor = AppTheme.Colors.PrimaryLight;
+        pnlLogoBadge.BorderThickness = 0;
+        pnlLogoBadge.ContainerColor = AppTheme.Colors.Surface;
+        pnlHeader.Controls.Add(pnlLogoBadge);
 
-        // Nếu có logo thì mở comment đoạn này:
-        // string logoPath = Path.Combine(Application.StartupPath, "Assets", "logo.png");
-        // if (File.Exists(logoPath))
-        // {
-        //     picLogo.Image = Image.FromFile(logoPath);
-        // }
-
-        pnlHeader.Controls.Add(picLogo);
+        lblLogoIcon.Text = "🏷";
+        lblLogoIcon.Dock = DockStyle.Fill;
+        lblLogoIcon.TextAlign = ContentAlignment.MiddleCenter;
+        lblLogoIcon.Font = AppTheme.Fonts.Icon;
+        lblLogoIcon.ForeColor = AppTheme.Colors.Primary;
+        pnlLogoBadge.Controls.Add(lblLogoIcon);
 
         lblTitle.Text = "IN TEM";
-        lblTitle.Left = 210;
-        lblTitle.Top = 18;
+        lblTitle.Left = 96;
+        lblTitle.Top = 20;
         lblTitle.Width = 400;
-        lblTitle.Font = new Font("Segoe UI", 20, FontStyle.Bold);
+        lblTitle.Font = AppTheme.Fonts.Title;
+        lblTitle.ForeColor = AppTheme.Colors.TextPrimary;
         pnlHeader.Controls.Add(lblTitle);
 
         lblSubtitle.Text = "Chọn danh mục tem để bắt đầu";
-        lblSubtitle.Left = 212;
+        lblSubtitle.Left = 98;
         lblSubtitle.Top = 58;
         lblSubtitle.Width = 600;
-        lblSubtitle.Font = new Font("Segoe UI", 10, FontStyle.Regular);
-        lblSubtitle.ForeColor = Color.DimGray;
+        lblSubtitle.Font = AppTheme.Fonts.Subtitle;
+        lblSubtitle.ForeColor = AppTheme.Colors.TextSecondary;
         pnlHeader.Controls.Add(lblSubtitle);
+
+        btnBack.Text = "← Quay lại";
+        btnBack.Width = 112;
+        btnBack.Height = 36;
+        btnBack.Top = 34;
+        btnBack.Left = pnlHeader.Width - btnBack.Width - 24;
+        btnBack.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+        btnBack.Variant = ButtonVariant.Ghost;
+        btnBack.ContainerColor = AppTheme.Colors.Surface;
+        btnBack.Font = AppTheme.Fonts.ButtonRegular;
+        btnBack.Visible = false;
+        btnBack.Click += (_, _) => ShowHome();
+        pnlHeader.Controls.Add(btnBack);
     }
     #endregion
 
@@ -116,36 +137,39 @@ public class FormMain : Form
     private void BuildCategoryPanel()
     {
         pnlCategory.Left = 20;
-        pnlCategory.Top = 130;
-        pnlCategory.Width = 920;
+        pnlCategory.Top = 128;
+        pnlCategory.Width = 924;
         pnlCategory.Height = 420;
-        pnlCategory.BackColor = Color.White;
+        pnlCategory.BackColor = AppTheme.Colors.Background;
         Controls.Add(pnlCategory);
 
         Label lblCategoryTitle = new()
         {
             Text = "DANH MỤC TEM",
-            Left = 10,
-            Top = 10,
+            Left = 4,
+            Top = 6,
             Width = 300,
-            Font = new Font("Segoe UI", 12, FontStyle.Bold)
+            Font = AppTheme.Fonts.SectionTitle,
+            ForeColor = AppTheme.Colors.TextPrimary
         };
         pnlCategory.Controls.Add(lblCategoryTitle);
 
         Label lblHint = new()
         {
             Text = "Chọn loại tem cần in. Danh sách này được lấy từ cấu hình.",
-            Left = 10,
-            Top = 40,
+            Left = 4,
+            Top = 34,
             Width = 700,
-            ForeColor = Color.DimGray
+            Font = AppTheme.Fonts.Body,
+            ForeColor = AppTheme.Colors.TextSecondary
         };
         pnlCategory.Controls.Add(lblHint);
 
-        flpCategories.Left = 10;
-        flpCategories.Top = 80;
-        flpCategories.Width = 880;
-        flpCategories.Height = 300;
+        flpCategories.Left = 0;
+        flpCategories.Top = 68;
+        flpCategories.Width = 924;
+        flpCategories.Height = 350;
+        flpCategories.BackColor = AppTheme.Colors.Background;
         flpCategories.AutoScroll = true;
         flpCategories.WrapContents = true;
         flpCategories.FlowDirection = FlowDirection.LeftToRight;
@@ -164,8 +188,8 @@ public class FormMain : Form
             {
                 Text = "Chưa có loại tem nào được bật trong cấu hình.",
                 AutoSize = true,
-                ForeColor = Color.DarkRed,
-                Font = new Font("Segoe UI", 10, FontStyle.Bold),
+                ForeColor = AppTheme.Colors.Danger,
+                Font = AppTheme.Fonts.BodyBold,
                 Margin = new Padding(20)
             };
 
@@ -181,48 +205,85 @@ public class FormMain : Form
 
     private Control CreateCategoryCard(LabelDefinition label)
     {
-        Panel card = new()
+        RoundedPanel card = new()
         {
-            Width = 260,
-            Height = 150,
-            Margin = new Padding(12),
-            BackColor = Color.FromArgb(248, 249, 252),
-            BorderStyle = BorderStyle.FixedSingle,
+            Width = 280,
+            Height = 152,
+            Margin = new Padding(0, 0, 16, 16),
+            CornerRadius = 14,
+            FillColor = AppTheme.Colors.Surface,
+            BorderColor = AppTheme.Colors.Border,
+            BorderThickness = 1,
+            HoverEffect = true,
+            HoverFillColor = AppTheme.Colors.Surface,
+            HoverBorderColor = AppTheme.Colors.Primary,
+            Cursor = Cursors.Hand
+        };
+
+        RoundedPanel iconBadge = new()
+        {
+            Left = 18,
+            Top = 18,
+            Width = 44,
+            Height = 44,
+            CornerRadius = 12,
+            FillColor = AppTheme.Colors.PrimaryLight,
+            BorderThickness = 0,
+            ContainerColor = AppTheme.Colors.Surface,
             Cursor = Cursors.Hand
         };
 
         Label lblIcon = new()
         {
             Text = string.IsNullOrWhiteSpace(label.IconText) ? "🏷" : label.IconText,
-            Left = 18,
-            Top = 16,
-            Width = 50,
-            Height = 40,
-            Font = new Font("Segoe UI Emoji", 20, FontStyle.Regular)
+            Dock = DockStyle.Fill,
+            TextAlign = ContentAlignment.MiddleCenter,
+            Font = AppTheme.Fonts.IconSmall,
+            ForeColor = AppTheme.Colors.Primary,
+            Cursor = Cursors.Hand
         };
+        iconBadge.Controls.Add(lblIcon);
 
         Label lblName = new()
         {
             Text = label.Name,
             Left = 18,
-            Top = 60,
-            Width = 220,
-            Font = new Font("Segoe UI", 12, FontStyle.Bold)
+            Top = 74,
+            Width = 244,
+            Height = 24,
+            Font = AppTheme.Fonts.BodyBold,
+            ForeColor = AppTheme.Colors.TextPrimary,
+            Cursor = Cursors.Hand
         };
 
         Label lblDesc = new()
         {
             Text = label.Description,
             Left = 18,
-            Top = 95,
-            Width = 220,
+            Top = 100,
+            Width = 244,
             Height = 40,
-            ForeColor = Color.DimGray
+            Font = AppTheme.Fonts.Hint,
+            ForeColor = AppTheme.Colors.TextSecondary,
+            Cursor = Cursors.Hand
         };
 
-        card.Controls.Add(lblIcon);
+        Label lblArrow = new()
+        {
+            Text = "→",
+            Left = 244,
+            Top = 16,
+            Width = 20,
+            Height = 20,
+            Font = AppTheme.Fonts.BodyBold,
+            ForeColor = AppTheme.Colors.TextMuted,
+            Cursor = Cursors.Hand
+        };
+
+        card.Controls.Add(iconBadge);
         card.Controls.Add(lblName);
         card.Controls.Add(lblDesc);
+        card.Controls.Add(lblArrow);
 
         void open(object? s, EventArgs e) => OpenLabelWorkspace(label);
 
@@ -230,6 +291,7 @@ public class FormMain : Form
         lblIcon.Click += open;
         lblName.Click += open;
         lblDesc.Click += open;
+        lblArrow.Click += open;
 
         return card;
     }
@@ -239,40 +301,72 @@ public class FormMain : Form
     private void BuildWorkspacePanel()
     {
         pnlWorkspace.Left = 20;
-        pnlWorkspace.Top = 130;
-        pnlWorkspace.Width = 920;
-        pnlWorkspace.Height = 420;
-        pnlWorkspace.BackColor = Color.White;
+        pnlWorkspace.Top = 128;
+        pnlWorkspace.Width = 924;
+        pnlWorkspace.Height = 360;
+        pnlWorkspace.CornerRadius = 14;
+        pnlWorkspace.FillColor = AppTheme.Colors.Surface;
+        pnlWorkspace.BorderColor = AppTheme.Colors.Border;
+        pnlWorkspace.BorderThickness = 1;
         pnlWorkspace.Visible = false;
         Controls.Add(pnlWorkspace);
 
         lblCurrentCategory.Text = "Danh mục:";
-        lblCurrentCategory.Left = 10;
-        lblCurrentCategory.Top = 10;
-        lblCurrentCategory.Width = 700;
-        lblCurrentCategory.Font = new Font("Segoe UI", 12, FontStyle.Bold);
+        lblCurrentCategory.Left = 28;
+        lblCurrentCategory.Top = 22;
+        lblCurrentCategory.Width = 760;
+        lblCurrentCategory.Height = 28;
+        lblCurrentCategory.Font = AppTheme.Fonts.SectionTitle;
+        lblCurrentCategory.ForeColor = AppTheme.Colors.TextPrimary;
         pnlWorkspace.Controls.Add(lblCurrentCategory);
+
+        Panel line1 = new()
+        {
+            Left = 28,
+            Top = 62,
+            Width = 868,
+            Height = 1,
+            BackColor = AppTheme.Colors.Border
+        };
+        pnlWorkspace.Controls.Add(line1);
+
+        Label lblSectionSource = new()
+        {
+            Text = "NGUỒN DỮ LIỆU",
+            Left = 28,
+            Top = 78,
+            Width = 300,
+            Font = AppTheme.Fonts.Hint,
+            ForeColor = AppTheme.Colors.TextMuted
+        };
+        pnlWorkspace.Controls.Add(lblSectionSource);
 
         Label lblExcel = new()
         {
             Text = "File Excel KiotViet",
-            Left = 10,
-            Top = 70,
-            Width = 140
+            Left = 28,
+            Top = 108,
+            Width = 140,
+            Font = AppTheme.Fonts.Body,
+            ForeColor = AppTheme.Colors.TextPrimary
         };
         pnlWorkspace.Controls.Add(lblExcel);
 
-        txtExcelFile.Left = 160;
-        txtExcelFile.Top = 66;
-        txtExcelFile.Width = 520;
+        txtExcelFile.Left = 174;
+        txtExcelFile.Top = 104;
+        txtExcelFile.Width = 526;
+        txtExcelFile.Height = 32;
+        txtExcelFile.Font = AppTheme.Fonts.Body;
         txtExcelFile.ReadOnly = true;
         pnlWorkspace.Controls.Add(txtExcelFile);
 
         btnChooseExcel.Text = "Chọn file";
-        btnChooseExcel.Left = 700;
-        btnChooseExcel.Top = 64;
+        btnChooseExcel.Left = 710;
+        btnChooseExcel.Top = 102;
         btnChooseExcel.Width = 110;
-        btnChooseExcel.Height = 32;
+        btnChooseExcel.Height = 34;
+        btnChooseExcel.Variant = ButtonVariant.Outline;
+        btnChooseExcel.ContainerColor = AppTheme.Colors.Surface;
         btnChooseExcel.Click += BtnChooseExcel_Click;
         pnlWorkspace.Controls.Add(btnChooseExcel);
 
@@ -280,85 +374,116 @@ public class FormMain : Form
         {
             Name = "lblEmployee",
             Text = "Mã nhân viên",
-            Left = 10,
-            Top = 125,
-            Width = 140
+            Left = 28,
+            Top = 154,
+            Width = 140,
+            Font = AppTheme.Fonts.Body,
+            ForeColor = AppTheme.Colors.TextPrimary
         };
         pnlWorkspace.Controls.Add(lblEmployee);
 
-        txtEmployeeCode.Left = 160;
-        txtEmployeeCode.Top = 121;
+        txtEmployeeCode.Left = 174;
+        txtEmployeeCode.Top = 148;
         txtEmployeeCode.Width = 300;
+        txtEmployeeCode.Height = 32;
+        txtEmployeeCode.Font = AppTheme.Fonts.Body;
         pnlWorkspace.Controls.Add(txtEmployeeCode);
 
         Label lblEmployeeHint = new()
         {
             Name = "lblEmployeeHint",
             Text = "Ví dụ: H020 hoặc H020-K026",
-            Left = 470,
-            Top = 125,
-            Width = 260,
-            ForeColor = Color.DimGray
+            Left = 488,
+            Top = 154,
+            Width = 300,
+            Font = AppTheme.Fonts.Hint,
+            ForeColor = AppTheme.Colors.TextMuted
         };
         pnlWorkspace.Controls.Add(lblEmployeeHint);
 
-        Panel line = new()
+        Panel line2 = new()
         {
-            Left = 10,
-            Top = 170,
-            Width = 860,
+            Left = 28,
+            Top = 198,
+            Width = 868,
             Height = 1,
-            BackColor = Color.Gainsboro
+            BackColor = AppTheme.Colors.Border
         };
-        pnlWorkspace.Controls.Add(line);
+        pnlWorkspace.Controls.Add(line2);
 
-        btnConfig.Text = "Cấu hình";
-        btnConfig.Left = 60;
-        btnConfig.Top = 220;
-        btnConfig.Width = 120;
-        btnConfig.Height = 42;
+        Label lblSectionActions = new()
+        {
+            Text = "THAO TÁC",
+            Left = 28,
+            Top = 214,
+            Width = 300,
+            Font = AppTheme.Fonts.Hint,
+            ForeColor = AppTheme.Colors.TextMuted
+        };
+        pnlWorkspace.Controls.Add(lblSectionActions);
+
+        int actionsTop = 244;
+        int actionsHeight = 42;
+
+        btnConfig.Text = "⚙ Cấu hình";
+        btnConfig.Left = 28;
+        btnConfig.Top = actionsTop;
+        btnConfig.Width = 116;
+        btnConfig.Height = actionsHeight;
+        btnConfig.Variant = ButtonVariant.Outline;
+        btnConfig.ContainerColor = AppTheme.Colors.Surface;
         btnConfig.Click += BtnConfig_Click;
         pnlWorkspace.Controls.Add(btnConfig);
 
-        btnHistory.Text = "Lịch sử";
-        btnHistory.Left = 210;
-        btnHistory.Top = 220;
-        btnHistory.Width = 120;
-        btnHistory.Height = 42;
+        btnHistory.Text = "🕒 Lịch sử";
+        btnHistory.Left = 156;
+        btnHistory.Top = actionsTop;
+        btnHistory.Width = 110;
+        btnHistory.Height = actionsHeight;
+        btnHistory.Variant = ButtonVariant.Outline;
+        btnHistory.ContainerColor = AppTheme.Colors.Surface;
         btnHistory.Click += BtnHistory_Click;
         pnlWorkspace.Controls.Add(btnHistory);
 
-
-        btnParserLab.Text = "Parser Lab";
-        btnParserLab.Left = 360;
-        btnParserLab.Top = 280;
-        btnParserLab.Width = 140;
-        btnParserLab.Height = 42;
-        btnParserLab.Click += BtnParserLab_Click;
-        pnlWorkspace.Controls.Add(btnParserLab);
-
-        btnPreview.Text = "Xem trước";
-        btnPreview.Left = 360;
-        btnPreview.Top = 220;
-        btnPreview.Width = 140;
-        btnPreview.Height = 42;
+        btnPreview.Text = "👁 Xem trước";
+        btnPreview.Left = 278;
+        btnPreview.Top = actionsTop;
+        btnPreview.Width = 136;
+        btnPreview.Height = actionsHeight;
+        btnPreview.Variant = ButtonVariant.Outline;
+        btnPreview.ContainerColor = AppTheme.Colors.Surface;
         btnPreview.Click += BtnPreview_Click;
         pnlWorkspace.Controls.Add(btnPreview);
 
-        btnCheckParse.Text = "Kiểm tra mã";
-        btnCheckParse.Left = 530;
-        btnCheckParse.Top = 220;
-        btnCheckParse.Width = 140;
-        btnCheckParse.Height = 42;
+        btnCheckParse.Text = "✓ Kiểm tra mã";
+        btnCheckParse.Left = 426;
+        btnCheckParse.Top = actionsTop;
+        btnCheckParse.Width = 150;
+        btnCheckParse.Height = actionsHeight;
+        btnCheckParse.Variant = ButtonVariant.Outline;
+        btnCheckParse.ContainerColor = AppTheme.Colors.Surface;
         btnCheckParse.Click += BtnCheckParse_Click;
         pnlWorkspace.Controls.Add(btnCheckParse);
 
-        btnPrint.Text = "IN TEM";
-        btnPrint.Left = 700;
-        btnPrint.Top = 220;
-        btnPrint.Width = 160;
-        btnPrint.Height = 42;
-        btnPrint.Font = new Font("Segoe UI", 10, FontStyle.Bold);
+        btnParserLab.Text = "Parser Lab";
+        btnParserLab.Left = 588;
+        btnParserLab.Top = actionsTop;
+        btnParserLab.Width = 110;
+        btnParserLab.Height = actionsHeight;
+        btnParserLab.Variant = ButtonVariant.Ghost;
+        btnParserLab.ContainerColor = AppTheme.Colors.Surface;
+        btnParserLab.Font = AppTheme.Fonts.ButtonRegular;
+        btnParserLab.Click += BtnParserLab_Click;
+        pnlWorkspace.Controls.Add(btnParserLab);
+
+        btnPrint.Text = "🖨 IN TEM";
+        btnPrint.Left = 706;
+        btnPrint.Top = actionsTop - 2;
+        btnPrint.Width = 190;
+        btnPrint.Height = actionsHeight + 4;
+        btnPrint.Variant = ButtonVariant.Primary;
+        btnPrint.ContainerColor = AppTheme.Colors.Surface;
+        btnPrint.Font = new Font(AppTheme.Fonts.Button.FontFamily, 10.5f, FontStyle.Bold);
         btnPrint.Click += BtnPrint_Click;
         pnlWorkspace.Controls.Add(btnPrint);
     }
@@ -387,7 +512,9 @@ public class FormMain : Form
         btnBack.Visible = true;
 
         lblSubtitle.Text = $"Danh mục: {label.Name}";
-        lblCurrentCategory.Text = $"Danh mục: {label.Name} ({label.Code})";
+
+        string icon = string.IsNullOrWhiteSpace(label.IconText) ? "🏷" : label.IconText;
+        lblCurrentCategory.Text = $"{icon}  {label.Name}   ·   {label.Code}";
 
         if (string.IsNullOrWhiteSpace(txtExcelFile.Text) &&
             !string.IsNullOrWhiteSpace(ConfigService.Instance.Config.LastExcelFile) &&
@@ -399,61 +526,61 @@ public class FormMain : Form
         ApplyEmployeeCodeMode(label);
     }
 
-  private void ApplyEmployeeCodeMode(LabelDefinition label)
-{
-    Control? lblEmployee = pnlWorkspace.Controls["lblEmployee"];
-    Control? lblEmployeeHint = pnlWorkspace.Controls["lblEmployeeHint"];
-
-    bool isBarcode = label.HandlerType == "BARCODE";
-    bool isGlasses = label.HandlerType == "GLASSES";
-
-    bool showInput = label.AppendEmployeeCode || isBarcode || isGlasses;
-
-    if (lblEmployee != null)
+    private void ApplyEmployeeCodeMode(LabelDefinition label)
     {
-        lblEmployee.Visible = showInput;
+        Control? lblEmployee = pnlWorkspace.Controls["lblEmployee"];
+        Control? lblEmployeeHint = pnlWorkspace.Controls["lblEmployeeHint"];
 
-        if (isGlasses)
-            lblEmployee.Text = "Mã màu";
-        else
-            lblEmployee.Text = "Mã nhân viên";
-    }
+        bool isBarcode = label.HandlerType == "BARCODE";
+        bool isGlasses = label.HandlerType == "GLASSES";
 
-    if (lblEmployeeHint != null)
-    {
-        lblEmployeeHint.Visible = showInput;
+        bool showInput = label.AppendEmployeeCode || isBarcode || isGlasses;
 
-        if (isGlasses)
-            lblEmployeeHint.Text = "Ví dụ: -1, -2, -3";
-        else
-            lblEmployeeHint.Text = "Ví dụ: H020 hoặc H020-K026";
-    }
-
-    txtEmployeeCode.Visible = showInput;
-    txtEmployeeCode.Enabled = showInput;
-    txtEmployeeCode.BackColor = showInput ? Color.White : Color.Gainsboro;
-
-    if (isGlasses)
-    {
-        // Tem kính: ô này là mã màu, không load default employee
-        txtEmployeeCode.Text = "";
-        return;
-    }
-
-    if (showInput)
-    {
-        if (ConfigService.Instance.Config.RememberEmployee &&
-            !string.IsNullOrWhiteSpace(ConfigService.Instance.Config.DefaultEmployee) &&
-            string.IsNullOrWhiteSpace(txtEmployeeCode.Text))
+        if (lblEmployee != null)
         {
-            txtEmployeeCode.Text = ConfigService.Instance.Config.DefaultEmployee;
+            lblEmployee.Visible = showInput;
+
+            if (isGlasses)
+                lblEmployee.Text = "Mã màu";
+            else
+                lblEmployee.Text = "Mã nhân viên";
+        }
+
+        if (lblEmployeeHint != null)
+        {
+            lblEmployeeHint.Visible = showInput;
+
+            if (isGlasses)
+                lblEmployeeHint.Text = "Ví dụ: -1, -2, -3";
+            else
+                lblEmployeeHint.Text = "Ví dụ: H020 hoặc H020-K026";
+        }
+
+        txtEmployeeCode.Visible = showInput;
+        txtEmployeeCode.Enabled = showInput;
+        txtEmployeeCode.BackColor = showInput ? AppTheme.Colors.Surface : AppTheme.Colors.Disabled;
+
+        if (isGlasses)
+        {
+            // Tem kính: ô này là mã màu, không load default employee
+            txtEmployeeCode.Text = "";
+            return;
+        }
+
+        if (showInput)
+        {
+            if (ConfigService.Instance.Config.RememberEmployee &&
+                !string.IsNullOrWhiteSpace(ConfigService.Instance.Config.DefaultEmployee) &&
+                string.IsNullOrWhiteSpace(txtEmployeeCode.Text))
+            {
+                txtEmployeeCode.Text = ConfigService.Instance.Config.DefaultEmployee;
+            }
+        }
+        else
+        {
+            txtEmployeeCode.Text = "";
         }
     }
-    else
-    {
-        txtEmployeeCode.Text = "";
-    }
-}
     #endregion
 
     #region Events
@@ -531,10 +658,10 @@ public class FormMain : Form
     }
 
     private void BtnParserLab_Click(object? sender, EventArgs e)
-{
-    using FormParserLab form = new();
-    form.ShowDialog();
-}
+    {
+        using FormParserLab form = new();
+        form.ShowDialog();
+    }
 
     private void BtnPreview_Click(object? sender, EventArgs e)
     {
@@ -628,16 +755,6 @@ public class FormMain : Form
 
         if (!ConfigService.Instance.IsConfigured())
             throw new Exception("Cấu hình chưa đầy đủ.");
-      
-
     }
-    private void btnParserLab_Click(
-    object sender,
-    EventArgs e)
-{
-    FormParserLab form = new();
-
-    form.ShowDialog();
-}
     #endregion
 }

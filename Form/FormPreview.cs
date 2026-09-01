@@ -1,13 +1,14 @@
 using KiotVietLabelPrinter.Models;
 using KiotVietLabelPrinter.Services;
+using KiotVietLabelPrinter.UI;
 
 namespace KiotVietLabelPrinter.Forms;
 public class FormPreview : Form
 {
     private readonly DataGridView dgvPreview = new();
     private readonly Label lblSummary = new();
-    private readonly Button btnPrint = new();
-    private readonly Button btnClose = new();
+    private readonly RoundedButton btnPrint = new();
+    private readonly RoundedButton btnClose = new();
 
     private readonly LabelService _labelService = new();
     private readonly LabelCatalogService _catalogService = new();
@@ -31,6 +32,9 @@ public class FormPreview : Form
         StartPosition = FormStartPosition.CenterScreen;
         FormBorderStyle = FormBorderStyle.FixedDialog;
         MaximizeBox = false;
+        DoubleBuffered = true;
+
+        AppTheme.StyleForm(this);
 
         BuildUi();
         LoadPreview();
@@ -39,14 +43,15 @@ public class FormPreview : Form
     private void BuildUi()
     {
         lblSummary.Left = 20;
-        lblSummary.Top = 15;
-        lblSummary.Width = 1150;
-        lblSummary.Height = 25;
-        lblSummary.Font = new Font("Segoe UI", 10, FontStyle.Bold);
+        lblSummary.Top = 18;
+        lblSummary.Width = 1190;
+        lblSummary.Height = 26;
+        lblSummary.Font = AppTheme.Fonts.BodyBold;
+        lblSummary.ForeColor = AppTheme.Colors.TextPrimary;
         Controls.Add(lblSummary);
 
         dgvPreview.Left = 20;
-        dgvPreview.Top = 50;
+        dgvPreview.Top = 54;
         dgvPreview.Width = 1190;
         dgvPreview.Height = 540;
         dgvPreview.ReadOnly = true;
@@ -55,15 +60,16 @@ public class FormPreview : Form
         dgvPreview.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
         dgvPreview.MultiSelect = false;
         dgvPreview.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
-        dgvPreview.RowHeadersVisible = false;
+        AppTheme.StyleGrid(dgvPreview);
         Controls.Add(dgvPreview);
 
-        btnPrint.Text = "IN TEM";
+        btnPrint.Text = "🖨 IN TEM";
         btnPrint.Left = 860;
         btnPrint.Top = 610;
         btnPrint.Width = 160;
-        btnPrint.Height = 40;
-        btnPrint.Font = new Font("Segoe UI", 10, FontStyle.Bold);
+        btnPrint.Height = 42;
+        btnPrint.Variant = ButtonVariant.Primary;
+        btnPrint.Font = new Font(AppTheme.Fonts.Button.FontFamily, 10.5f, FontStyle.Bold);
         btnPrint.Click += BtnPrint_Click;
         Controls.Add(btnPrint);
 
@@ -71,7 +77,8 @@ public class FormPreview : Form
         btnClose.Left = 1040;
         btnClose.Top = 610;
         btnClose.Width = 120;
-        btnClose.Height = 40;
+        btnClose.Height = 42;
+        btnClose.Variant = ButtonVariant.Secondary;
         btnClose.Click += (_, _) => Close();
         Controls.Add(btnClose);
     }

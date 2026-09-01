@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.Drawing.Printing;
 using KiotVietLabelPrinter.Models;
 using KiotVietLabelPrinter.Services;
+using KiotVietLabelPrinter.UI;
 
 namespace KiotVietLabelPrinter.Forms;
 
@@ -12,10 +13,10 @@ public class FormConfig : Form
     private readonly CheckBox chkRememberEmployee = new();
     private readonly TextBox txtDefaultEmployee = new();
 
-    private readonly Button btnBrowseBarTender = new();
-    private readonly Button btnSave = new();
-    private readonly Button btnAddLabel = new();
-    private readonly Button btnDeleteLabel = new();
+    private readonly RoundedButton btnBrowseBarTender = new();
+    private readonly RoundedButton btnSave = new();
+    private readonly RoundedButton btnAddLabel = new();
+    private readonly RoundedButton btnDeleteLabel = new();
 
     private readonly DataGridView dgvLabels = new();
 
@@ -29,6 +30,9 @@ public class FormConfig : Form
         StartPosition = FormStartPosition.CenterScreen;
         FormBorderStyle = FormBorderStyle.FixedDialog;
         MaximizeBox = false;
+        DoubleBuffered = true;
+
+        AppTheme.StyleForm(this);
 
         BuildUi();
         LoadConfig();
@@ -44,43 +48,74 @@ public class FormConfig : Form
     #region UI - General config
     private void BuildGeneralConfigSection()
     {
-        GroupBox grpGeneral = new()
+        RoundedPanel grpGeneral = new()
         {
-            Text = "Cấu hình chung",
             Left = 20,
             Top = 20,
             Width = 1340,
-            Height = 190
+            Height = 204,
+            CornerRadius = 14,
+            FillColor = AppTheme.Colors.Surface,
+            BorderColor = AppTheme.Colors.Border
         };
         Controls.Add(grpGeneral);
+
+        Label lblSectionTitle = new()
+        {
+            Text = "Cấu hình chung",
+            Left = 24,
+            Top = 14,
+            Width = 400,
+            Font = AppTheme.Fonts.SectionTitle,
+            ForeColor = AppTheme.Colors.TextPrimary
+        };
+        grpGeneral.Controls.Add(lblSectionTitle);
+
+        Panel divider = new()
+        {
+            Left = 24,
+            Top = 46,
+            Width = 1292,
+            Height = 1,
+            BackColor = AppTheme.Colors.Border
+        };
+        grpGeneral.Controls.Add(divider);
 
         Label lblBarTender = new()
         {
             Text = "BarTender.exe",
-            Left = 20,
-            Top = 35,
-            Width = 120
+            Left = 24,
+            Top = 68,
+            Width = 120,
+            Font = AppTheme.Fonts.Body,
+            ForeColor = AppTheme.Colors.TextPrimary
         };
         grpGeneral.Controls.Add(lblBarTender);
 
-        txtBarTender.SetBounds(150, 30, 1000, 28);
+        txtBarTender.SetBounds(160, 64, 1092, 30);
+        txtBarTender.Font = AppTheme.Fonts.Body;
         grpGeneral.Controls.Add(txtBarTender);
 
         btnBrowseBarTender.Text = "...";
-        btnBrowseBarTender.SetBounds(1170, 30, 50, 28);
+        btnBrowseBarTender.SetBounds(1266, 64, 50, 30);
+        btnBrowseBarTender.Variant = ButtonVariant.Outline;
+        btnBrowseBarTender.ContainerColor = AppTheme.Colors.Surface;
         btnBrowseBarTender.Click += (_, _) => BrowseFile(txtBarTender, "Executable|*.exe");
         grpGeneral.Controls.Add(btnBrowseBarTender);
 
         Label lblPrinter = new()
         {
             Text = "Máy in tem",
-            Left = 20,
-            Top = 75,
-            Width = 120
+            Left = 24,
+            Top = 112,
+            Width = 120,
+            Font = AppTheme.Fonts.Body,
+            ForeColor = AppTheme.Colors.TextPrimary
         };
         grpGeneral.Controls.Add(lblPrinter);
 
-        cboPrinter.SetBounds(150, 70, 500, 28);
+        cboPrinter.SetBounds(160, 108, 500, 30);
+        cboPrinter.Font = AppTheme.Fonts.Body;
         cboPrinter.DropDownStyle = ComboBoxStyle.DropDownList;
         LoadPrinterList();
         grpGeneral.Controls.Add(cboPrinter);
@@ -88,38 +123,44 @@ public class FormConfig : Form
         Label lblPrinterHint = new()
         {
             Text = "Cố định máy in để tránh bị đổi sang máy in khác khi in.",
-            Left = 660,
-            Top = 75,
-            Width = 400,
-            ForeColor = Color.DimGray
+            Left = 676,
+            Top = 112,
+            Width = 420,
+            Font = AppTheme.Fonts.Hint,
+            ForeColor = AppTheme.Colors.TextMuted
         };
         grpGeneral.Controls.Add(lblPrinterHint);
 
         chkRememberEmployee.Text = "Ghi nhớ mã nhân viên mặc định";
-        chkRememberEmployee.Left = 20;
-        chkRememberEmployee.Top = 120;
-        chkRememberEmployee.Width = 260;
+        chkRememberEmployee.Left = 24;
+        chkRememberEmployee.Top = 158;
+        chkRememberEmployee.Width = 280;
+        chkRememberEmployee.Font = AppTheme.Fonts.Body;
         grpGeneral.Controls.Add(chkRememberEmployee);
 
         Label lblDefaultEmployee = new()
         {
             Text = "Mã NV mặc định",
-            Left = 320,
-            Top = 122,
-            Width = 120
+            Left = 332,
+            Top = 160,
+            Width = 130,
+            Font = AppTheme.Fonts.Body,
+            ForeColor = AppTheme.Colors.TextPrimary
         };
         grpGeneral.Controls.Add(lblDefaultEmployee);
 
-        txtDefaultEmployee.SetBounds(450, 118, 220, 28);
+        txtDefaultEmployee.SetBounds(468, 156, 220, 30);
+        txtDefaultEmployee.Font = AppTheme.Fonts.Body;
         grpGeneral.Controls.Add(txtDefaultEmployee);
 
         Label lblHint = new()
         {
             Text = "Ví dụ: H020 hoặc H020-K026",
-            Left = 690,
-            Top = 122,
-            Width = 250,
-            ForeColor = Color.DimGray
+            Left = 700,
+            Top = 160,
+            Width = 260,
+            Font = AppTheme.Fonts.Hint,
+            ForeColor = AppTheme.Colors.TextMuted
         };
         grpGeneral.Controls.Add(lblHint);
     }
@@ -138,50 +179,78 @@ public class FormConfig : Form
     #region UI - Label grid
     private void BuildLabelGridSection()
     {
-        GroupBox grpLabels = new()
+        RoundedPanel grpLabels = new()
         {
-            Text = "Danh sách loại tem",
             Left = 20,
-            Top = 230,
+            Top = 240,
             Width = 1340,
-            Height = 470
+            Height = 460,
+            CornerRadius = 14,
+            FillColor = AppTheme.Colors.Surface,
+            BorderColor = AppTheme.Colors.Border
         };
         Controls.Add(grpLabels);
 
-        btnAddLabel.Text = "Thêm tem";
-        btnAddLabel.SetBounds(20, 30, 110, 32);
+        Label lblSectionTitle = new()
+        {
+            Text = "Danh sách loại tem",
+            Left = 24,
+            Top = 14,
+            Width = 400,
+            Font = AppTheme.Fonts.SectionTitle,
+            ForeColor = AppTheme.Colors.TextPrimary
+        };
+        grpLabels.Controls.Add(lblSectionTitle);
+
+        Panel divider = new()
+        {
+            Left = 24,
+            Top = 46,
+            Width = 1292,
+            Height = 1,
+            BackColor = AppTheme.Colors.Border
+        };
+        grpLabels.Controls.Add(divider);
+
+        btnAddLabel.Text = "+ Thêm tem";
+        btnAddLabel.SetBounds(24, 60, 120, 34);
+        btnAddLabel.Variant = ButtonVariant.Outline;
+        btnAddLabel.ContainerColor = AppTheme.Colors.Surface;
         btnAddLabel.Click += BtnAddLabel_Click;
         grpLabels.Controls.Add(btnAddLabel);
 
-        btnDeleteLabel.Text = "Xóa tem";
-        btnDeleteLabel.SetBounds(145, 30, 110, 32);
+        btnDeleteLabel.Text = "🗑 Xóa tem";
+        btnDeleteLabel.SetBounds(152, 60, 120, 34);
+        btnDeleteLabel.Variant = ButtonVariant.Danger;
+        btnDeleteLabel.ContainerColor = AppTheme.Colors.Surface;
         btnDeleteLabel.Click += BtnDeleteLabel_Click;
         grpLabels.Controls.Add(btnDeleteLabel);
 
         Label lblGridHint = new()
         {
             Text = "Mỗi dòng là 1 loại tem. Có thể sửa trực tiếp trong bảng rồi bấm Lưu cấu hình.",
-            Left = 280,
-            Top = 37,
+            Left = 292,
+            Top = 68,
             Width = 700,
-            ForeColor = Color.DimGray
+            Font = AppTheme.Fonts.Hint,
+            ForeColor = AppTheme.Colors.TextMuted
         };
         grpLabels.Controls.Add(lblGridHint);
 
-        dgvLabels.Left = 20;
-        dgvLabels.Top = 80;
-        dgvLabels.Width = 1290;
-        dgvLabels.Height = 360;
+        dgvLabels.Left = 24;
+        dgvLabels.Top = 104;
+        dgvLabels.Width = 1292;
+        dgvLabels.Height = 332;
         dgvLabels.AllowUserToAddRows = false;
         dgvLabels.AllowUserToDeleteRows = false;
         dgvLabels.AutoGenerateColumns = false;
-        dgvLabels.RowHeadersVisible = false;
         dgvLabels.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
         dgvLabels.MultiSelect = false;
         dgvLabels.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.None;
         dgvLabels.EditMode = DataGridViewEditMode.EditOnEnter;
 
         BuildLabelColumns();
+        AppTheme.StyleGrid(dgvLabels);
         grpLabels.Controls.Add(dgvLabels);
     }
 
@@ -278,9 +347,10 @@ public class FormConfig : Form
     #region UI - Bottom buttons
     private void BuildBottomButtons()
     {
-        btnSave.Text = "Lưu cấu hình";
-        btnSave.SetBounds(590, 715, 180, 42);
-        btnSave.Font = new Font("Segoe UI", 10, FontStyle.Bold);
+        btnSave.Text = "💾 Lưu cấu hình";
+        btnSave.SetBounds(600, 715, 180, 44);
+        btnSave.Variant = ButtonVariant.Primary;
+        btnSave.Font = new Font(AppTheme.Fonts.Button.FontFamily, 10.5f, FontStyle.Bold);
         btnSave.Click += BtnSave_Click;
         Controls.Add(btnSave);
     }

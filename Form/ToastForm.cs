@@ -1,4 +1,5 @@
 using System.Drawing.Drawing2D;
+using KiotVietLabelPrinter.UI;
 
 namespace KiotVietLabelPrinter.Forms;
 
@@ -14,23 +15,24 @@ public class ToastForm : Form
         ShowInTaskbar = false;
         TopMost = true;
         StartPosition = FormStartPosition.Manual;
-        BackColor = Color.White;
+        BackColor = AppTheme.Colors.Border;
         Padding = new Padding(1);
+        DoubleBuffered = true;
 
         Panel border = new()
         {
             Dock = DockStyle.Fill,
             BackColor = accentColor,
-            Padding = new Padding(3, 0, 0, 0)
+            Padding = new Padding(4, 0, 0, 0)
         };
 
         Label lbl = new()
         {
             Dock = DockStyle.Fill,
             Text = message,
-            Font = new Font("Segoe UI", 11, FontStyle.Regular),
-            ForeColor = Color.FromArgb(40, 40, 40),
-            BackColor = Color.White,
+            Font = AppTheme.Fonts.BodyBold,
+            ForeColor = AppTheme.Colors.TextPrimary,
+            BackColor = AppTheme.Colors.Surface,
             TextAlign = ContentAlignment.MiddleLeft,
             Padding = new Padding(14, 10, 18, 10),
             AutoSize = false,
@@ -89,12 +91,12 @@ public class ToastForm : Form
     // Xanh lá — thao tác thành công, tự tắt sau ~1.5s
     public static void ShowSuccess(string message, int durationMs = 1500)
     {
-        ShowToast(message, Color.FromArgb(46, 160, 67), durationMs);
+        ShowToast(message, AppTheme.Colors.Success, durationMs);
     }
 
     // Xanh dương — thông báo thông tin chung, tự tắt sau ~1.5s
     public static void ShowInfo(string message, int durationMs = 1500)
     {
-        ShowToast(message, Color.FromArgb(66, 133, 244), durationMs);
+        ShowToast(message, AppTheme.Colors.Primary, durationMs);
     }
 }

@@ -1,5 +1,6 @@
 using KiotVietLabelPrinter.Models;
 using KiotVietLabelPrinter.Services;
+using KiotVietLabelPrinter.UI;
 
 namespace KiotVietLabelPrinter.Forms;
 
@@ -8,8 +9,8 @@ public class FormHistory : Form
     private readonly HistoryService _historyService = new();
 
     private readonly DataGridView dgvHistory = new();
-    private readonly Button btnRefresh = new();
-    private readonly Button btnClose = new();
+    private readonly RoundedButton btnRefresh = new();
+    private readonly RoundedButton btnClose = new();
 
     public FormHistory()
     {
@@ -17,7 +18,9 @@ public class FormHistory : Form
         Width = 980;
         Height = 520;
         StartPosition = FormStartPosition.CenterParent;
-        BackColor = Color.White;
+        DoubleBuffered = true;
+
+        AppTheme.StyleForm(this);
 
         BuildUi();
         LoadHistory();
@@ -27,43 +30,44 @@ public class FormHistory : Form
     {
         Label lblTitle = new()
         {
-            Text = "LỊCH SỬ IN TEM",
+            Text = "Lịch sử in tem",
             Left = 20,
-            Top = 15,
-            Width = 300,
-            Font = new Font("Segoe UI", 14, FontStyle.Bold)
+            Top = 18,
+            Width = 400,
+            Font = AppTheme.Fonts.Title,
+            ForeColor = AppTheme.Colors.TextPrimary
         };
         Controls.Add(lblTitle);
 
-        btnRefresh.Text = "Làm mới";
+        btnRefresh.Text = "↻ Làm mới";
         btnRefresh.Left = 720;
-        btnRefresh.Top = 12;
+        btnRefresh.Top = 20;
         btnRefresh.Width = 100;
-        btnRefresh.Height = 34;
+        btnRefresh.Height = 36;
+        btnRefresh.Variant = ButtonVariant.Outline;
         btnRefresh.Click += (_, _) => LoadHistory();
         Controls.Add(btnRefresh);
 
         btnClose.Text = "Đóng";
         btnClose.Left = 835;
-        btnClose.Top = 12;
+        btnClose.Top = 20;
         btnClose.Width = 100;
-        btnClose.Height = 34;
+        btnClose.Height = 36;
+        btnClose.Variant = ButtonVariant.Secondary;
         btnClose.Click += (_, _) => Close();
         Controls.Add(btnClose);
 
         dgvHistory.Left = 20;
-        dgvHistory.Top = 60;
+        dgvHistory.Top = 68;
         dgvHistory.Width = 915;
-        dgvHistory.Height = 390;
+        dgvHistory.Height = 400;
         dgvHistory.ReadOnly = true;
         dgvHistory.AllowUserToAddRows = false;
         dgvHistory.AllowUserToDeleteRows = false;
         dgvHistory.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
         dgvHistory.MultiSelect = false;
         dgvHistory.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
-        dgvHistory.RowHeadersVisible = false;
-        dgvHistory.BackgroundColor = Color.White;
-        dgvHistory.BorderStyle = BorderStyle.FixedSingle;
+        AppTheme.StyleGrid(dgvHistory);
         Controls.Add(dgvHistory);
     }
 

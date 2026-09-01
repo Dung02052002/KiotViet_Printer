@@ -1,4 +1,5 @@
 using System.Windows.Forms;
+using KiotVietLabelPrinter.UI;
 
 namespace KiotVietLabelPrinter.Forms;
 
@@ -6,11 +7,11 @@ partial class FormParserLab
 {
     private TextBox txtInput = null!;
 
-    private Button btnParse = null!;
+    private RoundedButton btnParse = null!;
 
-    private Button btnRunAll = null!;
+    private RoundedButton btnRunAll = null!;
 
-    private Button btnClear = null!;
+    private RoundedButton btnClear = null!;
 
     private Label lblBaseCode = null!;
 
@@ -51,19 +52,25 @@ partial class FormParserLab
         StartPosition =
             FormStartPosition.CenterParent;
 
+        DoubleBuffered = true;
+
+        AppTheme.StyleForm(this);
+
         //------------------------------------------
         // Input
         //------------------------------------------
 
         txtInput.Multiline = true;
 
-        txtInput.Left = 10;
+        txtInput.Left = 20;
 
-        txtInput.Top = 10;
+        txtInput.Top = 20;
 
-        txtInput.Width = 1060;
+        txtInput.Width = 1040;
 
         txtInput.Height = 70;
+
+        txtInput.Font = AppTheme.Fonts.Body;
 
         //------------------------------------------
         // Parse
@@ -71,11 +78,15 @@ partial class FormParserLab
 
         btnParse.Text = "Parse";
 
-        btnParse.Left = 10;
+        btnParse.Left = 20;
 
-        btnParse.Top = 90;
+        btnParse.Top = 100;
 
         btnParse.Width = 120;
+
+        btnParse.Height = 34;
+
+        btnParse.Variant = ButtonVariant.Primary;
 
         //------------------------------------------
         // Run All
@@ -83,11 +94,15 @@ partial class FormParserLab
 
         btnRunAll.Text = "Run All";
 
-        btnRunAll.Left = 140;
+        btnRunAll.Left = 150;
 
-        btnRunAll.Top = 90;
+        btnRunAll.Top = 100;
 
         btnRunAll.Width = 120;
+
+        btnRunAll.Height = 34;
+
+        btnRunAll.Variant = ButtonVariant.Outline;
 
         //------------------------------------------
         // Clear
@@ -95,49 +110,65 @@ partial class FormParserLab
 
         btnClear.Text = "Clear";
 
-        btnClear.Left = 270;
+        btnClear.Left = 280;
 
-        btnClear.Top = 90;
+        btnClear.Top = 100;
 
         btnClear.Width = 120;
+
+        btnClear.Height = 34;
+
+        btnClear.Variant = ButtonVariant.Ghost;
 
         //------------------------------------------
         // Result
         //------------------------------------------
 
-        lblBaseCode.Left = 10;
+        lblBaseCode.Left = 20;
 
-        lblBaseCode.Top = 130;
+        lblBaseCode.Top = 148;
 
         lblBaseCode.Width = 600;
 
         lblBaseCode.Text = "BaseCode :";
 
-        lblRule.Left = 10;
+        lblBaseCode.Font = AppTheme.Fonts.BodyBold;
 
-        lblRule.Top = 155;
+        lblBaseCode.ForeColor = AppTheme.Colors.TextPrimary;
+
+        lblRule.Left = 20;
+
+        lblRule.Top = 172;
 
         lblRule.Width = 600;
 
         lblRule.Text = "Rule :";
 
-        lblTime.Left = 10;
+        lblRule.Font = AppTheme.Fonts.Body;
 
-        lblTime.Top = 180;
+        lblRule.ForeColor = AppTheme.Colors.TextSecondary;
+
+        lblTime.Left = 20;
+
+        lblTime.Top = 196;
 
         lblTime.Width = 600;
 
         lblTime.Text = "Time :";
 
+        lblTime.Font = AppTheme.Fonts.Body;
+
+        lblTime.ForeColor = AppTheme.Colors.TextSecondary;
+
         //------------------------------------------
         // Grid
         //------------------------------------------
 
-        dgvToken.Left = 10;
+        dgvToken.Left = 20;
 
-        dgvToken.Top = 220;
+        dgvToken.Top = 230;
 
-        dgvToken.Width = 700;
+        dgvToken.Width = 690;
 
         dgvToken.Height = 470;
 
@@ -145,10 +176,10 @@ partial class FormParserLab
 
         dgvToken.AllowUserToAddRows = false;
 
-        dgvToken.RowHeadersVisible = false;
-
         dgvToken.AutoSizeColumnsMode =
             DataGridViewAutoSizeColumnsMode.Fill;
+
+        AppTheme.StyleGrid(dgvToken);
 
         //------------------------------------------
         // Log
@@ -156,23 +187,23 @@ partial class FormParserLab
 
         dgvTest.Left = 720;
 
-dgvTest.Top = 220;
+        dgvTest.Top = 230;
 
-dgvTest.Width = 350;
+        dgvTest.Width = 340;
 
-dgvTest.Height = 470;
+        dgvTest.Height = 470;
 
-dgvTest.ReadOnly = true;
+        dgvTest.ReadOnly = true;
 
-dgvTest.AllowUserToAddRows = false;
+        dgvTest.AllowUserToAddRows = false;
 
-dgvTest.RowHeadersVisible = false;
+        dgvTest.SelectionMode =
+            DataGridViewSelectionMode.FullRowSelect;
 
-dgvTest.SelectionMode =
-    DataGridViewSelectionMode.FullRowSelect;
+        dgvTest.AutoSizeColumnsMode =
+            DataGridViewAutoSizeColumnsMode.Fill;
 
-dgvTest.AutoSizeColumnsMode =
-    DataGridViewAutoSizeColumnsMode.Fill;
+        AppTheme.StyleGrid(dgvTest);
 
         //------------------------------------------
         // Add
