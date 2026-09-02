@@ -20,7 +20,7 @@ public class FormMain : Form
 
     // Home / Category
     private readonly Panel pnlCategory = new();
-    private readonly FlowLayoutPanel flpCategories = new();
+    private readonly SmoothFlowLayoutPanel flpCategories = new();
 
     // Workspace
     private readonly RoundedPanel pnlWorkspace = new();
@@ -178,28 +178,35 @@ public class FormMain : Form
 
     private void ReloadCategories()
     {
-        flpCategories.Controls.Clear();
+        flpCategories.SuspendLayout();
 
-        List<LabelDefinition> labels = _catalogService.GetAllEnabled();
-
-        if (labels.Count == 0)
+        try
         {
-            Label empty = new()
+            flpCategories.Controls.Clear();
+
+            List<LabelDefinition> labels = _catalogService.GetAllEnabled();
+
+            if (labels.Count == 0)
             {
-                Text = "Chưa có loại tem nào được bật trong cấu hình.",
-                AutoSize = true,
-                ForeColor = AppTheme.Colors.Danger,
-                Font = AppTheme.Fonts.BodyBold,
-                Margin = new Padding(20)
-            };
+                Label empty = new()
+                {
+                    Text = "Chưa có loại tem nào được bật trong cấu hình.",
+                    AutoSize = true,
+                    ForeColor = AppTheme.Colors.Danger,
+                    Font = AppTheme.Fonts.BodyBold,
+                    Margin = new Padding(20)
+                };
 
-            flpCategories.Controls.Add(empty);
-            return;
+                flpCategories.Controls.Add(empty);
+                return;
+            }
+
+            foreach (LabelDefinition label in labels)
+                flpCategories.Controls.Add(CreateCategoryCard(label));
         }
-
-        foreach (LabelDefinition label in labels)
+        finally
         {
-            flpCategories.Controls.Add(CreateCategoryCard(label));
+            flpCategories.ResumeLayout(true);
         }
     }
 
@@ -504,11 +511,10 @@ public class FormMain : Form
         pnlWorkspace.Visible = false;
         btnBack.Visible = false;
 
-        UiMotion.SlideIn(pnlCategory, 20, -14);
-
         lblSubtitle.Text = "Chọn danh mục tem để bắt đầu";
 
         ReloadCategories();
+        UiMotion.SlideIn(pnlCategory, 20, -14);
     }
 
     private void OpenLabelWorkspace(LabelDefinition label)

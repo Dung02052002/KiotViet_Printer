@@ -27,7 +27,7 @@ public class FormConfig : Form
         Text = "Cấu hình phần mềm";
         Width = 1280;
         Height = 800;
-        StartPosition = FormStartPosition.CenterScreen;
+        StartPosition = FormStartPosition.CenterParent;
         FormBorderStyle = FormBorderStyle.Sizable;
         MinimumSize = new Size(1050, 680);
         MaximizeBox = true;
@@ -145,6 +145,8 @@ public class FormConfig : Form
         chkRememberEmployee.Width = 280;
         chkRememberEmployee.Font = AppTheme.Fonts.Body;
         chkRememberEmployee.ContainerColor = AppTheme.Colors.Surface;
+        chkRememberEmployee.CheckedChanged += (_, _) =>
+            txtDefaultEmployee.Enabled = chkRememberEmployee.Checked;
         grpGeneral.Controls.Add(chkRememberEmployee);
 
         Label lblDefaultEmployee = new()
@@ -226,14 +228,14 @@ public class FormConfig : Form
         grpLabels.Controls.Add(divider);
 
         btnAddLabel.Text = "+ Thêm tem";
-        btnAddLabel.SetBounds(24, 60, 120, 34);
+        btnAddLabel.SetBounds(24, 60, 120, 38);
         btnAddLabel.Variant = ButtonVariant.Outline;
         btnAddLabel.ContainerColor = AppTheme.Colors.Surface;
         btnAddLabel.Click += BtnAddLabel_Click;
         grpLabels.Controls.Add(btnAddLabel);
 
         btnDeleteLabel.Text = "🗑 Xóa tem";
-        btnDeleteLabel.SetBounds(152, 60, 120, 34);
+        btnDeleteLabel.SetBounds(152, 60, 120, 38);
         btnDeleteLabel.Variant = ButtonVariant.Danger;
         btnDeleteLabel.ContainerColor = AppTheme.Colors.Surface;
         btnDeleteLabel.Click += BtnDeleteLabel_Click;
@@ -252,9 +254,9 @@ public class FormConfig : Form
         grpLabels.Controls.Add(lblGridHint);
 
         dgvLabels.Left = 24;
-        dgvLabels.Top = 104;
+        dgvLabels.Top = 108;
         dgvLabels.Width = grpLabels.Width - 48;
-        dgvLabels.Height = grpLabels.Height - 128;
+        dgvLabels.Height = grpLabels.Height - 132;
         dgvLabels.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
         dgvLabels.AllowUserToAddRows = false;
         dgvLabels.AllowUserToDeleteRows = false;
@@ -263,6 +265,11 @@ public class FormConfig : Form
         dgvLabels.MultiSelect = false;
         dgvLabels.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.None;
         dgvLabels.EditMode = DataGridViewEditMode.EditOnEnter;
+        dgvLabels.DataBindingComplete += (_, _) =>
+        {
+            dgvLabels.ClearSelection();
+            dgvLabels.CurrentCell = null;
+        };
 
         BuildLabelColumns();
         AppTheme.StyleGrid(dgvLabels);
@@ -365,6 +372,7 @@ public class FormConfig : Form
         btnSave.Text = "💾 Lưu cấu hình";
         btnSave.SetBounds(ClientSize.Width - 200, ClientSize.Height - 62, 180, 44);
         btnSave.Variant = ButtonVariant.Primary;
+        btnSave.ContainerColor = AppTheme.Colors.Background;
         btnSave.Font = new Font(AppTheme.Fonts.Button.FontFamily, 10.5f, FontStyle.Bold);
         btnSave.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
         btnSave.Click += BtnSave_Click;
@@ -380,6 +388,7 @@ public class FormConfig : Form
         txtBarTender.Text = config.BarTenderExe;
         chkRememberEmployee.Checked = config.RememberEmployee;
         txtDefaultEmployee.Text = config.DefaultEmployee;
+        txtDefaultEmployee.Enabled = chkRememberEmployee.Checked;
 
         if (!string.IsNullOrWhiteSpace(config.PrinterName))
         {

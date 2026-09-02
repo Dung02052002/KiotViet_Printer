@@ -8,6 +8,9 @@ public class FormHistory : Form
 {
     private readonly HistoryService _historyService = new();
 
+    private readonly Label lblTitle = new();
+    private readonly Label lblSummary = new();
+    private readonly RoundedPanel pnlGridCard = new();
     private readonly SmoothDataGridView dgvHistory = new();
     private readonly RoundedButton btnRefresh = new();
     private readonly RoundedButton btnClose = new();
@@ -15,9 +18,11 @@ public class FormHistory : Form
     public FormHistory()
     {
         Text = "Lịch sử in tem";
-        Width = 980;
-        Height = 520;
+        Width = 1040;
+        Height = 620;
         StartPosition = FormStartPosition.CenterParent;
+        FormBorderStyle = FormBorderStyle.Sizable;
+        MinimumSize = new Size(820, 480);
         DoubleBuffered = true;
 
         AppTheme.StyleForm(this);
@@ -28,39 +33,48 @@ public class FormHistory : Form
 
     private void BuildUi()
     {
-        Label lblTitle = new()
-        {
-            Text = "Lịch sử in tem",
-            Left = 20,
-            Top = 18,
-            Width = 400,
-            Font = AppTheme.Fonts.Title,
-            ForeColor = AppTheme.Colors.TextPrimary
-        };
+        lblTitle.Text = "Lịch sử in tem";
+        lblTitle.SetBounds(24, 18, 440, 32);
+        lblTitle.Font = AppTheme.Fonts.Title;
+        lblTitle.ForeColor = AppTheme.Colors.TextPrimary;
         Controls.Add(lblTitle);
 
+        lblSummary.Text = "Đang tải lịch sử...";
+        lblSummary.SetBounds(26, 52, 600, 22);
+        lblSummary.Font = AppTheme.Fonts.Subtitle;
+        lblSummary.ForeColor = AppTheme.Colors.TextSecondary;
+        Controls.Add(lblSummary);
+
         btnRefresh.Text = "↻ Làm mới";
-        btnRefresh.Left = 720;
-        btnRefresh.Top = 20;
-        btnRefresh.Width = 100;
-        btnRefresh.Height = 36;
+        btnRefresh.SetBounds(ClientSize.Width - 244, 24, 104, 38);
+        btnRefresh.Anchor = AnchorStyles.Top | AnchorStyles.Right;
         btnRefresh.Variant = ButtonVariant.Outline;
+        btnRefresh.ContainerColor = AppTheme.Colors.Background;
         btnRefresh.Click += (_, _) => LoadHistory();
         Controls.Add(btnRefresh);
 
         btnClose.Text = "Đóng";
-        btnClose.Left = 835;
-        btnClose.Top = 20;
-        btnClose.Width = 100;
-        btnClose.Height = 36;
+        btnClose.SetBounds(ClientSize.Width - 128, 24, 104, 38);
+        btnClose.Anchor = AnchorStyles.Top | AnchorStyles.Right;
         btnClose.Variant = ButtonVariant.Secondary;
+        btnClose.ContainerColor = AppTheme.Colors.Background;
+        btnClose.DialogResult = DialogResult.Cancel;
         btnClose.Click += (_, _) => Close();
         Controls.Add(btnClose);
 
-        dgvHistory.Left = 20;
-        dgvHistory.Top = 68;
-        dgvHistory.Width = 915;
-        dgvHistory.Height = 400;
+        CancelButton = btnClose;
+
+        pnlGridCard.SetBounds(20, 90, ClientSize.Width - 40, ClientSize.Height - 110);
+        pnlGridCard.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+        pnlGridCard.CornerRadius = 16;
+        pnlGridCard.FillColor = AppTheme.Colors.SurfaceElevated;
+        pnlGridCard.BorderColor = AppTheme.Colors.Border;
+        pnlGridCard.BorderThickness = 1;
+        pnlGridCard.ContainerColor = AppTheme.Colors.Background;
+        Controls.Add(pnlGridCard);
+
+        dgvHistory.SetBounds(1, 1, pnlGridCard.Width - 2, pnlGridCard.Height - 2);
+        dgvHistory.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
         dgvHistory.ReadOnly = true;
         dgvHistory.AllowUserToAddRows = false;
         dgvHistory.AllowUserToDeleteRows = false;
@@ -68,7 +82,7 @@ public class FormHistory : Form
         dgvHistory.MultiSelect = false;
         dgvHistory.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
         AppTheme.StyleGrid(dgvHistory);
-        Controls.Add(dgvHistory);
+        pnlGridCard.Controls.Add(dgvHistory);
     }
 
     private void LoadHistory()
@@ -95,6 +109,7 @@ public class FormHistory : Form
 
             dgvHistory.DataSource = null;
             dgvHistory.DataSource = rows;
+            lblSummary.Text = $"{rows.Count:N0} lượt in đã được lưu · mới nhất hiển thị trước";
 
             var cThoiGian = dgvHistory.Columns["ThoiGian"];
             if (cThoiGian != null)
@@ -131,6 +146,16 @@ public class FormHistory : Form
             var cNguoiDung = dgvHistory.Columns["NguoiDung"];
             if (cNguoiDung != null)
                 cNguoiDung.HeaderText = "Người dùng";
+
+            SetColumnLayout(cThoiGian, 125);
+            SetColumnLayout(cLoaiTem, 100);
+            SetColumnLayout(cMaTem, 78);
+            SetColumnLayout(cMaNhanVien, 115);
+            SetColumnLayout(cSoSanPham, 105);
+            SetColumnLayout(cTongSoTem, 100);
+            SetColumnLayout(cFileExcel, 160);
+            SetColumnLayout(cMayTinh, 90);
+            SetColumnLayout(cNguoiDung, 90);
         }
         catch (Exception ex)
         {
@@ -140,5 +165,14 @@ public class FormHistory : Form
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Error);
         }
+    }
+
+    private static void SetColumnLayout(DataGridViewColumn? column, int width)
+    {
+        if (column == null)
+            return;
+
+        column.MinimumWidth = width;
+        column.FillWeight = width;
     }
 }

@@ -54,6 +54,10 @@ public class RoundedPanel : Panel
     private Color _targetFill;
     private Color _targetBorder;
 
+    internal Color DisplayFillColor => _visualStateInitialized
+        ? _currentFill
+        : ResolveColors().fill;
+
     public RoundedPanel()
     {
         SetStyle(

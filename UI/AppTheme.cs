@@ -265,51 +265,18 @@ public static class AppTheme
         g.DrawPath(pen, path);
     }
 
-    // Vẽ đúng phần nền mà control cha đang hiển thị ở vị trí control này chiếm chỗ.
-    //
-    // Các control tự vẽ chỉ tô phần bên trong đường bo tròn, nên 4 góc nằm ngoài
-    // đường bo vẫn phải hiện thứ ở phía sau. Trước đây chỗ đó được tô bằng một màu
-    // phẳng đoán trước (ContainerColor); chỉ cần đoán lệch là thấy ngay một ô vuông
-    // khác màu bao quanh khối bo tròn. Ở đây ta bảo chính control cha vẽ lại lát
-    // cắt đó nên màu luôn khớp tuyệt đối — kể cả khi cha cũng là control tự vẽ
-    // hoặc đang trong lúc đổi màu hover.
+    // Tô phần nằm ngoài đường bo bằng đúng màu bề mặt hiện tại của control cha.
+    // Không gọi lại toàn bộ OnPaint của cha: cách đó có thể sao chép chữ/control con
+    // vào background khi nhiều lớp RoundedPanel lồng nhau, tạo vệt chữ và góc đen.
     public static void PaintContainerBackground(Control control, PaintEventArgs e, Color fallback)
     {
-        if (control.Parent is not { } parent)
+        Color background = control.Parent switch
         {
-            e.Graphics.Clear(fallback);
-            return;
-        }
+            RoundedPanel roundedParent => roundedParent.DisplayFillColor,
+            { BackColor.A: > 0 } parent => parent.BackColor,
+            _ => fallback
+        };
 
-        GraphicsState state = e.Graphics.Save();
-
-        try
-        {
-            e.Graphics.TranslateTransform(-control.Left, -control.Top);
-
-            Rectangle slice = new(control.Left, control.Top, control.Width, control.Height);
-            using PaintEventArgs args = new(e.Graphics, slice);
-
-            PaintProxy.Shared.PaintInto(parent, args);
-        }
-        finally
-        {
-            e.Graphics.Restore(state);
-        }
-    }
-
-    // InvokePaintBackground/InvokePaint là protected trên Control nên chỉ gọi được
-    // từ bên trong một lớp con của Control. Lớp rỗng này tồn tại chỉ để "mượn"
-    // quyền gọi đó cho PaintContainerBackground, thay vì phải chép lại đoạn
-    // compose nền ở từng control tự vẽ.
-    private sealed class PaintProxy : Control
-    {
-        public static readonly PaintProxy Shared = new();
-
-        public void PaintInto(Control source, PaintEventArgs e)
-        {
-            InvokePaintBackground(source, e);
-            InvokePaint(source, e);
-        }
+        e.Graphics.Clear(background);
     }
 }

@@ -6,7 +6,10 @@ namespace KiotVietLabelPrinter.Forms;
 public class FormPreview : Form
 {
     private readonly SmoothDataGridView dgvPreview = new();
+    private readonly RoundedPanel pnlGridCard = new();
+    private readonly Label lblTitle = new();
     private readonly Label lblSummary = new();
+    private readonly Label lblFooterHint = new();
     private readonly RoundedButton btnPrint = new();
     private readonly RoundedButton btnClose = new();
 
@@ -28,32 +31,44 @@ public class FormPreview : Form
 
         Text = "Xem trước dữ liệu in tem";
         Width = 1250;
-        Height = 700;
-        StartPosition = FormStartPosition.CenterScreen;
-        FormBorderStyle = FormBorderStyle.FixedDialog;
-        MaximizeBox = false;
+        Height = 720;
+        StartPosition = FormStartPosition.CenterParent;
+        FormBorderStyle = FormBorderStyle.Sizable;
+        MinimumSize = new Size(900, 560);
         DoubleBuffered = true;
 
         AppTheme.StyleForm(this);
 
         BuildUi();
-        LoadPreview();
+        Shown += async (_, _) => await LoadPreviewAsync();
     }
 
     private void BuildUi()
     {
-        lblSummary.Left = 20;
-        lblSummary.Top = 18;
-        lblSummary.Width = 1190;
-        lblSummary.Height = 26;
-        lblSummary.Font = AppTheme.Fonts.BodyBold;
-        lblSummary.ForeColor = AppTheme.Colors.TextPrimary;
+        lblTitle.Text = "Xem trước dữ liệu";
+        lblTitle.SetBounds(24, 16, 520, 32);
+        lblTitle.Font = AppTheme.Fonts.Title;
+        lblTitle.ForeColor = AppTheme.Colors.TextPrimary;
+        Controls.Add(lblTitle);
+
+        lblSummary.Text = "Đang chuẩn bị dữ liệu xem trước...";
+        lblSummary.SetBounds(26, 52, ClientSize.Width - 52, 22);
+        lblSummary.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+        lblSummary.Font = AppTheme.Fonts.Subtitle;
+        lblSummary.ForeColor = AppTheme.Colors.TextSecondary;
         Controls.Add(lblSummary);
 
-        dgvPreview.Left = 20;
-        dgvPreview.Top = 54;
-        dgvPreview.Width = 1190;
-        dgvPreview.Height = 540;
+        pnlGridCard.SetBounds(20, 90, ClientSize.Width - 40, ClientSize.Height - 166);
+        pnlGridCard.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+        pnlGridCard.CornerRadius = 16;
+        pnlGridCard.FillColor = AppTheme.Colors.SurfaceElevated;
+        pnlGridCard.BorderColor = AppTheme.Colors.Border;
+        pnlGridCard.BorderThickness = 1;
+        pnlGridCard.ContainerColor = AppTheme.Colors.Background;
+        Controls.Add(pnlGridCard);
+
+        dgvPreview.SetBounds(1, 1, pnlGridCard.Width - 2, pnlGridCard.Height - 2);
+        dgvPreview.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
         dgvPreview.ReadOnly = true;
         dgvPreview.AllowUserToAddRows = false;
         dgvPreview.AllowUserToDeleteRows = false;
@@ -61,36 +76,51 @@ public class FormPreview : Form
         dgvPreview.MultiSelect = false;
         dgvPreview.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
         AppTheme.StyleGrid(dgvPreview);
-        Controls.Add(dgvPreview);
+        pnlGridCard.Controls.Add(dgvPreview);
+
+        lblFooterHint.Text = "Kiểm tra tên hàng, mã và số lượng trước khi gửi lệnh in.";
+        lblFooterHint.SetBounds(24, ClientSize.Height - 54, 620, 22);
+        lblFooterHint.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
+        lblFooterHint.Font = AppTheme.Fonts.Hint;
+        lblFooterHint.ForeColor = AppTheme.Colors.TextMuted;
+        Controls.Add(lblFooterHint);
 
         btnPrint.Text = "🖨 IN TEM";
-        btnPrint.Left = 860;
-        btnPrint.Top = 610;
-        btnPrint.Width = 160;
-        btnPrint.Height = 42;
+        btnPrint.SetBounds(ClientSize.Width - 316, ClientSize.Height - 62, 164, 44);
+        btnPrint.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
         btnPrint.Variant = ButtonVariant.Primary;
+        btnPrint.ContainerColor = AppTheme.Colors.Background;
         btnPrint.Font = new Font(AppTheme.Fonts.Button.FontFamily, 10.5f, FontStyle.Bold);
+        btnPrint.Enabled = false;
         btnPrint.Click += BtnPrint_Click;
         Controls.Add(btnPrint);
 
         btnClose.Text = "Đóng";
-        btnClose.Left = 1040;
-        btnClose.Top = 610;
-        btnClose.Width = 120;
-        btnClose.Height = 42;
+        btnClose.SetBounds(ClientSize.Width - 140, ClientSize.Height - 62, 120, 44);
+        btnClose.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
         btnClose.Variant = ButtonVariant.Secondary;
+        btnClose.ContainerColor = AppTheme.Colors.Background;
+        btnClose.DialogResult = DialogResult.Cancel;
         btnClose.Click += (_, _) => Close();
         Controls.Add(btnClose);
+
+        CancelButton = btnClose;
     }
 
-    private void LoadPreview()
+    private async Task LoadPreviewAsync()
     {
+        Cursor = Cursors.WaitCursor;
+        btnPrint.Enabled = false;
+
         try
         {
-            List<PreviewRow> rows = _labelService.BuildPreview(
-                _sourceExcelFile,
-                _labelCode,
-                _employeeCode);
+            List<PreviewRow> rows = await Task.Run(() => _labelService.BuildPreview(
+                    _sourceExcelFile,
+                    _labelCode,
+                    _employeeCode));
+
+            if (IsDisposed || Disposing || !Visible)
+                return;
 
             dgvPreview.DataSource = null;
             dgvPreview.DataSource = rows;
@@ -115,11 +145,21 @@ public class FormPreview : Form
                 $"Sản phẩm: {totalProducts}   |   " +
                 $"Tổng tem theo số lượng: {totalLabels}   |   " +
                 $"Mã NV: {(_employeeCode == "" ? "(trống)" : _employeeCode)}";
+
+            btnPrint.Enabled = true;
         }
         catch (Exception ex)
         {
-            MessageBox.Show(ex.Message, "Lỗi tải preview");
-            Close();
+            if (!IsDisposed && !Disposing && Visible)
+            {
+                MessageBox.Show(ex.Message, "Lỗi tải preview");
+                Close();
+            }
+        }
+        finally
+        {
+            if (!IsDisposed && !Disposing)
+                Cursor = Cursors.Default;
         }
     }
 

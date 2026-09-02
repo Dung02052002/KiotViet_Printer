@@ -20,6 +20,13 @@ public static class UiMotion
 
             timer.Tick += (_, _) =>
             {
+                if (form.IsDisposed)
+                {
+                    timer.Stop();
+                    timer.Dispose();
+                    return;
+                }
+
                 float progress = Math.Clamp(
                     (Environment.TickCount64 - startedAt) / (float)durationMs,
                     0f,
@@ -27,13 +34,11 @@ public static class UiMotion
 
                 form.Opacity = EaseOutCubic(progress);
 
-                if (progress >= 1f || form.IsDisposed)
+                if (progress >= 1f)
                 {
                     timer.Stop();
                     timer.Dispose();
-
-                    if (!form.IsDisposed)
-                        form.Opacity = 1;
+                    form.Opacity = 1;
                 }
             };
 

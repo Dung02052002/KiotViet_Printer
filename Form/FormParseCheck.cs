@@ -7,7 +7,10 @@ namespace KiotVietLabelPrinter.Forms;
 public class FormParseCheck : Form
 {
     private readonly SmoothDataGridView dgv = new();
+    private readonly RoundedPanel pnlGridCard = new();
+    private readonly Label lblTitle = new();
     private readonly Label lblSummary = new();
+    private readonly Label lblFooterHint = new();
     private readonly ToggleSwitch chkOnlyFlagged = new();
     private readonly RoundedButton btnClose = new();
 
@@ -31,42 +34,54 @@ public class FormParseCheck : Form
 
         Text = "Kiểm tra mã parse";
         Width = 1250;
-        Height = 700;
-        StartPosition = FormStartPosition.CenterScreen;
-        FormBorderStyle = FormBorderStyle.FixedDialog;
-        MaximizeBox = false;
+        Height = 720;
+        StartPosition = FormStartPosition.CenterParent;
+        FormBorderStyle = FormBorderStyle.Sizable;
+        MinimumSize = new Size(900, 560);
         DoubleBuffered = true;
 
         AppTheme.StyleForm(this);
 
         BuildUi();
-        LoadData();
+        Shown += async (_, _) => await LoadDataAsync();
     }
 
     private void BuildUi()
     {
-        lblSummary.Left = 20;
-        lblSummary.Top = 18;
-        lblSummary.Width = 900;
-        lblSummary.Height = 26;
-        lblSummary.Font = AppTheme.Fonts.BodyBold;
-        lblSummary.ForeColor = AppTheme.Colors.TextPrimary;
+        lblTitle.Text = "Kiểm tra mã parse";
+        lblTitle.SetBounds(24, 16, 520, 32);
+        lblTitle.Font = AppTheme.Fonts.Title;
+        lblTitle.ForeColor = AppTheme.Colors.TextPrimary;
+        Controls.Add(lblTitle);
+
+        lblSummary.Text = "Đang phân tích dữ liệu...";
+        lblSummary.SetBounds(26, 52, ClientSize.Width - 340, 22);
+        lblSummary.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+        lblSummary.Font = AppTheme.Fonts.Subtitle;
+        lblSummary.ForeColor = AppTheme.Colors.TextSecondary;
         Controls.Add(lblSummary);
 
         chkOnlyFlagged.Text = "Chỉ hiện dòng nghi ngờ";
-        chkOnlyFlagged.Left = 950;
-        chkOnlyFlagged.Top = 20;
-        chkOnlyFlagged.Width = 220;
+        chkOnlyFlagged.SetBounds(ClientSize.Width - 280, 24, 256, 28);
+        chkOnlyFlagged.Anchor = AnchorStyles.Top | AnchorStyles.Right;
         chkOnlyFlagged.Font = AppTheme.Fonts.Body;
         chkOnlyFlagged.ForeColor = AppTheme.Colors.TextPrimary;
         chkOnlyFlagged.ContainerColor = AppTheme.Colors.Background;
+        chkOnlyFlagged.Enabled = false;
         chkOnlyFlagged.CheckedChanged += (_, _) => RenderGrid();
         Controls.Add(chkOnlyFlagged);
 
-        dgv.Left = 20;
-        dgv.Top = 54;
-        dgv.Width = 1190;
-        dgv.Height = 540;
+        pnlGridCard.SetBounds(20, 90, ClientSize.Width - 40, ClientSize.Height - 166);
+        pnlGridCard.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+        pnlGridCard.CornerRadius = 16;
+        pnlGridCard.FillColor = AppTheme.Colors.SurfaceElevated;
+        pnlGridCard.BorderColor = AppTheme.Colors.Border;
+        pnlGridCard.BorderThickness = 1;
+        pnlGridCard.ContainerColor = AppTheme.Colors.Background;
+        Controls.Add(pnlGridCard);
+
+        dgv.SetBounds(1, 1, pnlGridCard.Width - 2, pnlGridCard.Height - 2);
+        dgv.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
         dgv.ReadOnly = true;
         dgv.AllowUserToAddRows = false;
         dgv.AllowUserToDeleteRows = false;
@@ -76,35 +91,61 @@ public class FormParseCheck : Form
         dgv.AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.AllCells;
         AppTheme.StyleGrid(dgv);
         dgv.DefaultCellStyle.WrapMode = DataGridViewTriState.False;
-        Controls.Add(dgv);
+        pnlGridCard.Controls.Add(dgv);
+
+        lblFooterHint.Text = "Các dòng nền hồng cần được kiểm tra trước khi in.";
+        lblFooterHint.SetBounds(24, ClientSize.Height - 54, 620, 22);
+        lblFooterHint.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
+        lblFooterHint.Font = AppTheme.Fonts.Hint;
+        lblFooterHint.ForeColor = AppTheme.Colors.TextMuted;
+        Controls.Add(lblFooterHint);
 
         btnClose.Text = "Đóng";
-        btnClose.Left = 1090;
-        btnClose.Top = 610;
-        btnClose.Width = 120;
-        btnClose.Height = 42;
+        btnClose.SetBounds(ClientSize.Width - 140, ClientSize.Height - 62, 120, 44);
+        btnClose.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
         btnClose.Variant = ButtonVariant.Secondary;
+        btnClose.ContainerColor = AppTheme.Colors.Background;
+        btnClose.DialogResult = DialogResult.Cancel;
         btnClose.Click += (_, _) => Close();
         Controls.Add(btnClose);
+
+        CancelButton = btnClose;
     }
 
-    private void LoadData()
+    private async Task LoadDataAsync()
     {
+        Cursor = Cursors.WaitCursor;
+
         try
         {
-            List<PreviewRow> previewRows = _labelService.BuildPreview(
-                _sourceExcelFile,
-                _labelCode,
-                _employeeCode);
+            _allRows = await Task.Run(() =>
+            {
+                List<PreviewRow> previewRows = _labelService.BuildPreview(
+                    _sourceExcelFile,
+                    _labelCode,
+                    _employeeCode);
 
-            _allRows = ParseCheckService.Build(previewRows);
+                return ParseCheckService.Build(previewRows);
+            });
 
+            if (IsDisposed || Disposing || !Visible)
+                return;
+
+            chkOnlyFlagged.Enabled = true;
             RenderGrid();
         }
         catch (Exception ex)
         {
-            MessageBox.Show(ex.Message, "Lỗi kiểm tra mã");
-            Close();
+            if (!IsDisposed && !Disposing && Visible)
+            {
+                MessageBox.Show(ex.Message, "Lỗi kiểm tra mã");
+                Close();
+            }
+        }
+        finally
+        {
+            if (!IsDisposed && !Disposing)
+                Cursor = Cursors.Default;
         }
     }
 

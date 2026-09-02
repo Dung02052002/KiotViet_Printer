@@ -13,20 +13,25 @@ public class ToastForm : Form
     private int _targetTop;
     private bool _isClosing;
 
-    private ToastForm(string message, Color accentColor, int durationMs)
+    private ToastForm(string message, Color accentColor, string glyph, int durationMs)
     {
         FormBorderStyle = FormBorderStyle.None;
         ShowInTaskbar = false;
         TopMost = true;
         StartPosition = FormStartPosition.Manual;
         BackColor = AppTheme.Colors.Surface;
-        Padding = new Padding(1);
+        Padding = Padding.Empty;
         DoubleBuffered = true;
+        Opacity = AppTheme.MotionEnabled ? 0 : 1;
 
-        Panel border = new()
+        RoundedPanel card = new()
         {
             Dock = DockStyle.Fill,
-            BackColor = AppTheme.Colors.Surface
+            CornerRadius = 14,
+            FillColor = AppTheme.Colors.SurfaceElevated,
+            BorderColor = AppTheme.Colors.Border,
+            BorderThickness = 1,
+            ContainerColor = AppTheme.Colors.Surface
         };
 
         Label lbl = new()
@@ -35,31 +40,40 @@ public class ToastForm : Form
             Text = message,
             Font = AppTheme.Fonts.BodyBold,
             ForeColor = AppTheme.Colors.TextPrimary,
-            BackColor = AppTheme.Colors.Surface,
+            BackColor = Color.Transparent,
             TextAlign = ContentAlignment.MiddleLeft,
-            Padding = new Padding(44, 12, 18, 12),
+            Padding = new Padding(58, 12, 18, 12),
             AutoSize = false,
             MaximumSize = new Size(420, 0),
             AutoEllipsis = false
         };
 
-        Label statusDot = new()
+        RoundedPanel statusBadge = new()
         {
-            Text = "●",
-            AutoSize = false,
-            Width = 18,
-            Height = 24,
+            Width = 28,
+            Height = 28,
             Left = 16,
-            ForeColor = accentColor,
-            BackColor = AppTheme.Colors.Surface,
-            Font = new Font(AppTheme.Fonts.Body.FontFamily, 11f, FontStyle.Bold),
-            TextAlign = ContentAlignment.MiddleCenter
+            CornerRadius = 14,
+            FillColor = AppTheme.Blend(AppTheme.Colors.Surface, accentColor, 0.14f),
+            BorderThickness = 0,
+            ContainerColor = AppTheme.Colors.Surface
         };
 
-        border.Controls.Add(lbl);
-        border.Controls.Add(statusDot);
-        statusDot.BringToFront();
-        Controls.Add(border);
+        Label statusGlyph = new()
+        {
+            Text = glyph,
+            Dock = DockStyle.Fill,
+            ForeColor = accentColor,
+            BackColor = Color.Transparent,
+            Font = new Font(AppTheme.Fonts.Body.FontFamily, 10.5f, FontStyle.Bold),
+            TextAlign = ContentAlignment.MiddleCenter
+        };
+        statusBadge.Controls.Add(statusGlyph);
+
+        card.Controls.Add(lbl);
+        card.Controls.Add(statusBadge);
+        statusBadge.BringToFront();
+        Controls.Add(card);
 
         using (Graphics g = CreateGraphics())
         {
@@ -68,7 +82,7 @@ public class ToastForm : Form
         }
 
         ClientSize = new Size(lbl.Width, lbl.Height);
-        statusDot.Top = Math.Max(0, (ClientSize.Height - statusDot.Height) / 2);
+        statusBadge.Top = Math.Max(0, (ClientSize.Height - statusBadge.Height) / 2);
 
         using (GraphicsPath path = AppTheme.RoundedRect(
                    new Rectangle(0, 0, ClientSize.Width, ClientSize.Height),
@@ -91,7 +105,10 @@ public class ToastForm : Form
 
     private void PositionBottomRight()
     {
-        Rectangle area = Screen.PrimaryScreen?.WorkingArea ?? new Rectangle(0, 0, 1024, 768);
+        Screen screen = Form.ActiveForm is { } activeForm
+            ? Screen.FromControl(activeForm)
+            : Screen.FromPoint(Cursor.Position);
+        Rectangle area = screen.WorkingArea;
 
         Location = new Point(
             area.Right - Width - 24,
@@ -174,21 +191,32 @@ public class ToastForm : Form
         }
     }
 
-    private static void ShowToast(string message, Color accentColor, int durationMs)
+    protected override CreateParams CreateParams
     {
-        ToastForm toast = new(message, accentColor, durationMs);
+        get
+        {
+            const int CsDropShadow = 0x00020000;
+            CreateParams parameters = base.CreateParams;
+            parameters.ClassStyle |= CsDropShadow;
+            return parameters;
+        }
+    }
+
+    private static void ShowToast(string message, Color accentColor, string glyph, int durationMs)
+    {
+        ToastForm toast = new(message, accentColor, glyph, durationMs);
         toast.Show();
     }
 
     // Xanh lá — thao tác thành công, tự tắt sau ~1.5s
     public static void ShowSuccess(string message, int durationMs = 1500)
     {
-        ShowToast(message, AppTheme.Colors.Success, durationMs);
+        ShowToast(message, AppTheme.Colors.Success, "✓", durationMs);
     }
 
     // Xanh dương — thông báo thông tin chung, tự tắt sau ~1.5s
     public static void ShowInfo(string message, int durationMs = 1500)
     {
-        ShowToast(message, AppTheme.Colors.Primary, durationMs);
+        ShowToast(message, AppTheme.Colors.Primary, "i", durationMs);
     }
 }
