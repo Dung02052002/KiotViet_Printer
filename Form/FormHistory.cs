@@ -45,7 +45,8 @@ public class FormHistory : Form
         lblSummary.ForeColor = AppTheme.Colors.TextSecondary;
         Controls.Add(lblSummary);
 
-        btnRefresh.Text = "↻ Làm mới";
+        btnRefresh.Text = "Làm mới";
+        btnRefresh.Icon = IconGlyphs.Kind.Refresh;
         btnRefresh.SetBounds(ClientSize.Width - 244, 24, 104, 38);
         btnRefresh.Anchor = AnchorStyles.Top | AnchorStyles.Right;
         btnRefresh.Variant = ButtonVariant.Outline;

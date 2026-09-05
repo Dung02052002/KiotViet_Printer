@@ -70,6 +70,7 @@ public static class UiMotion
     {
         private readonly Control _control;
         private readonly System.Windows.Forms.Timer _timer = new() { Interval = 15 };
+        private readonly System.Windows.Forms.Timer _settleTimer = new() { Interval = 180 };
         private long _startedAt;
         private int _startLeft;
         private int _targetLeft;
@@ -79,7 +80,32 @@ public static class UiMotion
         {
             _control = control;
             _timer.Tick += Animate;
+            _settleTimer.Tick += SettleRepaint;
             _control.Disposed += (_, _) => Dispose();
+        }
+
+        // Sau khi animation dừng, DWM đôi khi chưa ghép lại đúng bộ đệm hiển thị
+        // cho các control con bo góc — CopyFromScreen (hoặc chính khung hình đó)
+        // có thể lộ một mảnh pixel thừa ở góc dù bitmap control tự vẽ ra đã đúng
+        // hoàn toàn. Gọi ở tick KẾ TIẾP (không phải ngay trong tick vừa dừng
+        // animation) để nhường một nhịp cho compositor ổn định trước khi ép vẽ
+        // lại toàn bộ Form.
+        private void ScheduleSettleRepaint()
+        {
+            _settleTimer.Stop();
+            _settleTimer.Start();
+        }
+
+        private void SettleRepaint(object? sender, EventArgs e)
+        {
+            _settleTimer.Stop();
+
+            if (_control.IsDisposed)
+                return;
+
+            Form? form = _control.FindForm();
+            form?.Invalidate(true);
+            form?.Update();
         }
 
         public void Start(int targetLeft, int offset, int durationMs)
@@ -115,6 +141,7 @@ public static class UiMotion
             {
                 _control.Left = _targetLeft;
                 _timer.Stop();
+                ScheduleSettleRepaint();
             }
 
             // Khi control di chuyển, Windows chỉ blit lại pixel cũ và chỉ vẽ lại
@@ -128,6 +155,8 @@ public static class UiMotion
         {
             _timer.Stop();
             _timer.Dispose();
+            _settleTimer.Stop();
+            _settleTimer.Dispose();
         }
     }
 }

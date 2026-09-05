@@ -85,7 +85,8 @@ public class FormPreview : Form
         lblFooterHint.ForeColor = AppTheme.Colors.TextMuted;
         Controls.Add(lblFooterHint);
 
-        btnPrint.Text = "🖨 IN TEM";
+        btnPrint.Text = "IN TEM";
+        btnPrint.Icon = IconGlyphs.Kind.Printer;
         btnPrint.SetBounds(ClientSize.Width - 316, ClientSize.Height - 62, 164, 44);
         btnPrint.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
         btnPrint.Variant = ButtonVariant.Primary;

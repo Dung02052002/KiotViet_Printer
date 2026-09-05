@@ -93,6 +93,13 @@ public class ToggleSwitch : CheckBox
         Graphics g = e.Graphics;
         AppTheme.PrepareSmoothing(g);
 
+        // Paint an explicit opaque background instead of relying solely on
+        // OnPaintBackground's erase — erase-only rendering left stale sibling
+        // content (e.g. a neighboring label's text) showing through on first
+        // paint (same root cause fixed for RoundedButton's Outline/Ghost variants).
+        using (SolidBrush bg = new(ContainerColor))
+            g.FillRectangle(bg, 0, 0, Width, Height);
+
         const int trackWidth = 44;
         const int trackHeight = 24;
         const int knobSize = 18;

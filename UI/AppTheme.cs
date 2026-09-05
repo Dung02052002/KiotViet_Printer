@@ -11,41 +11,50 @@ public static class AppTheme
 
     public static class Colors
     {
-        // Light graphite + lilac palette inspired by iOS system surfaces.
-        public static readonly Color Primary = Color.FromArgb(126, 107, 224);
-        public static readonly Color PrimaryHover = Color.FromArgb(115, 95, 214);
-        public static readonly Color PrimaryPressed = Color.FromArgb(99, 80, 192);
-        public static readonly Color PrimaryLight = Color.FromArgb(239, 235, 252);
-        public static readonly Color PrimarySoft = Color.FromArgb(247, 244, 253);
-        public static readonly Color FocusRing = Color.FromArgb(183, 169, 239);
+        // iOS / macOS inspired light-blue palette: airy background, near-white
+        // cards, one accent blue, thin low-contrast borders.
+        public static readonly Color Primary = Color.FromArgb(47, 107, 255);
+        public static readonly Color PrimaryHover = Color.FromArgb(36, 95, 229);
+        public static readonly Color PrimaryPressed = Color.FromArgb(30, 84, 206);
+        public static readonly Color PrimaryLight = Color.FromArgb(243, 247, 255);
+        public static readonly Color PrimarySoft = Color.FromArgb(233, 240, 255);
+        public static readonly Color FocusRing = Color.FromArgb(163, 194, 255);
 
-        public static readonly Color Danger = Color.FromArgb(205, 83, 105);
-        public static readonly Color DangerHover = Color.FromArgb(188, 70, 93);
-        public static readonly Color DangerPressed = Color.FromArgb(164, 57, 80);
-        public static readonly Color DangerLight = Color.FromArgb(252, 237, 241);
+        public static readonly Color Danger = Color.FromArgb(224, 71, 71);
+        public static readonly Color DangerHover = Color.FromArgb(204, 60, 60);
+        public static readonly Color DangerPressed = Color.FromArgb(180, 49, 49);
+        public static readonly Color DangerLight = Color.FromArgb(253, 236, 236);
 
-        public static readonly Color Success = Color.FromArgb(71, 153, 112);
+        public static readonly Color Success = Color.FromArgb(52, 150, 90);
 
-        public static readonly Color Background = Color.FromArgb(245, 243, 248);
-        public static readonly Color Surface = Color.FromArgb(255, 254, 255);
+        public static readonly Color Background = Color.FromArgb(246, 248, 252);
+        public static readonly Color Surface = Color.White;
         public static readonly Color SurfaceElevated = Color.White;
-        public static readonly Color SurfaceHover = Color.FromArgb(249, 247, 252);
-        public static readonly Color SurfacePressed = Color.FromArgb(240, 236, 246);
-        public static readonly Color InputBackground = Color.FromArgb(249, 248, 251);
+        public static readonly Color SurfaceHover = Color.FromArgb(247, 249, 253);
+        public static readonly Color SurfacePressed = Color.FromArgb(239, 243, 250);
+        public static readonly Color InputBackground = Color.White;
 
-        public static readonly Color Border = Color.FromArgb(229, 224, 235);
-        public static readonly Color BorderStrong = Color.FromArgb(207, 199, 218);
+        public static readonly Color Border = Color.FromArgb(227, 232, 240);
+        public static readonly Color BorderStrong = Color.FromArgb(203, 213, 225);
 
-        public static readonly Color TextPrimary = Color.FromArgb(45, 41, 51);
-        public static readonly Color TextSecondary = Color.FromArgb(105, 98, 116);
-        public static readonly Color TextMuted = Color.FromArgb(148, 140, 160);
+        // Resting border for Outline action buttons: a soft gray-blue, much
+        // quieter than full Primary — Primary itself is reserved for hover/press
+        // so the border only reads as "active blue" on interaction.
+        public static readonly Color BorderOutlineRest = Color.FromArgb(214, 223, 240);
 
-        public static readonly Color Disabled = Color.FromArgb(237, 234, 241);
-        public static readonly Color DisabledText = Color.FromArgb(172, 164, 182);
+        public static readonly Color TextPrimary = Color.FromArgb(15, 23, 42);
+        public static readonly Color TextSecondary = Color.FromArgb(102, 112, 133);
+        public static readonly Color TextMuted = Color.FromArgb(152, 162, 179);
 
-        public static readonly Color GridHeaderBack = Color.FromArgb(242, 239, 246);
-        public static readonly Color GridAltRow = Color.FromArgb(250, 249, 252);
-        public static readonly Color GridSelection = Color.FromArgb(235, 229, 251);
+        public static readonly Color Disabled = Color.FromArgb(237, 240, 245);
+        public static readonly Color DisabledText = Color.FromArgb(163, 170, 181);
+
+        public static readonly Color GridHeaderBack = Color.FromArgb(242, 245, 250);
+        public static readonly Color GridAltRow = Color.FromArgb(249, 251, 253);
+        public static readonly Color GridSelection = Color.FromArgb(224, 235, 255);
+
+        // Very soft, near-transparent black used for layered card drop shadows.
+        public static readonly Color ShadowInk = Color.FromArgb(15, 23, 42);
     }
 
     public static class Fonts
@@ -53,14 +62,15 @@ public static class AppTheme
         private static readonly string Family = ResolveFontFamily("Segoe UI Variable Text", "Segoe UI");
         private static readonly string DisplayFamily = ResolveFontFamily("Segoe UI Variable Display", Family);
 
-        public static readonly Font Title = new(DisplayFamily, 20f, FontStyle.Bold);
-        public static readonly Font Subtitle = new(Family, 10f, FontStyle.Regular);
-        public static readonly Font SectionTitle = new(Family, 12.5f, FontStyle.Bold);
-        public static readonly Font Body = new(Family, 9.5f, FontStyle.Regular);
-        public static readonly Font BodyBold = new(Family, 9.5f, FontStyle.Bold);
-        public static readonly Font Hint = new(Family, 8.75f, FontStyle.Regular);
-        public static readonly Font Button = new(Family, 9.75f, FontStyle.Bold);
-        public static readonly Font ButtonRegular = new(Family, 9.5f, FontStyle.Regular);
+        public static readonly Font Title = new(DisplayFamily, 24f, FontStyle.Bold);
+        public static readonly Font Subtitle = new(Family, 10.5f, FontStyle.Regular);
+        public static readonly Font SectionTitle = new(Family, 15f, FontStyle.Bold);
+        public static readonly Font Overline = new(Family, 9.5f, FontStyle.Bold);
+        public static readonly Font Body = new(Family, 10f, FontStyle.Regular);
+        public static readonly Font BodyBold = new(Family, 10f, FontStyle.Bold);
+        public static readonly Font Hint = new(Family, 9f, FontStyle.Regular);
+        public static readonly Font Button = new(Family, 10f, FontStyle.Bold);
+        public static readonly Font ButtonRegular = new(Family, 10f, FontStyle.Regular);
         public static readonly Font Icon = new("Segoe UI Emoji", 20f, FontStyle.Regular);
         public static readonly Font IconSmall = new("Segoe UI Emoji", 14f, FontStyle.Regular);
 
@@ -238,31 +248,39 @@ public static class AppTheme
         g.FillPath(brush, path);
     }
 
-    // Vẽ viền bo góc. Hai chi tiết quyết định việc viền có bị "tua tủa" hay không:
-    //  - LineJoin.Round: mặc định GDI+ nối nét kiểu Miter. Ở 4 chỗ cung tròn tiếp
-    //    giáp đoạn thẳng, sai số số thực làm góc nối lệch khỏi 180° một chút và
-    //    Miter kéo dài mối nối thành gai nhọn chĩa ra ngoài.
-    //  - Thụt vào nửa độ dày nét: nét vẽ nằm giữa đường path, không thụt thì một
-    //    nửa nét tràn ra ngoài control rồi bị cắt cụt, để lại cạnh lởm chởm.
+    // Vẽ viền bo góc bằng CÁCH TÔ (fill), không dùng Pen.DrawPath: viền là
+    // Region của path ngoài (RoundedRect tại bounds) TRỪ ĐI Region của path
+    // trong (RoundedRect thu nhỏ bounds đi đúng thickness).
+    //
+    // Trước đây viền được vẽ bằng Pen.DrawPath trên path nối từ 4 AddArc. Dù đã
+    // set LineJoin.Round, GDI+ vẫn có thể sinh gai nhọn ("tua tủa") tại chỗ nối
+    // giữa cung tròn và đoạn thẳng do sai số dấu phẩy động — lỗi này từng lộ ra
+    // thành các sọc/pixel xanh thừa ở góc và cạnh nút.
+    //
+    // Bản trước của hàm này gộp 2 path vào 1 GraphicsPath rồi tô bằng
+    // FillMode.Alternate — nhưng vẫn để lọt một hình nêm đặc ở góc dưới-phải tại
+    // vài kích thước nút cụ thể (rasterizer của FillPath dựng hình sai khi 2
+    // đường cong có độ cong khác nhau chồng lên nhau ở cùng một góc). Region.
+    // Exclude dùng thuật toán tổ hợp vùng khác hẳn (không phải rasterize path
+    // trực tiếp) nên không còn gặp lỗi dựng hình đó.
     public static void DrawRoundedBorder(Graphics g, RectangleF bounds, float radius, Color color, float thickness)
     {
         if (color.A == 0 || thickness <= 0 || bounds.Width <= 0 || bounds.Height <= 0)
             return;
 
-        float inset = thickness / 2f;
-        RectangleF stroke = RectangleF.Inflate(bounds, -inset, -inset);
+        RectangleF inner = RectangleF.Inflate(bounds, -thickness, -thickness);
 
-        if (stroke.Width <= 0 || stroke.Height <= 0)
-            return;
+        using GraphicsPath outerPath = RoundedRect(bounds, radius);
+        using Region ring = new(outerPath);
 
-        using GraphicsPath path = RoundedRect(stroke, Math.Max(0f, radius - inset));
-        using Pen pen = new(color, thickness)
+        if (inner.Width > 0f && inner.Height > 0f)
         {
-            LineJoin = LineJoin.Round,
-            Alignment = PenAlignment.Center
-        };
+            using GraphicsPath innerPath = RoundedRect(inner, Math.Max(0f, radius - thickness));
+            ring.Exclude(innerPath);
+        }
 
-        g.DrawPath(pen, path);
+        using SolidBrush brush = new(color);
+        g.FillRegion(brush, ring);
     }
 
     // Tô phần nằm ngoài đường bo bằng đúng màu bề mặt hiện tại của control cha.

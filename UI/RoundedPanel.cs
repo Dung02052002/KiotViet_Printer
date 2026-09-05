@@ -45,6 +45,11 @@ public class RoundedPanel : Panel
     [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
     public Color HoverBorderColor { get; set; } = AppTheme.Colors.Primary;
 
+    // Very soft layered drop shadow for elevated cards (category cards, the
+    // detail workspace card). Off by default so plain panels/badges are unaffected.
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+    public bool ShadowEnabled { get; set; }
+
     private bool _hover;
     private bool _hoverEffect;
     private bool _visualStateInitialized;
@@ -138,7 +143,22 @@ public class RoundedPanel : Panel
 
         EnsureVisualState();
 
-        RectangleF bounds = new(0, 0, Width, Height);
+        RectangleF outer = new(0, 0, Width, Height);
+        RectangleF bounds = outer;
+
+        // No native drop-shadow support in GDI+/WinForms, so a soft shadow is
+        // faked with a few translucent layers growing outward below the card,
+        // inset from the control's own bounds since painting cannot spill
+        // outside them.
+        if (ShadowEnabled)
+        {
+            const float margin = 3f;
+            bounds = RectangleF.Inflate(outer, -margin, -margin);
+
+            DrawShadowLayer(g, bounds, 3f, 0.5f, 18);
+            DrawShadowLayer(g, bounds, 2f, 1.5f, 14);
+            DrawShadowLayer(g, bounds, 1f, 2.5f, 10);
+        }
 
         AppTheme.FillRounded(g, bounds, CornerRadius, _currentFill);
 
@@ -156,6 +176,13 @@ public class RoundedPanel : Panel
         }
 
         base.OnPaint(e);
+    }
+
+    private void DrawShadowLayer(Graphics g, RectangleF content, float grow, float dy, int alpha)
+    {
+        RectangleF layer = RectangleF.Inflate(content, grow, grow);
+        layer.Offset(0, dy);
+        AppTheme.FillRounded(g, layer, CornerRadius + grow, Color.FromArgb(alpha, AppTheme.Colors.ShadowInk));
     }
 
     private void PrepareChild(Control control)

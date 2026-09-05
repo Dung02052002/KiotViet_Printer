@@ -227,15 +227,17 @@ public class FormConfig : Form
         };
         grpLabels.Controls.Add(divider);
 
-        btnAddLabel.Text = "+ Thêm tem";
-        btnAddLabel.SetBounds(24, 60, 120, 38);
+        btnAddLabel.Text = "Thêm tem";
+        btnAddLabel.Icon = IconGlyphs.Kind.Plus;
+        btnAddLabel.SetBounds(24, 60, 130, 38);
         btnAddLabel.Variant = ButtonVariant.Outline;
         btnAddLabel.ContainerColor = AppTheme.Colors.Surface;
         btnAddLabel.Click += BtnAddLabel_Click;
         grpLabels.Controls.Add(btnAddLabel);
 
-        btnDeleteLabel.Text = "🗑 Xóa tem";
-        btnDeleteLabel.SetBounds(152, 60, 120, 38);
+        btnDeleteLabel.Text = "Xóa tem";
+        btnDeleteLabel.Icon = IconGlyphs.Kind.Trash;
+        btnDeleteLabel.SetBounds(162, 60, 130, 38);
         btnDeleteLabel.Variant = ButtonVariant.Danger;
         btnDeleteLabel.ContainerColor = AppTheme.Colors.Surface;
         btnDeleteLabel.Click += BtnDeleteLabel_Click;
@@ -244,9 +246,9 @@ public class FormConfig : Form
         Label lblGridHint = new()
         {
             Text = "Mỗi dòng là 1 loại tem. Có thể sửa trực tiếp trong bảng rồi bấm Lưu cấu hình.",
-            Left = 292,
+            Left = 312,
             Top = 68,
-            Width = grpLabels.Width - 316,
+            Width = grpLabels.Width - 336,
             Font = AppTheme.Fonts.Hint,
             ForeColor = AppTheme.Colors.TextMuted,
             Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right
@@ -369,7 +371,8 @@ public class FormConfig : Form
     #region UI - Bottom buttons
     private void BuildBottomButtons()
     {
-        btnSave.Text = "💾 Lưu cấu hình";
+        btnSave.Text = "Lưu cấu hình";
+        btnSave.Icon = IconGlyphs.Kind.Check;
         btnSave.SetBounds(ClientSize.Width - 200, ClientSize.Height - 62, 180, 44);
         btnSave.Variant = ButtonVariant.Primary;
         btnSave.ContainerColor = AppTheme.Colors.Background;

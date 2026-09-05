@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Drawing.Drawing2D;
 
 namespace KiotVietLabelPrinter.UI;
 
@@ -40,6 +41,17 @@ public class RoundedButton : Button
     [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
     public Color ContainerColor { get; set; } = AppTheme.Colors.Background;
 
+    // Optional leading line icon drawn in the current foreground color, so
+    // hover/pressed/disabled states tint the icon exactly like the text.
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+    public IconGlyphs.Kind? Icon { get; set; }
+
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+    public int IconSize { get; set; } = 16;
+
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+    public int IconTextGap { get; set; } = 8;
+
     private readonly System.Windows.Forms.Timer _animationTimer = new() { Interval = 15 };
     private ButtonVariant _variant = ButtonVariant.Secondary;
     private bool _hover;
@@ -48,9 +60,11 @@ public class RoundedButton : Button
     private Color _currentFill;
     private Color _currentBorder;
     private Color _currentFore;
+    private Color _currentIconFore;
     private Color _targetFill;
     private Color _targetBorder;
     private Color _targetFore;
+    private Color _targetIconFore;
 
     public RoundedButton()
     {
@@ -154,8 +168,32 @@ public class RoundedButton : Button
 
         RectangleF bounds = new(0, 0, Width, Height);
 
-        AppTheme.FillRounded(g, bounds, CornerRadius, _currentFill);
-        AppTheme.DrawRoundedBorder(g, bounds, CornerRadius, _currentBorder, 1f);
+        // Hard-clip to the pill silhouette before drawing anything. This is a
+        // defensive guarantee, independent of exactly which draw call is at
+        // fault: nothing can ever render outside the rounded shape.
+        using (GraphicsPath clipPath = AppTheme.RoundedRect(bounds, CornerRadius))
+            g.SetClip(clipPath, CombineMode.Intersect);
+
+        if (_currentBorder.A > 0)
+        {
+            // Two independent, simple filled rounded rects (border-color base,
+            // then a smaller fill-color rect on top) instead of a "ring" built
+            // from two nested curved paths. AppTheme.DrawRoundedBorder's ring
+            // (tried both via FillMode.Alternate and via Region.Exclude) left a
+            // stray filled wedge in one corner for specific button sizes — a
+            // rasterizer inconsistency where the outer and inner curves don't
+            // perfectly cancel out. A single FillRounded call is already proven
+            // pixel-clean (used everywhere for RoundedPanel cards), so doing it
+            // twice sidesteps that class of bug entirely.
+            AppTheme.FillRounded(g, bounds, CornerRadius, _currentBorder);
+
+            RectangleF inner = RectangleF.Inflate(bounds, -1f, -1f);
+            AppTheme.FillRounded(g, inner, Math.Max(0f, CornerRadius - 1f), _currentFill);
+        }
+        else
+        {
+            AppTheme.FillRounded(g, bounds, CornerRadius, _currentFill);
+        }
 
         if (Focused && ShowFocusCues && Enabled)
         {
@@ -167,9 +205,44 @@ public class RoundedButton : Button
                 1.5f);
         }
 
-        Rectangle textRect = new(0, 0, Width, Height);
-        if (_pressed)
-            textRect.Offset(0, 1);
+        if (Icon.HasValue)
+        {
+            DrawIconAndText(g);
+        }
+        else
+        {
+            Rectangle textRect = new(0, 0, Width, Height);
+            if (_pressed)
+                textRect.Offset(0, 1);
+
+            TextRenderer.DrawText(
+                g,
+                Text,
+                Font,
+                textRect,
+                _currentFore,
+                TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPadding | TextFormatFlags.EndEllipsis);
+        }
+    }
+
+    private void DrawIconAndText(Graphics g)
+    {
+        Size textSize = TextRenderer.MeasureText(
+            g,
+            Text,
+            Font,
+            new Size(int.MaxValue, Height),
+            TextFormatFlags.NoPadding | TextFormatFlags.SingleLine);
+
+        int totalWidth = IconSize + IconTextGap + textSize.Width;
+        int startX = Math.Max(6, (Width - totalWidth) / 2);
+        int yOffset = _pressed ? 1 : 0;
+
+        Rectangle iconRect = new(startX, ((Height - IconSize) / 2) + yOffset, IconSize, IconSize);
+        IconGlyphs.Draw(g, Icon!.Value, iconRect, _currentIconFore, 1.7f);
+
+        int textLeft = startX + IconSize + IconTextGap;
+        Rectangle textRect = new(textLeft, yOffset, Math.Max(0, Width - textLeft - 6), Height);
 
         TextRenderer.DrawText(
             g,
@@ -177,7 +250,7 @@ public class RoundedButton : Button
             Font,
             textRect,
             _currentFore,
-            TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPadding | TextFormatFlags.EndEllipsis);
+            TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPadding | TextFormatFlags.EndEllipsis);
     }
 
     private void EnsureVisualState()
@@ -185,8 +258,8 @@ public class RoundedButton : Button
         if (_visualStateInitialized)
             return;
 
-        (_currentFill, _currentBorder, _currentFore) = ResolveColors();
-        (_targetFill, _targetBorder, _targetFore) = (_currentFill, _currentBorder, _currentFore);
+        (_currentFill, _currentBorder, _currentFore, _currentIconFore) = ResolveColors();
+        (_targetFill, _targetBorder, _targetFore, _targetIconFore) = (_currentFill, _currentBorder, _currentFore, _currentIconFore);
         _visualStateInitialized = true;
     }
 
@@ -198,11 +271,11 @@ public class RoundedButton : Button
             return;
         }
 
-        (_targetFill, _targetBorder, _targetFore) = ResolveColors();
+        (_targetFill, _targetBorder, _targetFore, _targetIconFore) = ResolveColors();
 
         if (!AppTheme.MotionEnabled)
         {
-            (_currentFill, _currentBorder, _currentFore) = (_targetFill, _targetBorder, _targetFore);
+            (_currentFill, _currentBorder, _currentFore, _currentIconFore) = (_targetFill, _targetBorder, _targetFore, _targetIconFore);
             Invalidate();
             return;
         }
@@ -216,52 +289,66 @@ public class RoundedButton : Button
         _currentFill = AppTheme.Blend(_currentFill, _targetFill, speed);
         _currentBorder = AppTheme.Blend(_currentBorder, _targetBorder, speed);
         _currentFore = AppTheme.Blend(_currentFore, _targetFore, speed);
+        _currentIconFore = AppTheme.Blend(_currentIconFore, _targetIconFore, speed);
 
         if (AppTheme.IsClose(_currentFill, _targetFill) &&
             AppTheme.IsClose(_currentBorder, _targetBorder) &&
-            AppTheme.IsClose(_currentFore, _targetFore))
+            AppTheme.IsClose(_currentFore, _targetFore) &&
+            AppTheme.IsClose(_currentIconFore, _targetIconFore))
         {
-            (_currentFill, _currentBorder, _currentFore) = (_targetFill, _targetBorder, _targetFore);
+            (_currentFill, _currentBorder, _currentFore, _currentIconFore) = (_targetFill, _targetBorder, _targetFore, _targetIconFore);
             _animationTimer.Stop();
         }
 
         Invalidate();
     }
 
-    private (Color fill, Color border, Color fore) ResolveColors()
+    private (Color fill, Color border, Color fore, Color iconFore) ResolveColors()
     {
         if (!Enabled)
-            return (AppTheme.Colors.Disabled, Color.Transparent, AppTheme.Colors.DisabledText);
+            return (AppTheme.Colors.Disabled, Color.Transparent, AppTheme.Colors.DisabledText, AppTheme.Colors.DisabledText);
 
         return Variant switch
         {
             ButtonVariant.Primary => (
                 _pressed ? AppTheme.Colors.PrimaryPressed : _hover ? AppTheme.Colors.PrimaryHover : AppTheme.Colors.Primary,
                 Color.Transparent,
+                Color.White,
                 Color.White),
 
             ButtonVariant.Danger => (
                 _pressed ? AppTheme.Colors.DangerPressed : _hover ? AppTheme.Colors.DangerHover : AppTheme.Colors.Danger,
                 Color.Transparent,
+                Color.White,
                 Color.White),
 
-            // Lúc nghỉ, Outline/Ghost không tô nền: để nguyên phần nền của control
-            // cha đã được compose sẵn ở OnPaintBackground. Tô đè bằng ContainerColor
-            // như trước sẽ tạo một mảng màu hơi lệch nằm lọt trong đường bo tròn.
+            // Tô nền tường minh bằng ContainerColor thay vì để trong suốt: dựa vào
+            // OnPaintBackground tô hộ (dựa trên control cha) từng gây ra hiện tượng
+            // "bóng ma" — chữ của label khác đè lên nút — khi nút nằm trong một
+            // FlowLayoutPanel đang được UiMotion trượt vào (xem UI/UiMotion.cs).
+            // Mọi nơi khởi tạo RoundedButton đều đã set ContainerColor đúng màu nền
+            // thật, nên tô thẳng bằng nó cho kết quả giống hệt lúc nghỉ.
+            //
+            // Border chỉ đậm hẳn lên (Primary) khi hover/pressed; lúc nghỉ dùng
+            // viền gray-blue rất nhẹ để không "quá xanh". Text giữ màu tối
+            // (TextPrimary) còn icon giữ màu xanh (Primary) ở mọi trạng thái.
             ButtonVariant.Outline => (
-                _pressed || _hover ? AppTheme.Colors.PrimaryLight : Color.Transparent,
-                AppTheme.Colors.Primary,
+                _pressed ? AppTheme.Colors.PrimarySoft : _hover ? AppTheme.Colors.PrimaryLight : ContainerColor,
+                _pressed || _hover ? AppTheme.Colors.Primary : AppTheme.Colors.BorderOutlineRest,
+                AppTheme.Colors.TextPrimary,
                 AppTheme.Colors.Primary),
 
             ButtonVariant.Ghost => (
-                _pressed ? AppTheme.Colors.SurfacePressed : _hover ? AppTheme.Colors.SurfaceHover : Color.Transparent,
+                _pressed ? AppTheme.Colors.SurfacePressed : _hover ? AppTheme.Colors.SurfaceHover : ContainerColor,
                 Color.Transparent,
+                AppTheme.Colors.TextSecondary,
                 AppTheme.Colors.TextSecondary),
 
             _ => (
                 _pressed ? AppTheme.Colors.SurfacePressed : _hover ? AppTheme.Colors.SurfaceHover : AppTheme.Colors.Surface,
                 AppTheme.Colors.BorderStrong,
-                AppTheme.Colors.TextPrimary)
+                AppTheme.Colors.TextPrimary,
+                AppTheme.Colors.Primary)
         };
     }
 
