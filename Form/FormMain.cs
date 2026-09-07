@@ -2,6 +2,7 @@
 using KiotVietLabelPrinter.Models;
 using KiotVietLabelPrinter.Services;
 using KiotVietLabelPrinter.UI;
+using KiotVietLabelPrinter.Views;
 
 namespace KiotVietLabelPrinter.Forms;
 
@@ -9,6 +10,7 @@ public class FormMain : Form
 {
     private readonly LabelService _labelService = new();
     private readonly LabelCatalogService _catalogService = new();
+    private readonly ImageToolCatalogService _toolCatalogService = new();
 
     // Header
     private readonly Panel pnlHeader = new();
@@ -21,6 +23,13 @@ public class FormMain : Form
     // Home / Category
     private readonly Panel pnlCategory = new();
     private readonly SmoothFlowLayoutPanel flpCategories = new();
+    private readonly Label lblToolsTitle = new();
+    private readonly Label lblToolsHint = new();
+    private readonly SmoothFlowLayoutPanel flpTools = new();
+
+    // Công cụ hình ảnh (nhúng như một "workspace" khác — cùng cơ chế
+    // show/hide với pnlWorkspace, xem ShowHome/OpenBackgroundRemover).
+    private readonly BackgroundRemoverView bgRemoverView = new();
 
     // Workspace
     private readonly RoundedPanel pnlWorkspace = new();
@@ -72,6 +81,8 @@ public class FormMain : Form
         // width only changes via Anchor (no direct resize of its own) — without
         // this, buttons overflow past the card edge instead of wrapping.
         Resize += (_, _) => flpActions.PerformLayout();
+        Resize += (_, _) => flpCategories.PerformLayout();
+        Resize += (_, _) => flpTools.PerformLayout();
     }
 
     private void BuildUi()
@@ -79,6 +90,7 @@ public class FormMain : Form
         BuildHeader();
         BuildCategoryPanel();
         BuildWorkspacePanel();
+        BuildBackgroundRemoverPanel();
     }
 
     #region Header
@@ -175,6 +187,9 @@ public class FormMain : Form
         pnlCategory.Height = ClientSize.Height - 236;
         pnlCategory.BackColor = AppTheme.Colors.Background;
         pnlCategory.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Bottom;
+        // Cần cuộn dọc: bên dưới DANH MỤC TEM giờ có thêm section CÔNG CỤ HÌNH
+        // ẢNH, tổng chiều cao có thể vượt vùng hiển thị trên màn hình nhỏ.
+        pnlCategory.AutoScroll = true;
         Controls.Add(pnlCategory);
 
         Label lblCategoryTitle = new()
@@ -201,19 +216,64 @@ public class FormMain : Form
 
         flpCategories.Left = 0;
         flpCategories.Top = 72;
-        flpCategories.Width = pnlCategory.Width;
-        flpCategories.Height = pnlCategory.Height - 72;
-        flpCategories.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Bottom;
+        // -24 chừa chỗ cho scrollbar dọc của pnlCategory (AutoScroll) khi nội
+        // dung hai section cộng lại cao hơn vùng hiển thị.
+        flpCategories.Width = pnlCategory.Width - 24;
+        flpCategories.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
         flpCategories.BackColor = AppTheme.Colors.Background;
-        flpCategories.AutoScroll = true;
+        // AutoSize (không Dock/neo Bottom) thay vì tự cuộn: panel co theo đúng
+        // số hàng card đang có, để section CÔNG CỤ HÌNH ẢNH có thể nằm ngay bên
+        // dưới thay vì bị đẩy xuống cuối vùng hiển thị cố định.
+        flpCategories.AutoScroll = false;
+        flpCategories.AutoSize = true;
+        flpCategories.AutoSizeMode = AutoSizeMode.GrowAndShrink;
         flpCategories.WrapContents = true;
         flpCategories.FlowDirection = FlowDirection.LeftToRight;
         pnlCategory.Controls.Add(flpCategories);
+
+        lblToolsTitle.Text = "CÔNG CỤ HÌNH ẢNH";
+        lblToolsTitle.Left = 4;
+        lblToolsTitle.Width = 400;
+        lblToolsTitle.Font = AppTheme.Fonts.SectionTitle;
+        lblToolsTitle.ForeColor = AppTheme.Colors.TextPrimary;
+        pnlCategory.Controls.Add(lblToolsTitle);
+
+        lblToolsHint.Text = "Xử lý ảnh sản phẩm trực tiếp trên máy.";
+        lblToolsHint.Left = 4;
+        lblToolsHint.Width = 700;
+        lblToolsHint.Font = AppTheme.Fonts.Body;
+        lblToolsHint.ForeColor = AppTheme.Colors.TextSecondary;
+        pnlCategory.Controls.Add(lblToolsHint);
+
+        flpTools.Left = 0;
+        flpTools.Width = flpCategories.Width;
+        flpTools.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+        flpTools.BackColor = AppTheme.Colors.Background;
+        flpTools.AutoScroll = false;
+        flpTools.AutoSize = true;
+        flpTools.AutoSizeMode = AutoSizeMode.GrowAndShrink;
+        flpTools.WrapContents = true;
+        flpTools.FlowDirection = FlowDirection.LeftToRight;
+        pnlCategory.Controls.Add(flpTools);
+
+        // Chiều cao flpCategories chỉ biết được sau khi có card (và đổi lại mỗi
+        // khi cửa sổ resize làm card xuống dòng khác) — dời section thứ hai mỗi
+        // khi đó thay vì đặt cứng một toạ độ Top.
+        flpCategories.SizeChanged += (_, _) => RepositionToolsSection();
+        RepositionToolsSection();
+    }
+
+    private void RepositionToolsSection()
+    {
+        lblToolsTitle.Top = flpCategories.Bottom + 40;
+        lblToolsHint.Top = lblToolsTitle.Bottom + 8;
+        flpTools.Top = lblToolsHint.Bottom + 16;
     }
 
     private void ReloadCategories()
     {
         flpCategories.SuspendLayout();
+        flpTools.SuspendLayout();
 
         try
         {
@@ -233,15 +293,27 @@ public class FormMain : Form
                 };
 
                 flpCategories.Controls.Add(empty);
-                return;
+            }
+            else
+            {
+                foreach (LabelDefinition label in labels)
+                    flpCategories.Controls.Add(CreateCategoryCard(label));
             }
 
-            foreach (LabelDefinition label in labels)
-                flpCategories.Controls.Add(CreateCategoryCard(label));
+            flpTools.Controls.Clear();
+
+            List<ToolDefinition> tools = _toolCatalogService.GetAllEnabled();
+            lblToolsTitle.Visible = tools.Count > 0;
+            lblToolsHint.Visible = tools.Count > 0;
+
+            foreach (ToolDefinition tool in tools)
+                flpTools.Controls.Add(CreateToolCard(tool));
         }
         finally
         {
             flpCategories.ResumeLayout(true);
+            flpTools.ResumeLayout(true);
+            RepositionToolsSection();
         }
     }
 
@@ -266,6 +338,20 @@ public class FormMain : Form
 
     private Control CreateCategoryCard(LabelDefinition label)
     {
+        IconGlyphs.Kind? homeIcon = ResolveHomeIcon(label.HandlerType);
+        return BuildCard(label.Name, label.Description, homeIcon, label.IconText, (_, _) => OpenLabelWorkspace(label));
+    }
+
+    private Control CreateToolCard(ToolDefinition tool)
+    {
+        return BuildCard(tool.Name, tool.Description, IconGlyphs.Kind.Image, null, (_, _) => OpenBackgroundRemover(tool));
+    }
+
+    // Dùng chung cho mọi card ở màn hình chính (DANH MỤC TEM lẫn CÔNG CỤ HÌNH
+    // ẢNH) để đảm bảo cùng kích thước/bo góc/border/shadow/typography/spacing/
+    // hover — không tạo một style card thứ hai khác biệt.
+    private Control BuildCard(string name, string description, IconGlyphs.Kind? iconKind, string? iconTextFallback, EventHandler onClick)
+    {
         RoundedPanel card = new()
         {
             Width = 300,
@@ -282,7 +368,7 @@ public class FormMain : Form
             ContainerColor = AppTheme.Colors.Background,
             Cursor = Cursors.Hand,
             AccessibleRole = AccessibleRole.PushButton,
-            AccessibleName = label.Name
+            AccessibleName = name
         };
 
         RoundedPanel iconBadge = new()
@@ -298,14 +384,12 @@ public class FormMain : Form
             Cursor = Cursors.Hand
         };
 
-        IconGlyphs.Kind? homeIcon = ResolveHomeIcon(label.HandlerType);
-
-        if (homeIcon.HasValue)
+        if (iconKind.HasValue)
         {
             IconGlyph icon = new()
             {
                 Dock = DockStyle.Fill,
-                Kind = homeIcon.Value,
+                Kind = iconKind.Value,
                 IconColor = AppTheme.Colors.Primary,
                 ContainerColor = AppTheme.Colors.PrimaryLight,
                 Cursor = Cursors.Hand
@@ -316,7 +400,7 @@ public class FormMain : Form
         {
             Label lblIcon = new()
             {
-                Text = string.IsNullOrWhiteSpace(label.IconText) ? "🏷" : label.IconText,
+                Text = string.IsNullOrWhiteSpace(iconTextFallback) ? "🏷" : iconTextFallback,
                 Dock = DockStyle.Fill,
                 TextAlign = ContentAlignment.MiddleCenter,
                 Font = AppTheme.Fonts.IconSmall,
@@ -353,7 +437,7 @@ public class FormMain : Form
 
         Label lblName = new()
         {
-            Text = label.Name,
+            Text = name,
             Left = 22,
             Top = 84,
             Width = card.Width - 44,
@@ -365,7 +449,7 @@ public class FormMain : Form
 
         Label lblDesc = new()
         {
-            Text = label.Description,
+            Text = description,
             Left = 22,
             Top = 112,
             Width = card.Width - 44,
@@ -380,15 +464,28 @@ public class FormMain : Form
         card.Controls.Add(lblName);
         card.Controls.Add(lblDesc);
 
-        void open(object? s, EventArgs e) => OpenLabelWorkspace(label);
-
-        card.Click += open;
-        lblName.Click += open;
-        lblDesc.Click += open;
-        arrowBadge.Click += open;
-        arrowIcon.Click += open;
+        card.Click += onClick;
+        lblName.Click += onClick;
+        lblDesc.Click += onClick;
+        arrowBadge.Click += onClick;
+        arrowIcon.Click += onClick;
 
         return card;
+    }
+    #endregion
+
+    #region Background remover panel
+    // Nhúng cùng vị trí/kích thước với pnlWorkspace — show/hide y hệt cơ chế
+    // hiện có (xem ShowHome/OpenBackgroundRemover), không tạo Form/dialog mới.
+    private void BuildBackgroundRemoverPanel()
+    {
+        bgRemoverView.Left = 32;
+        bgRemoverView.Top = 204;
+        bgRemoverView.Width = ClientSize.Width - 64;
+        bgRemoverView.Height = ClientSize.Height - 236;
+        bgRemoverView.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Bottom;
+        bgRemoverView.Visible = false;
+        Controls.Add(bgRemoverView);
     }
     #endregion
 
@@ -637,6 +734,7 @@ public class FormMain : Form
         _selectedLabel = null;
 
         pnlWorkspace.Visible = false;
+        bgRemoverView.Visible = false;
         btnBack.Visible = false;
 
         lblSubtitle.Text = "Chọn danh mục tem để bắt đầu";
@@ -645,11 +743,23 @@ public class FormMain : Form
         UiMotion.SlideIn(pnlCategory, 32, -14);
     }
 
+    private void OpenBackgroundRemover(ToolDefinition tool)
+    {
+        pnlCategory.Visible = false;
+        pnlWorkspace.Visible = false;
+        btnBack.Visible = true;
+
+        UiMotion.SlideIn(bgRemoverView, 32, 14);
+
+        lblSubtitle.Text = $"Công cụ: {tool.Name}";
+    }
+
     private void OpenLabelWorkspace(LabelDefinition label)
     {
         _selectedLabel = label;
 
         pnlCategory.Visible = false;
+        bgRemoverView.Visible = false;
         btnBack.Visible = true;
 
         UiMotion.SlideIn(pnlWorkspace, 32, 14);

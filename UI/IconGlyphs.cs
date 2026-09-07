@@ -26,7 +26,10 @@ public static class IconGlyphs
         Trash,
         Refresh,
         Plus,
-        Check
+        Check,
+        Image,
+        MagicWand,
+        Stop
     }
 
     public static void Draw(Graphics g, Kind kind, RectangleF bounds, Color color, float strokeWidth = 1.75f)
@@ -76,6 +79,9 @@ public static class IconGlyphs
                 case Kind.Refresh: DrawRefresh(g, pen); break;
                 case Kind.Plus: DrawPlus(g, pen); break;
                 case Kind.Check: DrawCheck(g, pen); break;
+                case Kind.Image: DrawImage(g, pen, brush); break;
+                case Kind.MagicWand: DrawMagicWand(g, pen, brush); break;
+                case Kind.Stop: DrawStop(g, pen); break;
             }
         }
         finally
@@ -228,5 +234,44 @@ public static class IconGlyphs
     private static void DrawCheck(Graphics g, Pen pen)
     {
         g.DrawLines(pen, new[] { new PointF(5, 13), new PointF(10, 18), new PointF(19, 6) });
+    }
+
+    // Ảnh: khung bo góc + mặt trời nhỏ + dãy núi — ngôn ngữ icon "photo" quen
+    // thuộc, dùng cho các card/màn hình liên quan tới xử lý ảnh sản phẩm.
+    private static void DrawImage(Graphics g, Pen pen, SolidBrush brush)
+    {
+        using GraphicsPath frame = AppTheme.RoundedRect(new RectangleF(3.5f, 4.5f, 17f, 15f), 2.5f);
+        g.DrawPath(pen, frame);
+        g.FillEllipse(brush, 7f, 8f, 3f, 3f);
+        g.DrawLines(pen, new[]
+        {
+            new PointF(5f, 17f), new PointF(10f, 12f), new PointF(13.5f, 15.5f),
+            new PointF(16f, 13f), new PointF(19f, 16f)
+        });
+    }
+
+    // Đũa thần: thân que chéo góc + tia lấp lánh — biểu tượng "xử lý tự động"
+    // dùng cho công cụ xoá nền.
+    private static void DrawMagicWand(Graphics g, Pen pen, SolidBrush brush)
+    {
+        g.DrawLine(pen, 6f, 18f, 15.5f, 8.5f);
+        FillDiamond(g, brush, 17.5f, 6.5f, 2.6f);
+        FillDiamond(g, brush, 5f, 5f, 1.7f);
+        FillDiamond(g, brush, 20f, 12.5f, 1.5f);
+    }
+
+    private static void FillDiamond(Graphics g, SolidBrush brush, float cx, float cy, float r)
+    {
+        g.FillPolygon(brush, new[]
+        {
+            new PointF(cx, cy - r), new PointF(cx + r, cy),
+            new PointF(cx, cy + r), new PointF(cx - r, cy)
+        });
+    }
+
+    private static void DrawStop(Graphics g, Pen pen)
+    {
+        using GraphicsPath path = AppTheme.RoundedRect(new RectangleF(6f, 6f, 12f, 12f), 2.5f);
+        g.DrawPath(pen, path);
     }
 }

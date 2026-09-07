@@ -47,6 +47,14 @@
   "AppendEmployeeCode": false,
   "TargetNameColumnIndex": 5
   }
-    
+
+  ],
+  "Tools": [
+    {
+      "Code": "BG_REMOVE",
+      "Name": "Xóa nền ảnh",
+      "Description": "Xóa nền tự động + thay nền trắng",
+      "IsEnabled": true
+    }
   ]
 }

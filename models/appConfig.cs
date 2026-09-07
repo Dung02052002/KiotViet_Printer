@@ -12,4 +12,8 @@ public class AppConfig
     public string DefaultEmployee { get; set; } = "";
 
     public List<LabelDefinition> Labels { get; set; } = new();
+
+    // Danh mục CÔNG CỤ HÌNH ẢNH — tách riêng khỏi Labels vì đây không phải
+    // một loại tem, dù cùng cơ chế "card lấy từ cấu hình".
+    public List<ToolDefinition> Tools { get; set; } = new();
 }

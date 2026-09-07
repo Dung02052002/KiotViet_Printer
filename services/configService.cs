@@ -59,6 +59,17 @@ public class ConfigService
                 Config = CreateDefaultConfig();
                 Save();
             }
+
+            // Config cũ (trước khi có CÔNG CỤ HÌNH ẢNH) sẽ không có Tools —
+            // bổ sung mặc định thay vì bắt người dùng xoá config để có lại card.
+            if (Config.Tools == null)
+                Config.Tools = new List<ToolDefinition>();
+
+            if (Config.Tools.Count == 0)
+            {
+                Config.Tools = DefaultTools();
+                Save();
+            }
         }
         catch
         {
@@ -136,6 +147,21 @@ public class ConfigService
                     AppendEmployeeCode = true,
                     TargetNameColumnIndex = 5
                 }
+            },
+            Tools = DefaultTools()
+        };
+    }
+
+    private static List<ToolDefinition> DefaultTools()
+    {
+        return new List<ToolDefinition>
+        {
+            new ToolDefinition
+            {
+                Code = "BG_REMOVE",
+                Name = "Xóa nền ảnh",
+                Description = "Xóa nền tự động + thay nền trắng",
+                IsEnabled = true
             }
         };
     }
