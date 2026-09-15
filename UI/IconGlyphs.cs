@@ -29,7 +29,8 @@ public static class IconGlyphs
         Check,
         Image,
         MagicWand,
-        Stop
+        Stop,
+        Compress
     }
 
     public static void Draw(Graphics g, Kind kind, RectangleF bounds, Color color, float strokeWidth = 1.75f)
@@ -82,6 +83,7 @@ public static class IconGlyphs
                 case Kind.Image: DrawImage(g, pen, brush); break;
                 case Kind.MagicWand: DrawMagicWand(g, pen, brush); break;
                 case Kind.Stop: DrawStop(g, pen); break;
+                case Kind.Compress: DrawCompress(g, pen); break;
             }
         }
         finally
@@ -273,5 +275,40 @@ public static class IconGlyphs
     {
         using GraphicsPath path = AppTheme.RoundedRect(new RectangleF(6f, 6f, 12f, 12f), 2.5f);
         g.DrawPath(pen, path);
+    }
+
+    // Giảm dung lượng: 4 mũi tên từ góc chỉ vào tâm — ngôn ngữ icon "thu nhỏ/
+    // nén" quen thuộc (ngược với icon "expand" mũi tên chỉ ra ngoài).
+    private static void DrawCompress(Graphics g, Pen pen)
+    {
+        DrawInwardArrow(g, pen, new PointF(4f, 4f), new PointF(9f, 9f));
+        DrawInwardArrow(g, pen, new PointF(20f, 4f), new PointF(15f, 9f));
+        DrawInwardArrow(g, pen, new PointF(4f, 20f), new PointF(9f, 15f));
+        DrawInwardArrow(g, pen, new PointF(20f, 20f), new PointF(15f, 15f));
+    }
+
+    private static void DrawInwardArrow(Graphics g, Pen pen, PointF from, PointF to)
+    {
+        g.DrawLine(pen, from, to);
+
+        float dx = to.X - from.X;
+        float dy = to.Y - from.Y;
+        float len = (float)Math.Sqrt((dx * dx) + (dy * dy));
+        dx /= len;
+        dy /= len;
+
+        float px = -dy;
+        float py = dx;
+        const float headLen = 3f;
+
+        PointF p1 = new(
+            to.X - (dx * headLen) + (px * headLen * 0.6f),
+            to.Y - (dy * headLen) + (py * headLen * 0.6f));
+        PointF p2 = new(
+            to.X - (dx * headLen) - (px * headLen * 0.6f),
+            to.Y - (dy * headLen) - (py * headLen * 0.6f));
+
+        g.DrawLine(pen, to, p1);
+        g.DrawLine(pen, to, p2);
     }
 }

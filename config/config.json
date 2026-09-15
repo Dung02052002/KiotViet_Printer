@@ -55,6 +55,12 @@
       "Name": "Xóa nền ảnh",
       "Description": "Xóa nền tự động + thay nền trắng",
       "IsEnabled": true
+    },
+    {
+      "Code": "IMAGE_COMPRESS",
+      "Name": "Giảm dung lượng ảnh",
+      "Description": "Nén và tối ưu dung lượng ảnh hàng loạt",
+      "IsEnabled": true
     }
   ]
 }

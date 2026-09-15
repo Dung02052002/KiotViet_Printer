@@ -29,6 +29,17 @@ public class GlassesPrintService
         if (!File.Exists(label.TemplatePath))
             throw new Exception($"Không tìm thấy file:\n{label.TemplatePath}");
 
+        // Tem kính LUÔN cần NamedSubString (tiêu đề/thông tin đã format
+        // động) qua /XMLScript= — không có cách nào thay thế bằng command
+        // line chuẩn. Nếu máy đã xác nhận không hỗ trợ, báo lỗi rõ ràng 1
+        // lần duy nhất ngay từ đầu thay vì để từng mã trong danh sách lần
+        // lượt fail với cùng 1 lỗi lặp lại.
+        BarTenderCapabilityService.Instance.EnsureProbed(
+            ConfigService.Instance.Config.BarTenderExe);
+
+        if (BarTenderCapabilityService.Instance.XmlScriptSupported == false)
+            throw BarTenderCapabilityService.BuildEnterpriseRequiredException();
+
         //============================
         // 1 sản phẩm
         //============================

@@ -1,7 +1,7 @@
 [Setup]
 AppId={{8E1A7C3D-2D91-4E37-8B54-123456789ABC}
 AppName=In Tem KiotViet
-AppVersion=1.0.1
+AppVersion=2.1.0
 AppPublisher=Dung Store
 
 DefaultDirName={userdesktop}\KiotViet Label Printer
@@ -9,7 +9,7 @@ DefaultGroupName=In Tem KiotViet_V1
 DisableProgramGroupPage=yes
 
 OutputDir=installer_output
-OutputBaseFilename=InTemKiotViet_V1.2_Setup
+OutputBaseFilename=InTemKiotViet_V2.1.0_Setup
 
 Compression=lzma
 SolidCompression=yes

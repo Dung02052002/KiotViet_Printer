@@ -1,11 +1,21 @@
 bin/
 obj/
 publish/
+Release_*/
 installer_output/
 .vs/
+
+# Log/artifact runtime do app tạo ra khi chạy — không commit, không ship.
+logs/
+print_logs/
+debug_xml/
 
 *.exe
 *.dll
 *.pdb
 *.deps.json
 *.runtimeconfig.json
+
+# ONNX Runtime profiling traces (dùng để xác minh execution provider — xem
+# OnnxModelSession.VerifyActiveProvider); ghi ra thư mục tạm nhưng phòng khi rơi vãi.
+onnxruntime_profile__*.json

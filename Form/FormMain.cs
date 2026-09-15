@@ -19,6 +19,7 @@ public class FormMain : Form
     private readonly IconGlyph iconLogo = new();
     private readonly Label lblTitle = new();
     private readonly Label lblSubtitle = new();
+    private readonly Label lblVersion = new();
 
     // Home / Category
     private readonly Panel pnlCategory = new();
@@ -30,6 +31,7 @@ public class FormMain : Form
     // Công cụ hình ảnh (nhúng như một "workspace" khác — cùng cơ chế
     // show/hide với pnlWorkspace, xem ShowHome/OpenBackgroundRemover).
     private readonly BackgroundRemoverView bgRemoverView = new();
+    private readonly ImageCompressorView imageCompressorView = new();
 
     // Workspace
     private readonly RoundedPanel pnlWorkspace = new();
@@ -91,6 +93,7 @@ public class FormMain : Form
         BuildCategoryPanel();
         BuildWorkspacePanel();
         BuildBackgroundRemoverPanel();
+        BuildImageCompressorPanel();
     }
 
     #region Header
@@ -148,6 +151,16 @@ public class FormMain : Form
         lblSubtitle.Font = AppTheme.Fonts.Subtitle;
         lblSubtitle.ForeColor = AppTheme.Colors.TextSecondary;
         pnlHeader.Controls.Add(lblSubtitle);
+
+        // Phiên bản build — để xác nhận máy đang chạy đúng bản .exe mới.
+        lblVersion.Text = Services.AppInfo.ShortLabel;
+        lblVersion.Left = 114;
+        lblVersion.Top = 150;
+        lblVersion.Width = 640;
+        lblVersion.Height = 18;
+        lblVersion.Font = AppTheme.Fonts.Overline;
+        lblVersion.ForeColor = AppTheme.Colors.TextMuted;
+        pnlHeader.Controls.Add(lblVersion);
 
         btnBack.Text = "Quay lại";
         btnBack.Icon = IconGlyphs.Kind.ArrowLeft;
@@ -344,7 +357,16 @@ public class FormMain : Form
 
     private Control CreateToolCard(ToolDefinition tool)
     {
-        return BuildCard(tool.Name, tool.Description, IconGlyphs.Kind.Image, null, (_, _) => OpenBackgroundRemover(tool));
+        IconGlyphs.Kind icon = tool.Code == "IMAGE_COMPRESS" ? IconGlyphs.Kind.Compress : IconGlyphs.Kind.Image;
+        return BuildCard(tool.Name, tool.Description, icon, null, (_, _) => OpenTool(tool));
+    }
+
+    private void OpenTool(ToolDefinition tool)
+    {
+        if (tool.Code == "IMAGE_COMPRESS")
+            OpenImageCompressor(tool);
+        else
+            OpenBackgroundRemover(tool);
     }
 
     // Dùng chung cho mọi card ở màn hình chính (DANH MỤC TEM lẫn CÔNG CỤ HÌNH
@@ -486,6 +508,21 @@ public class FormMain : Form
         bgRemoverView.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Bottom;
         bgRemoverView.Visible = false;
         Controls.Add(bgRemoverView);
+    }
+    #endregion
+
+    #region Image compressor panel
+    // Nhúng cùng vị trí/kích thước với pnlWorkspace/bgRemoverView — cùng cơ chế
+    // show/hide (xem ShowHome/OpenImageCompressor), không tạo Form/dialog mới.
+    private void BuildImageCompressorPanel()
+    {
+        imageCompressorView.Left = 32;
+        imageCompressorView.Top = 204;
+        imageCompressorView.Width = ClientSize.Width - 64;
+        imageCompressorView.Height = ClientSize.Height - 236;
+        imageCompressorView.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Bottom;
+        imageCompressorView.Visible = false;
+        Controls.Add(imageCompressorView);
     }
     #endregion
 
@@ -735,6 +772,7 @@ public class FormMain : Form
 
         pnlWorkspace.Visible = false;
         bgRemoverView.Visible = false;
+        imageCompressorView.Visible = false;
         btnBack.Visible = false;
 
         lblSubtitle.Text = "Chọn danh mục tem để bắt đầu";
@@ -747,9 +785,22 @@ public class FormMain : Form
     {
         pnlCategory.Visible = false;
         pnlWorkspace.Visible = false;
+        imageCompressorView.Visible = false;
         btnBack.Visible = true;
 
         UiMotion.SlideIn(bgRemoverView, 32, 14);
+
+        lblSubtitle.Text = $"Công cụ: {tool.Name}";
+    }
+
+    private void OpenImageCompressor(ToolDefinition tool)
+    {
+        pnlCategory.Visible = false;
+        pnlWorkspace.Visible = false;
+        bgRemoverView.Visible = false;
+        btnBack.Visible = true;
+
+        UiMotion.SlideIn(imageCompressorView, 32, 14);
 
         lblSubtitle.Text = $"Công cụ: {tool.Name}";
     }
@@ -760,6 +811,7 @@ public class FormMain : Form
 
         pnlCategory.Visible = false;
         bgRemoverView.Visible = false;
+        imageCompressorView.Visible = false;
         btnBack.Visible = true;
 
         UiMotion.SlideIn(pnlWorkspace, 32, 14);

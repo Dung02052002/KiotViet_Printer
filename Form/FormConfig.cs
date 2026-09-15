@@ -14,6 +14,8 @@ public class FormConfig : Form
     private readonly RoundedTextBox txtDefaultEmployee = new();
 
     private readonly RoundedButton btnBrowseBarTender = new();
+    private readonly Label lblCapabilityStatus = new();
+    private readonly RoundedButton btnResetCapability = new();
     private readonly RoundedButton btnSave = new();
     private readonly RoundedButton btnAddLabel = new();
     private readonly RoundedButton btnDeleteLabel = new();
@@ -24,7 +26,7 @@ public class FormConfig : Form
 
     public FormConfig()
     {
-        Text = "Cấu hình phần mềm";
+        Text = $"Cấu hình phần mềm — {Services.AppInfo.ShortLabel}";
         Width = 1280;
         Height = 800;
         StartPosition = FormStartPosition.CenterParent;
@@ -54,7 +56,7 @@ public class FormConfig : Form
             Left = 20,
             Top = 20,
             Width = ClientSize.Width - 40,
-            Height = 204,
+            Height = 244,
             CornerRadius = 18,
             FillColor = AppTheme.Colors.SurfaceElevated,
             BorderColor = AppTheme.Colors.Border,
@@ -176,6 +178,57 @@ public class FormConfig : Form
             ForeColor = AppTheme.Colors.TextMuted
         };
         grpGeneral.Controls.Add(lblHint);
+
+        lblCapabilityStatus.Left = 24;
+        lblCapabilityStatus.Top = 202;
+        lblCapabilityStatus.Width = grpGeneral.Width - 210;
+        lblCapabilityStatus.Height = 32;
+        lblCapabilityStatus.Font = AppTheme.Fonts.Hint;
+        lblCapabilityStatus.ForeColor = AppTheme.Colors.TextMuted;
+        lblCapabilityStatus.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+        grpGeneral.Controls.Add(lblCapabilityStatus);
+
+        btnResetCapability.Text = "Kiểm tra lại";
+        btnResetCapability.SetBounds(grpGeneral.Width - 174, 196, 150, 32);
+        btnResetCapability.Variant = ButtonVariant.Outline;
+        btnResetCapability.ContainerColor = AppTheme.Colors.Surface;
+        btnResetCapability.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+        btnResetCapability.Click += (_, _) =>
+        {
+            BarTenderCapabilityService.Instance.Reset();
+            RefreshCapabilityStatus();
+            ToastForm.ShowSuccess("Đã đặt lại — lần in tiếp theo sẽ tự kiểm tra lại BarTender.");
+        };
+        grpGeneral.Controls.Add(btnResetCapability);
+    }
+
+    private void RefreshCapabilityStatus()
+    {
+        string exePath = txtBarTender.Text.Trim();
+        string? version = BarTenderCapabilityService.TryGetVersion(exePath);
+        BarTenderCapabilityService cap = BarTenderCapabilityService.Instance;
+
+        string versionText = string.IsNullOrWhiteSpace(version)
+            ? "(chưa xác định được version)"
+            : $"version {version}";
+
+        cap.EnsureProbed(exePath);
+
+        string statusText = cap.XmlScriptSupported switch
+        {
+            true => "hỗ trợ Automation nâng cao (XMLScript) — Tem kính in được.",
+            false => "KHÔNG hỗ trợ Automation nâng cao. Tem đầy đủ / Tem mã vạch " +
+                     "vẫn in bình thường (command line chuẩn); Tem kính cần nâng " +
+                     "cấp BarTender lên Enterprise Automation.",
+            _ => "chưa xác định — Tem đầy đủ / Tem mã vạch in bình thường; Tem kính " +
+                 "sẽ tự kiểm tra ở lần in đầu."
+        };
+
+        string editionText = string.IsNullOrWhiteSpace(cap.DetectedEdition)
+            ? ""
+            : $" · Edition: {cap.DetectedEdition}";
+
+        lblCapabilityStatus.Text = $"BarTender {versionText}{editionText} — {statusText}";
     }
 
     private void LoadPrinterList()
@@ -195,9 +248,9 @@ public class FormConfig : Form
         RoundedPanel grpLabels = new()
         {
             Left = 20,
-            Top = 240,
+            Top = 280,
             Width = ClientSize.Width - 40,
-            Height = ClientSize.Height - 320,
+            Height = ClientSize.Height - 360,
             CornerRadius = 18,
             FillColor = AppTheme.Colors.SurfaceElevated,
             BorderColor = AppTheme.Colors.Border,
@@ -389,6 +442,7 @@ public class FormConfig : Form
         AppConfig config = ConfigService.Instance.Config;
 
         txtBarTender.Text = config.BarTenderExe;
+        RefreshCapabilityStatus();
         chkRememberEmployee.Checked = config.RememberEmployee;
         txtDefaultEmployee.Text = config.DefaultEmployee;
         txtDefaultEmployee.Enabled = chkRememberEmployee.Checked;

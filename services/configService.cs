@@ -70,6 +70,13 @@ public class ConfigService
                 Config.Tools = DefaultTools();
                 Save();
             }
+            // Config cũ (trước khi có "Giảm dung lượng ảnh") sẽ có Tools nhưng
+            // thiếu đúng tool này — bổ sung thay vì bắt người dùng xoá config.
+            else if (!Config.Tools.Any(t => t.Code == "IMAGE_COMPRESS"))
+            {
+                Config.Tools.Add(ImageCompressTool());
+                Save();
+            }
         }
         catch
         {
@@ -162,7 +169,19 @@ public class ConfigService
                 Name = "Xóa nền ảnh",
                 Description = "Xóa nền tự động + thay nền trắng",
                 IsEnabled = true
-            }
+            },
+            ImageCompressTool()
+        };
+    }
+
+    private static ToolDefinition ImageCompressTool()
+    {
+        return new ToolDefinition
+        {
+            Code = "IMAGE_COMPRESS",
+            Name = "Giảm dung lượng ảnh",
+            Description = "Nén và tối ưu dung lượng ảnh hàng loạt",
+            IsEnabled = true
         };
     }
 }

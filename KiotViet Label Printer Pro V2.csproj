@@ -8,7 +8,26 @@
     <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
     <AcceptNPOISMFLicense>true</AcceptNPOISMFLicense>
+
+    <!-- Phiên bản hiển thị trong app + ghi log lúc khởi động, để xác nhận
+         máy nào đang chạy đúng build nào (xem services/AppInfo.cs). Tăng số
+         này mỗi lần phát hành bản mới. -->
+    <Version>2.1.0</Version>
+    <AssemblyVersion>2.1.0.0</AssemblyVersion>
+    <FileVersion>2.1.0.0</FileVersion>
+    <InformationalVersion>2.1.0</InformationalVersion>
   </PropertyGroup>
+
+  <!-- Nhúng thời điểm build vào assembly metadata (đọc qua AppInfo). MSBuild
+       property function chạy lại mỗi lần build nên luôn là giờ build thật. -->
+  <Target Name="StampBuildTimestamp" BeforeTargets="GetAssemblyAttributes">
+    <ItemGroup>
+      <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+        <_Parameter1>BuildTimestampUtc</_Parameter1>
+        <_Parameter2>$([System.DateTime]::UtcNow.ToString("yyyy-MM-dd HH:mm:ss"))</_Parameter2>
+      </AssemblyAttribute>
+    </ItemGroup>
+  </Target>
 
   <ItemGroup>
     <PackageReference Include="ClosedXML" Version="0.105.0" />

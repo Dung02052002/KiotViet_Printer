@@ -42,6 +42,14 @@ if not exist "publish\%EXE_NAME%" (
     exit /b 1
 )
 
+echo ==== LAM SACH ARTIFACT RUNTIME (tranh ship trang thai may build) ====
+rem config.json trong publish phai la ban goc (seed) — khong dinh cache
+rem BarTenderXmlScriptSupported / LastFolder... cua may build.
+copy /Y "config\config.json" "publish\config\config.json" >nul
+if exist "publish\logs" rmdir /s /q "publish\logs"
+if exist "publish\debug_xml" rmdir /s /q "publish\debug_xml"
+if exist "publish\print_logs" rmdir /s /q "publish\print_logs"
+
 echo ==== BUILD INSTALLER ====
 set "ISCC="
 if exist "%LOCALAPPDATA%\Programs\Inno Setup 6\ISCC.exe" set "ISCC=%LOCALAPPDATA%\Programs\Inno Setup 6\ISCC.exe"
