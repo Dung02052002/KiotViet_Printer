@@ -93,16 +93,21 @@ public class FormEditPrices : Form
         dgv.AllowUserToAddRows = false;
         dgv.AllowUserToDeleteRows = false;
         dgv.SelectionMode = DataGridViewSelectionMode.CellSelect;
-        dgv.MultiSelect = false;
+        // Cho phép kéo chuột chọn nhiều ô (Ctrl+C có sẵn của DataGridView) rồi
+        // Ctrl+V để dán nhanh - xem Dgv_KeyDown/PasteFromClipboard.
+        dgv.MultiSelect = true;
+        dgv.ClipboardCopyMode = DataGridViewClipboardCopyMode.EnableWithoutHeaderText;
         dgv.AutoGenerateColumns = false;
         dgv.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
         dgv.EditMode = DataGridViewEditMode.EditOnKeystrokeOrF2;
         AppTheme.StyleGrid(dgv);
         BuildColumns();
         dgv.CellEndEdit += Dgv_CellEndEdit;
+        dgv.KeyDown += Dgv_KeyDown;
         pnlGridCard.Controls.Add(dgv);
 
-        lblFooterHint.Text = "Sản phẩm không nhập \"Giá mới\" sẽ giữ nguyên giá hiện tại trong file Excel.";
+        lblFooterHint.Text = "Sản phẩm không nhập \"Giá mới\" sẽ giữ nguyên giá hiện tại trong file Excel. " +
+            "Kéo chuột chọn nhiều ô rồi Ctrl+C/Ctrl+V để copy giá nhanh.";
         lblFooterHint.SetBounds(24, ClientSize.Height - 54, 620, 22);
         lblFooterHint.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
         lblFooterHint.Font = AppTheme.Fonts.Hint;
@@ -186,17 +191,86 @@ public class FormEditPrices : Form
             return;
 
         DataGridViewCell cell = dgv.Rows[e.RowIndex].Cells[e.ColumnIndex];
-        string raw = cell.Value?.ToString() ?? "";
+        cell.Value = FormatPriceText(cell.Value?.ToString() ?? "");
+    }
+
+    private static string FormatPriceText(string raw)
+    {
         string digits = new(raw.Where(char.IsDigit).ToArray());
 
         if (digits.Length > 15)
             digits = digits[..15];
 
-        string formatted = digits.Length == 0 || !long.TryParse(digits, out long parsed)
+        return digits.Length == 0 || !long.TryParse(digits, out long parsed)
             ? ""
             : parsed.ToString("N0", VnCulture);
+    }
 
-        cell.Value = formatted;
+    // Cho phép kéo chuột chọn nhiều ô rồi Ctrl+V để dán nhanh, kể cả dán 1 giá
+    // trị (copy từ 1 ô) vào cả vùng đã chọn - giống Excel. Ctrl+C dùng hành vi
+    // có sẵn của DataGridView (ClipboardCopyMode ở trên), không cần code thêm.
+    private void Dgv_KeyDown(object? sender, KeyEventArgs e)
+    {
+        if (e.Control && e.KeyCode == Keys.V)
+        {
+            PasteFromClipboard();
+            e.Handled = true;
+            e.SuppressKeyPress = true;
+        }
+    }
+
+    private void PasteFromClipboard()
+    {
+        if (!Clipboard.ContainsText())
+            return;
+
+        string text = Clipboard.GetText();
+        if (string.IsNullOrEmpty(text))
+            return;
+
+        string[] lines = text.Replace("\r\n", "\n").TrimEnd('\n').Split('\n');
+        string[][] grid = lines.Select(l => l.Split('\t')).ToArray();
+
+        dgv.EndEdit();
+
+        List<DataGridViewCell> selected = dgv.SelectedCells.Cast<DataGridViewCell>().ToList();
+
+        // Dán 1 giá trị (copy từ đúng 1 ô) vào toàn bộ vùng đang bôi đen -
+        // giống Excel, đúng nhu cầu sửa nhanh giá của nhiều sản phẩm cùng lúc.
+        if (grid.Length == 1 && grid[0].Length == 1 && selected.Count > 1)
+        {
+            string value = FormatPriceText(grid[0][0]);
+            foreach (DataGridViewCell cell in selected)
+            {
+                if (!cell.ReadOnly)
+                    cell.Value = value;
+            }
+            return;
+        }
+
+        int startRow = selected.Count > 0 ? selected.Min(c => c.RowIndex) : dgv.CurrentCell?.RowIndex ?? -1;
+        int startCol = selected.Count > 0 ? selected.Min(c => c.ColumnIndex) : dgv.CurrentCell?.ColumnIndex ?? -1;
+
+        if (startRow < 0 || startCol < 0)
+            return;
+
+        for (int r = 0; r < grid.Length; r++)
+        {
+            int rowIndex = startRow + r;
+            if (rowIndex >= dgv.Rows.Count)
+                break;
+
+            for (int c = 0; c < grid[r].Length; c++)
+            {
+                int colIndex = startCol + c;
+                if (colIndex >= dgv.Columns.Count)
+                    break;
+
+                DataGridViewCell target = dgv.Rows[rowIndex].Cells[colIndex];
+                if (!target.ReadOnly)
+                    target.Value = FormatPriceText(grid[r][c]);
+            }
+        }
     }
 
     private void ApplyFilter(string query)

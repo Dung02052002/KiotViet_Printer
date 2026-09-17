@@ -91,15 +91,20 @@ public class FormEditNames : Form
         dgv.AllowUserToAddRows = false;
         dgv.AllowUserToDeleteRows = false;
         dgv.SelectionMode = DataGridViewSelectionMode.CellSelect;
-        dgv.MultiSelect = false;
+        // Cho phép kéo chuột chọn nhiều ô (Ctrl+C có sẵn của DataGridView) rồi
+        // Ctrl+V để dán nhanh - xem Dgv_KeyDown/PasteFromClipboard.
+        dgv.MultiSelect = true;
+        dgv.ClipboardCopyMode = DataGridViewClipboardCopyMode.EnableWithoutHeaderText;
         dgv.AutoGenerateColumns = false;
         dgv.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
         dgv.EditMode = DataGridViewEditMode.EditOnKeystrokeOrF2;
         AppTheme.StyleGrid(dgv);
         BuildColumns();
+        dgv.KeyDown += Dgv_KeyDown;
         pnlGridCard.Controls.Add(dgv);
 
-        lblFooterHint.Text = "Sản phẩm không nhập \"Tên hàng mới\" sẽ giữ nguyên tên hiện tại trong file Excel.";
+        lblFooterHint.Text = "Sản phẩm không nhập \"Tên hàng mới\" sẽ giữ nguyên tên hiện tại trong file Excel. " +
+            "Kéo chuột chọn nhiều ô rồi Ctrl+C/Ctrl+V để copy tên nhanh.";
         lblFooterHint.SetBounds(24, ClientSize.Height - 54, 620, 22);
         lblFooterHint.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
         lblFooterHint.Font = AppTheme.Fonts.Hint;
@@ -162,6 +167,73 @@ public class FormEditNames : Form
             }
         };
         dgv.Columns.Add(newNameColumn);
+    }
+
+    // Cho phép kéo chuột chọn nhiều ô rồi Ctrl+V để dán nhanh, kể cả dán 1 tên
+    // (copy từ 1 ô) vào cả vùng đã chọn - giống Excel. Ctrl+C dùng hành vi có
+    // sẵn của DataGridView (ClipboardCopyMode ở trên), không cần code thêm.
+    private void Dgv_KeyDown(object? sender, KeyEventArgs e)
+    {
+        if (e.Control && e.KeyCode == Keys.V)
+        {
+            PasteFromClipboard();
+            e.Handled = true;
+            e.SuppressKeyPress = true;
+        }
+    }
+
+    private void PasteFromClipboard()
+    {
+        if (!Clipboard.ContainsText())
+            return;
+
+        string text = Clipboard.GetText();
+        if (string.IsNullOrEmpty(text))
+            return;
+
+        string[] lines = text.Replace("\r\n", "\n").TrimEnd('\n').Split('\n');
+        string[][] grid = lines.Select(l => l.Split('\t')).ToArray();
+
+        dgv.EndEdit();
+
+        List<DataGridViewCell> selected = dgv.SelectedCells.Cast<DataGridViewCell>().ToList();
+
+        // Dán 1 tên (copy từ đúng 1 ô) vào toàn bộ vùng đang bôi đen - giống
+        // Excel, đúng nhu cầu sửa nhanh tên của nhiều sản phẩm cùng lúc.
+        if (grid.Length == 1 && grid[0].Length == 1 && selected.Count > 1)
+        {
+            string value = grid[0][0].Trim();
+            foreach (DataGridViewCell cell in selected)
+            {
+                if (!cell.ReadOnly)
+                    cell.Value = value;
+            }
+            return;
+        }
+
+        int startRow = selected.Count > 0 ? selected.Min(c => c.RowIndex) : dgv.CurrentCell?.RowIndex ?? -1;
+        int startCol = selected.Count > 0 ? selected.Min(c => c.ColumnIndex) : dgv.CurrentCell?.ColumnIndex ?? -1;
+
+        if (startRow < 0 || startCol < 0)
+            return;
+
+        for (int r = 0; r < grid.Length; r++)
+        {
+            int rowIndex = startRow + r;
+            if (rowIndex >= dgv.Rows.Count)
+                break;
+
+            for (int c = 0; c < grid[r].Length; c++)
+            {
+                int colIndex = startCol + c;
+                if (colIndex >= dgv.Columns.Count)
+                    break;
+
+                DataGridViewCell target = dgv.Rows[rowIndex].Cells[colIndex];
+                if (!target.ReadOnly)
+                    target.Value = grid[r][c].Trim();
+            }
+        }
     }
 
     private void ApplyFilter(string query)
