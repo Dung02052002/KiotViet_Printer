@@ -39,7 +39,8 @@ public class FullLabelHandler : ILabelHandler
     public void PrepareDataAndPrint(
         List<ProductRow> products,
         LabelDefinition label,
-        string employeeCode)
+        string employeeCode,
+        PriceOverride? priceOverride = null)
     {
         if (string.IsNullOrWhiteSpace(label.SourceExcelFile) || !File.Exists(label.SourceExcelFile))
             throw new Exception($"Không tìm thấy file Excel nguồn:\n{label.SourceExcelFile}");
@@ -52,7 +53,8 @@ public class FullLabelHandler : ILabelHandler
 
         _excelService.WriteGenericLabelData(
             label.SourceExcelFile,
-            label.DataFilePath);
+            label.DataFilePath,
+            priceOverride);
 
         _barTenderService.Print(label.TemplatePath);
     }

@@ -61,6 +61,15 @@ public class RoundedTextBox : UserControl
         set => _editor.TextAlign = value;
     }
 
+    // Cho phép các ô nhập tự định dạng (vd. giá tiền có dấu phân cách) giữ
+    // đúng vị trí con trỏ sau khi format lại Text - xem FormMain.
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+    public int SelectionStart
+    {
+        get => _editor.SelectionStart;
+        set => _editor.SelectionStart = value;
+    }
+
     [AllowNull]
     public override string Text
     {

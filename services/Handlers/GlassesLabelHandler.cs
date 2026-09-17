@@ -55,7 +55,8 @@ rows.Add(new PreviewRow
     public void PrepareDataAndPrint(
         List<ProductRow> products,
         LabelDefinition label,
-        string employeeCode)
+        string employeeCode,
+        PriceOverride? priceOverride = null)
     {
         string colorCode = employeeCode;
 

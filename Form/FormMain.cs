@@ -1,4 +1,5 @@
 
+using System.Globalization;
 using KiotVietLabelPrinter.Models;
 using KiotVietLabelPrinter.Services;
 using KiotVietLabelPrinter.UI;
@@ -42,6 +43,18 @@ public class FormMain : Form
 
     private readonly RoundedTextBox txtExcelFile = new();
     private readonly RoundedTextBox txtEmployeeCode = new();
+
+    // Nhập giá bán - chỉ hiện với Tem đầy đủ (HandlerType == "FULL").
+    // Xem ApplyPriceEditMode/UpdatePriceModeUi.
+    private readonly Label lblPriceMode = new();
+    private readonly ComboBox cboPriceMode = new();
+    private readonly RoundedTextBox txtUniformPrice = new();
+    private readonly RoundedButton btnEditPrices = new();
+    private readonly Label lblPriceStatus = new();
+
+    private PriceOverrideMode _priceMode = PriceOverrideMode.Keep;
+    private readonly Dictionary<string, double> _productPriceOverrides = new(StringComparer.OrdinalIgnoreCase);
+    private bool _formattingUniformPrice;
 
     private readonly RoundedButton btnChooseExcel = new();
     private readonly SmoothFlowLayoutPanel flpActions = new();
@@ -665,6 +678,8 @@ public class FormMain : Form
         };
         pnlWorkspace.Controls.Add(lblEmployeeHint);
 
+        BuildPriceModeRow();
+
         Panel line2 = new()
         {
             Left = 32,
@@ -763,6 +778,218 @@ public class FormMain : Form
         btnPrint.Click += BtnPrint_Click;
         flpActions.Controls.Add(btnPrint);
     }
+
+    // Cùng hàng/toạ độ với "Mã nhân viên" (lblEmployee/txtEmployeeCode): hai
+    // nhóm control này không bao giờ hiện cùng lúc (FULL không dùng mã nhân
+    // viên - xem ApplyEmployeeCodeMode), nên dùng chung chỗ trống đó thay vì
+    // đẩy layout của THAO TÁC/IN TEM xuống.
+    private void BuildPriceModeRow()
+    {
+        lblPriceMode.Text = "Nhập giá bán";
+        lblPriceMode.Left = 32;
+        lblPriceMode.Top = 202;
+        lblPriceMode.Width = 150;
+        lblPriceMode.Font = AppTheme.Fonts.Body;
+        lblPriceMode.ForeColor = AppTheme.Colors.TextPrimary;
+        pnlWorkspace.Controls.Add(lblPriceMode);
+
+        cboPriceMode.Left = 190;
+        cboPriceMode.Top = 194;
+        cboPriceMode.Width = 280;
+        cboPriceMode.Height = 42;
+        cboPriceMode.DropDownStyle = ComboBoxStyle.DropDownList;
+        AppTheme.StyleComboBox(cboPriceMode);
+        cboPriceMode.Items.Add("Giữ nguyên giá");
+        cboPriceMode.Items.Add("Sửa tất cả cùng 1 giá");
+        cboPriceMode.Items.Add("Sửa giá một vài sản phẩm");
+        cboPriceMode.SelectedIndex = (int)PriceOverrideMode.Keep;
+        cboPriceMode.SelectedIndexChanged += CboPriceMode_SelectedIndexChanged;
+        pnlWorkspace.Controls.Add(cboPriceMode);
+
+        txtUniformPrice.Left = 486;
+        txtUniformPrice.Top = 194;
+        txtUniformPrice.Width = 200;
+        txtUniformPrice.Height = 42;
+        txtUniformPrice.Font = AppTheme.Fonts.Body;
+        txtUniformPrice.TextAlign = HorizontalAlignment.Right;
+        txtUniformPrice.PlaceholderText = "Nhập giá bán (VNĐ)";
+        txtUniformPrice.ContainerColor = AppTheme.Colors.Surface;
+        txtUniformPrice.Visible = false;
+        txtUniformPrice.TextChanged += TxtUniformPrice_TextChanged;
+        pnlWorkspace.Controls.Add(txtUniformPrice);
+
+        btnEditPrices.Text = "Sửa giá...";
+        btnEditPrices.Icon = IconGlyphs.Kind.Code;
+        btnEditPrices.Left = 486;
+        btnEditPrices.Top = 194;
+        btnEditPrices.Width = 170;
+        btnEditPrices.Height = 42;
+        btnEditPrices.Variant = ButtonVariant.Outline;
+        btnEditPrices.ContainerColor = AppTheme.Colors.Surface;
+        btnEditPrices.Visible = false;
+        btnEditPrices.Click += (_, _) => OpenPerProductPriceEditor();
+        pnlWorkspace.Controls.Add(btnEditPrices);
+
+        lblPriceStatus.Left = 666;
+        lblPriceStatus.Top = 208;
+        lblPriceStatus.Width = 280;
+        lblPriceStatus.Height = 18;
+        lblPriceStatus.Font = AppTheme.Fonts.Hint;
+        lblPriceStatus.ForeColor = AppTheme.Colors.TextMuted;
+        lblPriceStatus.Visible = false;
+        pnlWorkspace.Controls.Add(lblPriceStatus);
+    }
+    #endregion
+
+    #region Giá bán (Tem đầy đủ)
+    private void CboPriceMode_SelectedIndexChanged(object? sender, EventArgs e)
+    {
+        _priceMode = (PriceOverrideMode)cboPriceMode.SelectedIndex;
+        UpdatePriceModeUi();
+
+        if (_priceMode == PriceOverrideMode.PerProduct)
+            OpenPerProductPriceEditor();
+    }
+
+    private void OpenPerProductPriceEditor()
+    {
+        List<ProductRow> products;
+
+        try
+        {
+            if (string.IsNullOrWhiteSpace(txtExcelFile.Text) || !File.Exists(txtExcelFile.Text.Trim()))
+                throw new Exception("Vui lòng chọn file Excel KiotViet trước khi sửa giá từng sản phẩm.");
+
+            products = _labelService.ReadProducts(txtExcelFile.Text.Trim());
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(ex.Message, "Lỗi");
+            return;
+        }
+
+        using FormEditPrices form = new(products, _productPriceOverrides);
+
+        if (form.ShowDialog(this) == DialogResult.OK)
+        {
+            _productPriceOverrides.Clear();
+            foreach (KeyValuePair<string, double> kv in form.ResultOverrides)
+                _productPriceOverrides[kv.Key] = kv.Value;
+        }
+
+        UpdatePriceModeUi();
+    }
+
+    // Tự định dạng dấu phân cách nghìn (vi-VN) trong lúc gõ, giữ nguyên vị trí
+    // con trỏ - vì RoundedTextBox không lộ ra KeyPress để chặn ký tự không
+    // phải số, nên lọc/format lại toàn bộ Text mỗi lần thay đổi là đơn giản và
+    // an toàn hơn (không thể gõ được ký tự âm/chữ vì luôn bị lọc bỏ).
+    private void TxtUniformPrice_TextChanged(object? sender, EventArgs e)
+    {
+        if (_formattingUniformPrice)
+            return;
+
+        string raw = txtUniformPrice.Text;
+        int caret = Math.Clamp(txtUniformPrice.SelectionStart, 0, raw.Length);
+        int digitsBeforeCaret = raw.Take(caret).Count(char.IsDigit);
+
+        string digits = new(raw.Where(char.IsDigit).ToArray());
+        if (digits.Length > 15)
+            digits = digits[..15];
+
+        string formatted = digits.Length == 0 || !long.TryParse(digits, out long value)
+            ? ""
+            : value.ToString("N0", CultureInfo.GetCultureInfo("vi-VN"));
+
+        _formattingUniformPrice = true;
+        txtUniformPrice.Text = formatted;
+
+        int newCaret = 0;
+        int seen = 0;
+        while (newCaret < formatted.Length && seen < digitsBeforeCaret)
+        {
+            if (char.IsDigit(formatted[newCaret]))
+                seen++;
+            newCaret++;
+        }
+        txtUniformPrice.SelectionStart = Math.Clamp(newCaret, 0, formatted.Length);
+        _formattingUniformPrice = false;
+    }
+
+    private bool TryParseUniformPrice(out double price)
+    {
+        string digits = new(txtUniformPrice.Text.Where(char.IsDigit).ToArray());
+
+        if (digits.Length == 0 || !long.TryParse(digits, out long value) || value < 0)
+        {
+            price = 0;
+            return false;
+        }
+
+        price = value;
+        return true;
+    }
+
+    // Gọi mỗi khi vào workspace của một danh mục tem và mỗi khi đổi file Excel
+    // nguồn: chỉ Tem đầy đủ (HandlerType == "FULL") mới hiện các control này,
+    // và các mã sản phẩm đã sửa giá gắn với một file Excel cụ thể nên không
+    // nên giữ lại khi người dùng đổi sang file khác.
+    private void ApplyPriceEditMode(LabelDefinition label)
+    {
+        bool isFull = label.HandlerType == "FULL";
+
+        lblPriceMode.Visible = isFull;
+        cboPriceMode.Visible = isFull;
+
+        UpdatePriceModeUi();
+    }
+
+    private void ResetPriceState()
+    {
+        _priceMode = PriceOverrideMode.Keep;
+        _productPriceOverrides.Clear();
+
+        cboPriceMode.SelectedIndexChanged -= CboPriceMode_SelectedIndexChanged;
+        cboPriceMode.SelectedIndex = (int)PriceOverrideMode.Keep;
+        cboPriceMode.SelectedIndexChanged += CboPriceMode_SelectedIndexChanged;
+
+        txtUniformPrice.Clear();
+
+        UpdatePriceModeUi();
+    }
+
+    private void UpdatePriceModeUi()
+    {
+        bool isFull = cboPriceMode.Visible;
+        bool isKeep = isFull && _priceMode == PriceOverrideMode.Keep;
+        bool isUniform = isFull && _priceMode == PriceOverrideMode.Uniform;
+        bool isPerProduct = isFull && _priceMode == PriceOverrideMode.PerProduct;
+
+        // Giữ nguyên giá: hiện ô giá nhưng khoá lại (disable), không cho nhập -
+        // chỉ còn dòng chữ mờ (placeholder) nhắc là đang dùng nguyên giá Excel.
+        txtUniformPrice.Visible = isKeep || isUniform;
+        txtUniformPrice.Enabled = isUniform;
+
+        if (isKeep)
+        {
+            txtUniformPrice.PlaceholderText = "Giữ nguyên giá trong file Excel";
+            txtUniformPrice.Clear();
+        }
+        else if (isUniform)
+        {
+            txtUniformPrice.PlaceholderText = "Nhập giá bán (VNĐ)";
+        }
+
+        btnEditPrices.Visible = isPerProduct;
+        lblPriceStatus.Visible = isPerProduct;
+
+        if (isPerProduct)
+        {
+            lblPriceStatus.Text = _productPriceOverrides.Count == 0
+                ? "Chưa sửa giá sản phẩm nào"
+                : $"Đã sửa giá {_productPriceOverrides.Count} sản phẩm";
+        }
+    }
     #endregion
 
     #region Navigation
@@ -830,6 +1057,7 @@ public class FormMain : Form
         }
 
         ApplyEmployeeCodeMode(label);
+        ApplyPriceEditMode(label);
     }
 
     private void ApplyEmployeeCodeMode(LabelDefinition label)
@@ -930,6 +1158,10 @@ public class FormMain : Form
         {
             txtExcelFile.Text = dialog.FileName;
 
+            // Giá đã sửa/chọn gắn với sản phẩm của file cũ - đổi file khác thì
+            // reset để tránh áp nhầm giá lên sản phẩm không liên quan.
+            ResetPriceState();
+
             ConfigService.Instance.Config.LastExcelFile = dialog.FileName;
 
             string? folder = Path.GetDirectoryName(dialog.FileName);
@@ -974,10 +1206,13 @@ public class FormMain : Form
         {
             EnsureReadyToProcess();
 
+            PriceOverride? priceOverride = BuildPriceOverrideOrThrow();
+
             using FormPreview preview = new(
                 txtExcelFile.Text.Trim(),
                 _selectedLabel!.Code,
-                txtEmployeeCode.Text.Trim());
+                txtEmployeeCode.Text.Trim(),
+                priceOverride);
 
             preview.ShowDialog();
         }
@@ -1015,6 +1250,7 @@ public class FormMain : Form
             string sourceExcelFile = txtExcelFile.Text.Trim();
             string labelCode = _selectedLabel!.Code;
             string employeeCode = txtEmployeeCode.Text.Trim();
+            PriceOverride? priceOverride = BuildPriceOverrideOrThrow();
 
             // In số lượng lớn có thể mất nhiều phút (phải chờ máy in xử lý
             // xong từng mã trước khi in mã kế tiếp — xem BarTenderService).
@@ -1030,7 +1266,8 @@ public class FormMain : Form
                 int productCount = await Task.Run(() => _labelService.Print(
                     sourceExcelFile,
                     labelCode,
-                    employeeCode));
+                    employeeCode,
+                    priceOverride));
 
                 ToastForm.ShowSuccess($"In thành công. Số sản phẩm: {productCount}");
             }
@@ -1060,6 +1297,33 @@ public class FormMain : Form
 
         if (!ConfigService.Instance.IsConfigured())
             throw new Exception("Cấu hình chưa đầy đủ.");
+    }
+
+    // Chỉ Tem đầy đủ mới có chỉnh giá bán - các loại tem khác luôn in bằng
+    // đúng giá trong file Excel (trả về null).
+    private PriceOverride? BuildPriceOverrideOrThrow()
+    {
+        if (_selectedLabel!.HandlerType != "FULL")
+            return null;
+
+        switch (_priceMode)
+        {
+            case PriceOverrideMode.Uniform:
+                if (!TryParseUniformPrice(out double uniformPrice))
+                    throw new Exception("Vui lòng nhập giá bán hợp lệ (không được để trống hoặc âm).");
+
+                return new PriceOverride { Mode = PriceOverrideMode.Uniform, UniformPrice = uniformPrice };
+
+            case PriceOverrideMode.PerProduct:
+                return new PriceOverride
+                {
+                    Mode = PriceOverrideMode.PerProduct,
+                    ProductOverrides = new Dictionary<string, double>(_productPriceOverrides, StringComparer.OrdinalIgnoreCase)
+                };
+
+            default:
+                return null;
+        }
     }
     #endregion
 }

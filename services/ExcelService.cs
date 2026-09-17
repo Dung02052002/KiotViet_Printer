@@ -6,6 +6,8 @@ namespace KiotVietLabelPrinter.Services;
 public class ExcelService
 {
     private const int BarcodeColumnIndex = 5; // Cột F
+    private const int PriceColumnIndex = 8;   // Cột I - Giá bán
+    private const int ProductCodeColumnIndex = 2; // Cột C - Mã hàng
 
     #region PUBLIC API CHO PROJECT MỚI
 
@@ -54,11 +56,13 @@ public class ExcelService
 
     /// <summary>
     /// Ghi file data tem FULL theo logic tool cũ:
-    /// copy nguyên dữ liệu từ source sang target, không parse cột F
+    /// copy nguyên dữ liệu từ source sang target, không parse cột F.
+    /// priceOverride (tuỳ chọn) cho phép ghi đè cột giá bán (I) theo chế độ đã
+    /// chọn ở màn hình Tem đầy đủ, mà không đụng tới file Excel nguồn.
     /// </summary>
-    public void WriteGenericLabelData(string sourceFile, string targetFile)
+    public void WriteGenericLabelData(string sourceFile, string targetFile, PriceOverride? priceOverride = null)
     {
-        CopyToBarTenderData(sourceFile, targetFile, false, "");
+        CopyToBarTenderData(sourceFile, targetFile, false, "", priceOverride);
     }
 
     /// <summary>
@@ -79,7 +83,8 @@ public class ExcelService
         string sourceFile,
         string targetFile,
         bool isBarcode,
-        string employeeCode = "")
+        string employeeCode = "",
+        PriceOverride? priceOverride = null)
     {
         using IWorkbook sourceWorkbook = OpenWorkbook(sourceFile);
         using IWorkbook targetWorkbook = OpenWorkbook(targetFile);
@@ -103,8 +108,20 @@ public class ExcelService
 
             IRow targetRow = targetSheet.GetRow(i) ?? targetSheet.CreateRow(i);
 
+            string productCode = sourceRow.GetCell(ProductCodeColumnIndex)?.ToString()?.Trim() ?? "";
+
             for (int j = 0; j < sourceRow.LastCellNum; j++)
             {
+                // GIÁ BÁN: ghi đè theo chế độ đã chọn ở màn hình Tem đầy đủ (Sửa
+                // tất cả cùng 1 giá / Sửa giá một vài sản phẩm). Không đụng tới
+                // file Excel nguồn - chỉ áp dụng lên file data vừa ghi ra đây.
+                if (j == PriceColumnIndex && priceOverride != null && priceOverride.TryResolve(productCode, out double overriddenPrice))
+                {
+                    ICell overriddenCell = targetRow.GetCell(j) ?? targetRow.CreateCell(j);
+                    overriddenCell.SetCellValue(overriddenPrice);
+                    continue;
+                }
+
                 ICell? sourceCell = sourceRow.GetCell(j);
                 if (sourceCell == null)
                     continue;

@@ -19,15 +19,18 @@ public class FormPreview : Form
     private readonly string _sourceExcelFile;
     private readonly string _labelCode;
     private readonly string _employeeCode;
+    private readonly PriceOverride? _priceOverride;
 
     public FormPreview(
         string sourceExcelFile,
         string labelCode,
-        string employeeCode)
+        string employeeCode,
+        PriceOverride? priceOverride = null)
     {
         _sourceExcelFile = sourceExcelFile;
         _labelCode = labelCode;
         _employeeCode = employeeCode;
+        _priceOverride = priceOverride;
 
         Text = "Xem trước dữ liệu in tem";
         Width = 1250;
@@ -123,6 +126,17 @@ public class FormPreview : Form
             if (IsDisposed || Disposing || !Visible)
                 return;
 
+            // Phản ánh đúng giá đã chỉnh ở màn hình Tem đầy đủ (nếu có) - chỉ đổi
+            // giá trị hiển thị trên dòng preview, không đụng tới file Excel nguồn.
+            if (_priceOverride != null)
+            {
+                foreach (PreviewRow row in rows)
+                {
+                    if (_priceOverride.TryResolve(row.ProductCode, out double overriddenPrice))
+                        row.Price = overriddenPrice;
+                }
+            }
+
             dgvPreview.DataSource = null;
             dgvPreview.DataSource = rows;
 
@@ -141,11 +155,19 @@ public class FormPreview : Form
                 // fallback nếu chưa tìm thấy cấu hình
             }
 
+            string priceNote = _priceOverride?.Mode switch
+            {
+                PriceOverrideMode.Uniform => "   |   Giá bán: đã sửa (1 giá chung)",
+                PriceOverrideMode.PerProduct => "   |   Giá bán: đã sửa một số sản phẩm",
+                _ => ""
+            };
+
             lblSummary.Text =
                 $"Loại tem: {labelName} ({_labelCode})   |   " +
                 $"Sản phẩm: {totalProducts}   |   " +
                 $"Tổng tem theo số lượng: {totalLabels}   |   " +
-                $"Mã NV: {(_employeeCode == "" ? "(trống)" : _employeeCode)}";
+                $"Mã NV: {(_employeeCode == "" ? "(trống)" : _employeeCode)}" +
+                priceNote;
 
             btnPrint.Enabled = true;
         }
@@ -245,7 +267,8 @@ public class FormPreview : Form
             int total = await Task.Run(() => _labelService.Print(
                 _sourceExcelFile,
                 _labelCode,
-                _employeeCode));
+                _employeeCode,
+                _priceOverride));
 
             ToastForm.ShowSuccess($"Đã xử lý {total} sản phẩm.");
             DialogResult = DialogResult.OK;
