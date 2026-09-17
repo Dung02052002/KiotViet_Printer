@@ -52,7 +52,8 @@ public class BarcodeLabelHandler : ILabelHandler
         List<ProductRow> products,
         LabelDefinition label,
         string employeeCode,
-        PriceOverride? priceOverride = null)
+        PriceOverride? priceOverride = null,
+        Dictionary<string, string>? nameOverrides = null)
     {
         if (string.IsNullOrWhiteSpace(label.SourceExcelFile) || !File.Exists(label.SourceExcelFile))
             throw new Exception($"Không tìm thấy file Excel nguồn:\n{label.SourceExcelFile}");

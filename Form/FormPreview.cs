@@ -20,17 +20,20 @@ public class FormPreview : Form
     private readonly string _labelCode;
     private readonly string _employeeCode;
     private readonly PriceOverride? _priceOverride;
+    private readonly Dictionary<string, string>? _nameOverrides;
 
     public FormPreview(
         string sourceExcelFile,
         string labelCode,
         string employeeCode,
-        PriceOverride? priceOverride = null)
+        PriceOverride? priceOverride = null,
+        Dictionary<string, string>? nameOverrides = null)
     {
         _sourceExcelFile = sourceExcelFile;
         _labelCode = labelCode;
         _employeeCode = employeeCode;
         _priceOverride = priceOverride;
+        _nameOverrides = nameOverrides;
 
         Text = "Xem trước dữ liệu in tem";
         Width = 1250;
@@ -137,6 +140,23 @@ public class FormPreview : Form
                 }
             }
 
+            // Phản ánh đúng tên hàng đã sửa ở modal "Sửa tên hàng" (nếu có) -
+            // chỉ đổi giá trị hiển thị trên dòng preview, không đụng tới file
+            // Excel nguồn. Ưu tiên tên đã sửa, nếu không có thì giữ tên gốc.
+            if (_nameOverrides != null)
+            {
+                foreach (PreviewRow row in rows)
+                {
+                    if (!string.IsNullOrWhiteSpace(row.ProductCode) &&
+                        _nameOverrides.TryGetValue(row.ProductCode, out string? overriddenName) &&
+                        !string.IsNullOrWhiteSpace(overriddenName))
+                    {
+                        row.ProductName = overriddenName;
+                        row.ProductNameWithAttr = overriddenName;
+                    }
+                }
+            }
+
             dgvPreview.DataSource = null;
             dgvPreview.DataSource = rows;
 
@@ -162,12 +182,17 @@ public class FormPreview : Form
                 _ => ""
             };
 
+            string nameNote = _nameOverrides != null && _nameOverrides.Count > 0
+                ? $"   |   Tên hàng: đã sửa {_nameOverrides.Count} sản phẩm"
+                : "";
+
             lblSummary.Text =
                 $"Loại tem: {labelName} ({_labelCode})   |   " +
                 $"Sản phẩm: {totalProducts}   |   " +
                 $"Tổng tem theo số lượng: {totalLabels}   |   " +
                 $"Mã NV: {(_employeeCode == "" ? "(trống)" : _employeeCode)}" +
-                priceNote;
+                priceNote +
+                nameNote;
 
             btnPrint.Enabled = true;
         }
@@ -246,8 +271,12 @@ public class FormPreview : Form
         if (cPrice != null)
             cPrice.FillWeight = 90;
 
+        // Tên hàng/nội dung dài phải xuống dòng và hiển thị đầy đủ, không cắt
+        // chữ, không dấu "..." - AllCells tự tăng chiều cao hàng theo nội dung
+        // dài nhất, các hàng phía dưới tự dịch xuống theo (xem yêu cầu Xem
+        // trước hiển thị đầy đủ tên hàng dài).
         dgvPreview.AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.AllCells;
-        dgvPreview.DefaultCellStyle.WrapMode = DataGridViewTriState.False;
+        dgvPreview.DefaultCellStyle.WrapMode = DataGridViewTriState.True;
     }
 
     private async void BtnPrint_Click(object? sender, EventArgs e)
@@ -268,7 +297,8 @@ public class FormPreview : Form
                 _sourceExcelFile,
                 _labelCode,
                 _employeeCode,
-                _priceOverride));
+                _priceOverride,
+                _nameOverrides));
 
             ToastForm.ShowSuccess($"Đã xử lý {total} sản phẩm.");
             DialogResult = DialogResult.OK;

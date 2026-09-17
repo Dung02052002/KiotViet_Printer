@@ -5,7 +5,8 @@ namespace KiotVietLabelPrinter.Services;
 
 public class ExcelService
 {
-    private const int BarcodeColumnIndex = 5; // Cột F
+    private const int ProductNameColumnIndex = 4;  // Cột E - Tên hàng
+    private const int BarcodeColumnIndex = 5; // Cột F - cũng là "Tên hàng (thuộc tính)"
     private const int PriceColumnIndex = 8;   // Cột I - Giá bán
     private const int ProductCodeColumnIndex = 2; // Cột C - Mã hàng
 
@@ -59,10 +60,16 @@ public class ExcelService
     /// copy nguyên dữ liệu từ source sang target, không parse cột F.
     /// priceOverride (tuỳ chọn) cho phép ghi đè cột giá bán (I) theo chế độ đã
     /// chọn ở màn hình Tem đầy đủ, mà không đụng tới file Excel nguồn.
+    /// nameOverrides (tuỳ chọn) cho phép ghi đè tên hàng (cột E/F) theo mã sản
+    /// phẩm đã sửa ở modal "Sửa tên hàng" - cũng không đụng tới file Excel nguồn.
     /// </summary>
-    public void WriteGenericLabelData(string sourceFile, string targetFile, PriceOverride? priceOverride = null)
+    public void WriteGenericLabelData(
+        string sourceFile,
+        string targetFile,
+        PriceOverride? priceOverride = null,
+        Dictionary<string, string>? nameOverrides = null)
     {
-        CopyToBarTenderData(sourceFile, targetFile, false, "", priceOverride);
+        CopyToBarTenderData(sourceFile, targetFile, false, "", priceOverride, nameOverrides);
     }
 
     /// <summary>
@@ -84,7 +91,8 @@ public class ExcelService
         string targetFile,
         bool isBarcode,
         string employeeCode = "",
-        PriceOverride? priceOverride = null)
+        PriceOverride? priceOverride = null,
+        Dictionary<string, string>? nameOverrides = null)
     {
         using IWorkbook sourceWorkbook = OpenWorkbook(sourceFile);
         using IWorkbook targetWorkbook = OpenWorkbook(targetFile);
@@ -119,6 +127,20 @@ public class ExcelService
                 {
                     ICell overriddenCell = targetRow.GetCell(j) ?? targetRow.CreateCell(j);
                     overriddenCell.SetCellValue(overriddenPrice);
+                    continue;
+                }
+
+                // TÊN HÀNG: ghi đè cột E/F theo tên đã sửa ở modal "Sửa tên hàng"
+                // (Tem đầy đủ). Không áp dụng cho tem mã vạch (cột F ở đó dùng để
+                // parse mã, không phải tên hiển thị). Không đụng tới file Excel
+                // nguồn - chỉ áp dụng lên file data vừa ghi ra đây.
+                if (!isBarcode && (j == ProductNameColumnIndex || j == BarcodeColumnIndex) &&
+                    nameOverrides != null && !string.IsNullOrWhiteSpace(productCode) &&
+                    nameOverrides.TryGetValue(productCode, out string? overriddenName) &&
+                    !string.IsNullOrWhiteSpace(overriddenName))
+                {
+                    ICell overriddenCell = targetRow.GetCell(j) ?? targetRow.CreateCell(j);
+                    overriddenCell.SetCellValue(overriddenName);
                     continue;
                 }
 

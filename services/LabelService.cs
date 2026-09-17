@@ -46,7 +46,8 @@ public class LabelService
         string sourceExcelFile,
         string labelCode,
         string employeeCode,
-        PriceOverride? priceOverride = null)
+        PriceOverride? priceOverride = null,
+        Dictionary<string, string>? nameOverrides = null)
     {
         List<ProductRow> products = ReadProducts(sourceExcelFile);
 
@@ -57,7 +58,7 @@ public class LabelService
 
         var handler = _handlerFactory.GetHandler(label.HandlerType);
 
-        handler.PrepareDataAndPrint(products, label, employeeCode, priceOverride);
+        handler.PrepareDataAndPrint(products, label, employeeCode, priceOverride, nameOverrides);
 
         _historyService.Add(new PrintHistory
         {

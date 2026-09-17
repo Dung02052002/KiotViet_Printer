@@ -56,7 +56,8 @@ rows.Add(new PreviewRow
         List<ProductRow> products,
         LabelDefinition label,
         string employeeCode,
-        PriceOverride? priceOverride = null)
+        PriceOverride? priceOverride = null,
+        Dictionary<string, string>? nameOverrides = null)
     {
         string colorCode = employeeCode;
 

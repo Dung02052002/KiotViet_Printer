@@ -56,6 +56,15 @@ public class FormMain : Form
     private readonly Dictionary<string, double> _productPriceOverrides = new(StringComparer.OrdinalIgnoreCase);
     private bool _formattingUniformPrice;
 
+    // Sửa tên hàng - chỉ hiện với Tem đầy đủ, ngay dưới hàng giá bán. Hoàn
+    // toàn độc lập với state/luồng dữ liệu giá bán ở trên (xem region "Sửa
+    // tên hàng (Tem đầy đủ)").
+    private readonly RoundedButton btnEditNames = new();
+    private readonly Label lblNameStatus = new();
+    private readonly Panel pnlDivider2 = new();
+    private readonly Label lblSectionActionsTitle = new();
+    private readonly Dictionary<string, string> _productNameOverrides = new(StringComparer.OrdinalIgnoreCase);
+
     private readonly RoundedButton btnChooseExcel = new();
     private readonly SmoothFlowLayoutPanel flpActions = new();
     private readonly RoundedButton btnConfig = new();
@@ -71,11 +80,12 @@ public class FormMain : Form
     {
         Text = "KiotViet Label Printer";
         Width = 1060;
-        Height = 760;
-        // Tall enough that the detail card (icon/header + 2 field rows + up to
-        // two wrapped rows of action buttons) never gets clipped by the card's
-        // own bottom-anchored edge at the smallest allowed window size.
-        MinimumSize = new Size(940, 760);
+        Height = 815;
+        // Tall enough that the detail card (icon/header + up to 3 field rows -
+        // the 3rd row "Sửa tên hàng" only shows for Tem đầy đủ - + up to two
+        // wrapped rows of action buttons) never gets clipped by the card's own
+        // bottom-anchored edge at the smallest allowed window size.
+        MinimumSize = new Size(940, 815);
         StartPosition = FormStartPosition.CenterScreen;
         FormBorderStyle = FormBorderStyle.Sizable;
         MaximizeBox = true;
@@ -679,28 +689,23 @@ public class FormMain : Form
         pnlWorkspace.Controls.Add(lblEmployeeHint);
 
         BuildPriceModeRow();
+        BuildNameEditRow();
 
-        Panel line2 = new()
-        {
-            Left = 32,
-            Top = 254,
-            Width = pnlWorkspace.Width - 64,
-            Height = 1,
-            BackColor = AppTheme.Colors.Border,
-            Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right
-        };
-        pnlWorkspace.Controls.Add(line2);
+        pnlDivider2.Left = 32;
+        pnlDivider2.Top = 254;
+        pnlDivider2.Width = pnlWorkspace.Width - 64;
+        pnlDivider2.Height = 1;
+        pnlDivider2.BackColor = AppTheme.Colors.Border;
+        pnlDivider2.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+        pnlWorkspace.Controls.Add(pnlDivider2);
 
-        Label lblSectionActions = new()
-        {
-            Text = "THAO TÁC",
-            Left = 32,
-            Top = 274,
-            Width = 300,
-            Font = AppTheme.Fonts.Overline,
-            ForeColor = AppTheme.Colors.TextMuted
-        };
-        pnlWorkspace.Controls.Add(lblSectionActions);
+        lblSectionActionsTitle.Text = "THAO TÁC";
+        lblSectionActionsTitle.Left = 32;
+        lblSectionActionsTitle.Top = 274;
+        lblSectionActionsTitle.Width = 300;
+        lblSectionActionsTitle.Font = AppTheme.Fonts.Overline;
+        lblSectionActionsTitle.ForeColor = AppTheme.Colors.TextMuted;
+        pnlWorkspace.Controls.Add(lblSectionActionsTitle);
 
         const int actionHeight = 44;
 
@@ -839,6 +844,33 @@ public class FormMain : Form
         lblPriceStatus.Visible = false;
         pnlWorkspace.Controls.Add(lblPriceStatus);
     }
+
+    // Hàng riêng ngay dưới hàng giá bán, chỉ hiện với Tem đầy đủ (xem
+    // ApplyPriceEditMode). Không đụng tới control/logic của hàng giá bán ở
+    // trên - đây là control mới, độc lập hoàn toàn.
+    private void BuildNameEditRow()
+    {
+        btnEditNames.Text = "Sửa tên hàng";
+        btnEditNames.Icon = IconGlyphs.Kind.Code;
+        btnEditNames.Left = 32;
+        btnEditNames.Top = 246;
+        btnEditNames.Width = 170;
+        btnEditNames.Height = 42;
+        btnEditNames.Variant = ButtonVariant.Outline;
+        btnEditNames.ContainerColor = AppTheme.Colors.SurfaceElevated;
+        btnEditNames.Visible = false;
+        btnEditNames.Click += (_, _) => OpenNameEditor();
+        pnlWorkspace.Controls.Add(btnEditNames);
+
+        lblNameStatus.Left = 212;
+        lblNameStatus.Top = 260;
+        lblNameStatus.Width = 500;
+        lblNameStatus.Height = 18;
+        lblNameStatus.Font = AppTheme.Fonts.Hint;
+        lblNameStatus.ForeColor = AppTheme.Colors.TextMuted;
+        lblNameStatus.Visible = false;
+        pnlWorkspace.Controls.Add(lblNameStatus);
+    }
     #endregion
 
     #region Giá bán (Tem đầy đủ)
@@ -942,6 +974,12 @@ public class FormMain : Form
         cboPriceMode.Visible = isFull;
 
         UpdatePriceModeUi();
+
+        // Sửa tên hàng dùng chung điều kiện hiển thị (chỉ Tem đầy đủ) nhưng là
+        // control/state riêng - xem region "Sửa tên hàng (Tem đầy đủ)".
+        btnEditNames.Visible = isFull;
+        UpdateNameEditUi();
+        RepositionActionsSection();
     }
 
     private void ResetPriceState()
@@ -989,6 +1027,77 @@ public class FormMain : Form
                 ? "Chưa sửa giá sản phẩm nào"
                 : $"Đã sửa giá {_productPriceOverrides.Count} sản phẩm";
         }
+    }
+    #endregion
+
+    #region Sửa tên hàng (Tem đầy đủ)
+    // Hoàn toàn độc lập với region "Giá bán (Tem đầy đủ)" ở trên - không đọc,
+    // không ghi _priceMode/_productPriceOverrides, và ngược lại không region
+    // nào ở trên đọc/ghi _productNameOverrides.
+    private void OpenNameEditor()
+    {
+        List<ProductRow> products;
+
+        try
+        {
+            if (string.IsNullOrWhiteSpace(txtExcelFile.Text) || !File.Exists(txtExcelFile.Text.Trim()))
+                throw new Exception("Vui lòng chọn file Excel KiotViet trước khi sửa tên hàng.");
+
+            products = _labelService.ReadProducts(txtExcelFile.Text.Trim());
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(ex.Message, "Lỗi");
+            return;
+        }
+
+        using FormEditNames form = new(products, _productNameOverrides);
+
+        if (form.ShowDialog(this) == DialogResult.OK)
+        {
+            _productNameOverrides.Clear();
+            foreach (KeyValuePair<string, string> kv in form.ResultOverrides)
+                _productNameOverrides[kv.Key] = kv.Value;
+        }
+
+        UpdateNameEditUi();
+    }
+
+    private void ResetNameState()
+    {
+        _productNameOverrides.Clear();
+        UpdateNameEditUi();
+    }
+
+    private void UpdateNameEditUi()
+    {
+        bool hasOverrides = _productNameOverrides.Count > 0;
+        lblNameStatus.Visible = hasOverrides;
+
+        if (hasOverrides)
+            lblNameStatus.Text = $"Đã sửa tên {_productNameOverrides.Count} sản phẩm";
+    }
+
+    // Chỉ Tem đầy đủ mới có sửa tên hàng - các loại tem khác luôn in bằng
+    // đúng tên trong file Excel (trả về null, giống BuildPriceOverrideOrThrow).
+    private Dictionary<string, string>? BuildNameOverrideOrNull()
+    {
+        if (_selectedLabel!.HandlerType != "FULL" || _productNameOverrides.Count == 0)
+            return null;
+
+        return new Dictionary<string, string>(_productNameOverrides, StringComparer.OrdinalIgnoreCase);
+    }
+
+    // Đẩy phần "THAO TÁC"/IN TEM xuống khi hàng "Sửa tên hàng" đang hiển thị
+    // (chỉ Tem đầy đủ), để không đè lên nút/trạng thái của hàng đó. Gọi lại
+    // mỗi khi đổi danh mục tem (xem ApplyPriceEditMode).
+    private void RepositionActionsSection()
+    {
+        int extra = btnEditNames.Visible ? 52 : 0;
+
+        pnlDivider2.Top = 254 + extra;
+        lblSectionActionsTitle.Top = pnlDivider2.Top + 20;
+        flpActions.Top = lblSectionActionsTitle.Top + 32;
     }
     #endregion
 
@@ -1162,6 +1271,10 @@ public class FormMain : Form
             // reset để tránh áp nhầm giá lên sản phẩm không liên quan.
             ResetPriceState();
 
+            // Tương tự cho tên hàng đã sửa - cũng gắn với mã sản phẩm của file
+            // cũ, nên reset khi đổi file (độc lập với ResetPriceState ở trên).
+            ResetNameState();
+
             ConfigService.Instance.Config.LastExcelFile = dialog.FileName;
 
             string? folder = Path.GetDirectoryName(dialog.FileName);
@@ -1207,12 +1320,14 @@ public class FormMain : Form
             EnsureReadyToProcess();
 
             PriceOverride? priceOverride = BuildPriceOverrideOrThrow();
+            Dictionary<string, string>? nameOverrides = BuildNameOverrideOrNull();
 
             using FormPreview preview = new(
                 txtExcelFile.Text.Trim(),
                 _selectedLabel!.Code,
                 txtEmployeeCode.Text.Trim(),
-                priceOverride);
+                priceOverride,
+                nameOverrides);
 
             preview.ShowDialog();
         }
@@ -1251,6 +1366,7 @@ public class FormMain : Form
             string labelCode = _selectedLabel!.Code;
             string employeeCode = txtEmployeeCode.Text.Trim();
             PriceOverride? priceOverride = BuildPriceOverrideOrThrow();
+            Dictionary<string, string>? nameOverrides = BuildNameOverrideOrNull();
 
             // In số lượng lớn có thể mất nhiều phút (phải chờ máy in xử lý
             // xong từng mã trước khi in mã kế tiếp — xem BarTenderService).
@@ -1267,7 +1383,8 @@ public class FormMain : Form
                     sourceExcelFile,
                     labelCode,
                     employeeCode,
-                    priceOverride));
+                    priceOverride,
+                    nameOverrides));
 
                 ToastForm.ShowSuccess($"In thành công. Số sản phẩm: {productCount}");
             }

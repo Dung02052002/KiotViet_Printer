@@ -15,5 +15,6 @@ public interface ILabelHandler
         List<ProductRow> products,
         LabelDefinition label,
         string employeeCode,
-        PriceOverride? priceOverride = null);
+        PriceOverride? priceOverride = null,
+        Dictionary<string, string>? nameOverrides = null);
 }
