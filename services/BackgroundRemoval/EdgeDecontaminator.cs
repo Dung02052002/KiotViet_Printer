@@ -52,13 +52,14 @@ public sealed class EdgeDecontaminator
         bool[] fgSeed = new bool[a.Length];
         bool[] bgSeed = new bool[a.Length];
 
-        for (int i = 0; i < a.Length; i++)
+        // Cờ per-pixel thuần, không phụ thuộc lẫn nhau — song song hoá an toàn.
+        Parallel.For(0, a.Length, i =>
         {
             inTransition[i] = a[i] > _opt.BandLow && a[i] < _opt.BandHigh;
             band[i] = a[i] > 0.02f && a[i] < 0.98f;
             fgSeed[i] = a[i] >= _opt.ConfidentForegroundAlpha;
             bgSeed[i] = a[i] <= _opt.ConfidentBackgroundAlpha;
-        }
+        });
 
         // Vùng cho phép lan màu = dải biên nới rộng MaxPropagationRadius.
         bool[] allow = _opt.MaxPropagationRadius > 0
@@ -71,10 +72,13 @@ public sealed class EdgeDecontaminator
         float k = _opt.StabilityBlend;
         int maxDelta = _opt.MaxChannelDelta;
 
-        for (int i = 0; i < a.Length; i++)
+        // Mỗi pixel i chỉ đọc mảng bất biến trong vòng lặp (fLocal/bLocal/...) và
+        // chỉ ghi vào outImg.Rgb tại đúng offset của nó (p3..p3+2) — độc lập giữa
+        // các pixel, song song hoá an toàn theo pixel.
+        Parallel.For(0, a.Length, i =>
         {
             if (!inTransition[i] || !fHas[i])
-                continue;
+                return;
 
             float alpha = a[i];
             // Fade → 0 ngay sát foreground chắc chắn (không tạo viền do chính bước
@@ -82,7 +86,7 @@ public sealed class EdgeDecontaminator
             float fade = MaskMath.SmoothStep(0.985f, 0.88f, alpha)
                        * MaskMath.SmoothStep(_opt.BandLow - 0.03f, _opt.BandLow + 0.03f, alpha);
             if (fade <= 0f)
-                continue;
+                return;
 
             int p3 = i * 3;
             float denom = MathF.Max(alpha, 0.15f);
@@ -108,7 +112,7 @@ public sealed class EdgeDecontaminator
                 float blended = observed + ((est - observed) * fade);
                 outImg.Rgb[p3 + c] = (byte)(blended < 0f ? 0f : blended > 255f ? 255f : blended + 0.5f);
             }
-        }
+        });
 
         return outImg;
     }

@@ -1,12 +1,14 @@
+using System.Text;
+
 namespace KiotVietLabelPrinter.Services.Glasses.Lexer;
 
 public class TokenBuilder
 {
-    private readonly List<char> _buffer = [];
+    private readonly StringBuilder _buffer = new();
 
     public int StartIndex { get; private set; }
 
-    public bool HasValue => _buffer.Count > 0;
+    public bool HasValue => _buffer.Length > 0;
 
     //---------------------------------------------------------
 
@@ -22,14 +24,14 @@ public class TokenBuilder
 
     public void Append(char c)
     {
-        _buffer.Add(c);
+        _buffer.Append(c);
     }
 
     //---------------------------------------------------------
 
     public string Build()
     {
-        return new string(_buffer.ToArray());
+        return _buffer.ToString();
     }
 
     //---------------------------------------------------------

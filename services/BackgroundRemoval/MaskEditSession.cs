@@ -212,22 +212,29 @@ public sealed class MaskEditSession
         SKImageInfo info = new(Width, Height, SKColorType.Rgba8888, SKAlphaType.Unpremul);
         SKBitmap bmp = new(info);
         byte[] px = new byte[Height * info.RowBytes];
+        int rowBytes = info.RowBytes;
+        int w = Width;
+        byte[] rgb = _rgb;
+        byte[] alpha = _alpha;
 
-        for (int y = 0; y < Height; y++)
+        // Mỗi hàng đọc rgb/alpha (không đổi trong lúc render) và chỉ ghi vào px
+        // của chính hàng đó — song song hoá theo hàng an toàn, gọi lại sau MỖI
+        // nét cọ nên đây là đường chịu tải nhiều nhất khi người dùng sửa mask.
+        Parallel.For(0, Height, y =>
         {
-            int dstRow = y * info.RowBytes;
-            int aRow = y * Width;
-            int fgRow = y * Width * 3;
-            for (int x = 0; x < Width; x++)
+            int dstRow = y * rowBytes;
+            int aRow = y * w;
+            int fgRow = y * w * 3;
+            for (int x = 0; x < w; x++)
             {
                 int di = dstRow + (x * 4);
                 int fi = fgRow + (x * 3);
-                px[di] = _rgb[fi];
-                px[di + 1] = _rgb[fi + 1];
-                px[di + 2] = _rgb[fi + 2];
-                px[di + 3] = _alpha[aRow + x];
+                px[di] = rgb[fi];
+                px[di + 1] = rgb[fi + 1];
+                px[di + 2] = rgb[fi + 2];
+                px[di + 3] = alpha[aRow + x];
             }
-        }
+        });
 
         Marshal.Copy(px, 0, bmp.GetPixels(), px.Length);
         return bmp;
@@ -239,25 +246,29 @@ public sealed class MaskEditSession
         SKImageInfo info = new(Width, Height, SKColorType.Rgba8888, SKAlphaType.Opaque);
         SKBitmap bmp = new(info);
         byte[] px = new byte[Height * info.RowBytes];
+        int rowBytes = info.RowBytes;
+        int w = Width;
+        byte[] rgb = _rgb;
+        byte[] alpha = _alpha;
 
-        for (int y = 0; y < Height; y++)
+        Parallel.For(0, Height, y =>
         {
-            int dstRow = y * info.RowBytes;
-            int aRow = y * Width;
-            int fgRow = y * Width * 3;
-            for (int x = 0; x < Width; x++)
+            int dstRow = y * rowBytes;
+            int aRow = y * w;
+            int fgRow = y * w * 3;
+            for (int x = 0; x < w; x++)
             {
-                float av = _alpha[aRow + x] / 255f;
+                float av = alpha[aRow + x] / 255f;
                 float inv = 1f - av;
                 int di = dstRow + (x * 4);
                 int fi = fgRow + (x * 3);
 
-                px[di] = Clamp((_rgb[fi] * av) + (255f * inv));
-                px[di + 1] = Clamp((_rgb[fi + 1] * av) + (255f * inv));
-                px[di + 2] = Clamp((_rgb[fi + 2] * av) + (255f * inv));
+                px[di] = Clamp((rgb[fi] * av) + (255f * inv));
+                px[di + 1] = Clamp((rgb[fi + 1] * av) + (255f * inv));
+                px[di + 2] = Clamp((rgb[fi + 2] * av) + (255f * inv));
                 px[di + 3] = 255;
             }
-        }
+        });
 
         Marshal.Copy(px, 0, bmp.GetPixels(), px.Length);
         return bmp;

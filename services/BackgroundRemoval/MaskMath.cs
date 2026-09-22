@@ -26,7 +26,9 @@ internal static class MaskMath
     {
         float norm = 1f / ((2 * radius) + 1);
 
-        for (int y = 0; y < h; y++)
+        // Mỗi hàng là một prefix-sum trượt độc lập (chỉ đọc/ghi trong hàng của
+        // chính nó) — song song hoá theo hàng an toàn, kết quả giống hệt tuần tự.
+        Parallel.For(0, h, y =>
         {
             int row = y * w;
             float acc = src[row] * (radius + 1);
@@ -40,14 +42,15 @@ internal static class MaskMath
                 float sub = src[row + Math.Max(x - radius, 0)];
                 acc += add - sub;
             }
-        }
+        });
     }
 
     private static void BlurVertical(float[] src, float[] dst, int w, int h, int radius)
     {
         float norm = 1f / ((2 * radius) + 1);
 
-        for (int x = 0; x < w; x++)
+        // Tương tự BlurHorizontal nhưng theo cột — mỗi cột độc lập.
+        Parallel.For(0, w, x =>
         {
             float acc = src[x] * (radius + 1);
             for (int y = 1; y <= radius; y++)
@@ -60,7 +63,7 @@ internal static class MaskMath
                 float sub = src[(Math.Max(y - radius, 0) * w) + x];
                 acc += add - sub;
             }
-        }
+        });
     }
 
     public sealed class Component

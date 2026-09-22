@@ -39,7 +39,12 @@ public static partial class GlassesLexer
                 tokens.Add(new GlassesToken
                 {
                     Text = c.ToString(),
-                    Type = TokenType.Separator,
+                    // DetectType() của một ký tự phân cách đơn lẻ như "(",",",
+                    // ";",":" không rơi vào nhánh riêng nào nên luôn trả về Word
+                    // mặc định — gán đúng type cuối cùng này ngay từ lúc tạo để
+                    // GlassesLexer.Scan khỏi phải gọi lại DetectType cho toàn bộ
+                    // token (xem vòng lặp DetectType ở đó).
+                    Type = TokenType.Word,
                     Start = i,
                     End = i
                 });

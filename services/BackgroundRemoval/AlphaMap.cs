@@ -142,7 +142,8 @@ public sealed class RgbImage
         int rowBytes = rgba.RowBytes;
         byte[] dst = img.Rgb;
 
-        for (int y = 0; y < h; y++)
+        // Mỗi hàng đọc/ghi trong phạm vi riêng — độc lập giữa các hàng.
+        Parallel.For(0, h, y =>
         {
             int srcRow = y * rowBytes;
             int dstRow = y * w * 3;
@@ -154,7 +155,7 @@ public sealed class RgbImage
                 dst[di + 1] = src[si + 1];
                 dst[di + 2] = src[si + 2];
             }
-        }
+        });
 
         return img;
     }
@@ -163,8 +164,15 @@ public sealed class RgbImage
     public float[] ToGrayNormalized()
     {
         float[] gray = new float[Width * Height];
-        for (int p = 0, i = 0; p < gray.Length; p++, i += 3)
-            gray[p] = ((0.299f * Rgb[i]) + (0.587f * Rgb[i + 1]) + (0.114f * Rgb[i + 2])) / 255f;
+        byte[] rgb = Rgb;
+
+        // Mỗi phần tử độc lập — song song hoá an toàn theo chỉ số pixel.
+        Parallel.For(0, gray.Length, p =>
+        {
+            int i = p * 3;
+            gray[p] = ((0.299f * rgb[i]) + (0.587f * rgb[i + 1]) + (0.114f * rgb[i + 2])) / 255f;
+        });
+
         return gray;
     }
 }

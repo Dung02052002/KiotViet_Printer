@@ -13,7 +13,15 @@ public class GlassesParser
     // Rule Engine
     //---------------------------------------------------------
 
-    private readonly List<IGlassesRule> _rules =
+    // static readonly: mọi IGlassesRule ở đây không giữ state (chỉ đọc tokens
+    // truyền vào Execute), nên chia sẻ 1 danh sách dùng chung cho mọi lần Parse
+    // thay vì cấp phát mới 10 rule object + 1 List cho mỗi GlassesParser/mỗi
+    // dòng sản phẩm là an toàn.
+    //
+    // Danh sách PHẢI giữ đúng thứ tự Priority tăng dần (10,15,20,30,40,50,60,
+    // 70,80,90) — Parse() không còn OrderBy lại nữa (xem bên dưới), rule nào
+    // thêm sau này phải tự chèn đúng vị trí.
+    private static readonly List<IGlassesRule> _rules =
     [
         new ModelRule(),
         new BeltMauRule(),
@@ -134,8 +142,7 @@ public class GlassesParser
         // Rule Engine
         //-----------------------------------------------------
 
-        foreach (IGlassesRule rule in
-                 _rules.OrderBy(x => x.Priority))
+        foreach (IGlassesRule rule in _rules)
         {
             RuleResult ruleResult =
                 rule.Execute(tokens);
@@ -179,6 +186,15 @@ public class GlassesParser
         return result;
     }
 
+    private static readonly Regex CodeWithKSuffixRegex =
+        new(@"^([A-Z]{1,6}\d+)-K\d+$", RegexOptions.CultureInvariant | RegexOptions.Compiled);
+
+    private static readonly Regex CodePairLettersRegex =
+        new(@"^([A-Z]{1,6}\d+)X([A-Z]{1,6}\d+)$", RegexOptions.CultureInvariant | RegexOptions.Compiled);
+
+    private static readonly Regex CodePairDigitsRegex =
+        new(@"^(\d+)X(\d+)$", RegexOptions.CultureInvariant | RegexOptions.Compiled);
+
     private static string NormalizeBaseCode(string? baseCode)
     {
         string value = (baseCode ?? string.Empty).Trim().ToUpperInvariant();
@@ -187,29 +203,20 @@ public class GlassesParser
             return value;
 
         // D2823-K026 -> D2823
-        Match match = Regex.Match(
-            value,
-            @"^([A-Z]{1,6}\d+)-K\d+$",
-            RegexOptions.CultureInvariant);
+        Match match = CodeWithKSuffixRegex.Match(value);
 
         if (match.Success)
             return match.Groups[1].Value;
 
         // H008XH019 -> H008xH019
-        match = Regex.Match(
-            value,
-            @"^([A-Z]{1,6}\d+)X([A-Z]{1,6}\d+)$",
-            RegexOptions.CultureInvariant);
+        match = CodePairLettersRegex.Match(value);
 
         if (match.Success)
             return $"{match.Groups[1].Value}x{match.Groups[2].Value}";
 
         // 8616X8615 -> 8616x8615 (cặp mã số thuần, không có chữ nên
         // không đụng tới các mã đơn kiểu YX35096 ở nhánh trên)
-        match = Regex.Match(
-            value,
-            @"^(\d+)X(\d+)$",
-            RegexOptions.CultureInvariant);
+        match = CodePairDigitsRegex.Match(value);
 
         if (match.Success)
             return $"{match.Groups[1].Value}x{match.Groups[2].Value}";

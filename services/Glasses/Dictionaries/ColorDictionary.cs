@@ -21,8 +21,10 @@ public static class ColorDictionary
         "SILVER"
     ];
 
+    // Caller (GlassesLexer.DetectType) đã ToUpper() trước khi gọi — không cần
+    // làm lại (tránh cấp phát thêm 1 string mỗi lần gọi trên hot path parse).
     public static bool Contains(string value)
     {
-        return Colors.Contains(value.ToUpper());
+        return Colors.Contains(value);
     }
 }

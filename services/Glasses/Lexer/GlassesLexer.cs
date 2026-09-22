@@ -30,11 +30,13 @@ public static partial class GlassesLexer
         //-------------------------------------------------
         // Detect Type
         //-------------------------------------------------
+        // ScanCore() đã gán đúng Type cuối cùng cho mọi token lúc tạo (Flush()
+        // gọi DetectType() cho token chữ/số, separator gán thẳng type tương
+        // đương) — không cần tính lại DetectType() ở đây nữa. Giữ lại vòng lặp
+        // debug log để log không đổi.
 
         foreach (GlassesToken token in tokens)
         {
-            token.Type = DetectType(token.Text);
-
             GlassesDebug.Info(
                 $"{token.Index,-2} {token.Type,-10} {token.Text}");
         }

@@ -306,6 +306,18 @@ public class FormMain : Form
         flpTools.Top = lblToolsHint.Bottom + 16;
     }
 
+    // Controls.Clear() chỉ gỡ quan hệ cha-con, KHÔNG Dispose() control cũ — để
+    // lại HWND + Timer nội bộ của RoundedPanel/RoundedButton (xem Dispose
+    // override của chúng) sống tới khi GC finalize. ReloadCategories() được
+    // gọi lại mỗi lần "Quay lại" Home nên rò rỉ cộng dồn dần theo phiên làm
+    // việc. Dispose từng control cũ trước (tự cascade xuống toàn bộ con cháu
+    // và tự gỡ khỏi Controls) để giải phóng ngay, không đổi giao diện hiển thị.
+    private static void ClearAndDispose(Control.ControlCollection controls)
+    {
+        while (controls.Count > 0)
+            controls[0].Dispose();
+    }
+
     private void ReloadCategories()
     {
         flpCategories.SuspendLayout();
@@ -313,7 +325,7 @@ public class FormMain : Form
 
         try
         {
-            flpCategories.Controls.Clear();
+            ClearAndDispose(flpCategories.Controls);
 
             List<LabelDefinition> labels = _catalogService.GetAllEnabled();
 
@@ -336,7 +348,7 @@ public class FormMain : Form
                     flpCategories.Controls.Add(CreateCategoryCard(label));
             }
 
-            flpTools.Controls.Clear();
+            ClearAndDispose(flpTools.Controls);
 
             List<ToolDefinition> tools = _toolCatalogService.GetAllEnabled();
             lblToolsTitle.Visible = tools.Count > 0;

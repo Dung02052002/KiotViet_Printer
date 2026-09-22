@@ -862,16 +862,27 @@ public class ImageCompressorView : UserControl
         HashSet<string> existing = new(_items.Select(i => i.FilePath), StringComparer.OrdinalIgnoreCase);
         List<CompressionItem> added = new();
 
-        foreach (string file in files)
+        // Quét cả thư mục con có thể ra hàng trăm/nghìn ảnh; thêm từng row một
+        // sẽ layout lại lưới mỗi lần Add — SuspendLayout gộp lại 1 lần, hiển
+        // thị cuối cùng giống hệt, chỉ nhanh hơn.
+        dgvImages.SuspendLayout();
+        try
         {
-            if (existing.Add(file))
+            foreach (string file in files)
             {
-                CompressionItem item = new() { FilePath = file };
-                _items.Add(item);
-                added.Add(item);
+                if (existing.Add(file))
+                {
+                    CompressionItem item = new() { FilePath = file };
+                    _items.Add(item);
+                    added.Add(item);
 
-                dgvImages.Rows.Add(DBNull.Value, item.FileName, "…", "", "…", "", item.StatusText);
+                    dgvImages.Rows.Add(DBNull.Value, item.FileName, "…", "", "…", "", item.StatusText);
+                }
             }
+        }
+        finally
+        {
+            dgvImages.ResumeLayout();
         }
 
         UpdateProgressIdle();

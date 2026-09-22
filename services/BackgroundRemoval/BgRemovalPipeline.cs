@@ -254,7 +254,9 @@ internal sealed class BgRemovalPipeline
         byte[] fg = foreground.Rgb;
         float[] a = alpha.Data;
 
-        for (int y = 0; y < h; y++)
+        // Mỗi hàng chỉ đọc fg/a (không đổi) và chỉ ghi vào outPx của chính hàng
+        // đó — độc lập giữa các hàng, song song hoá an toàn theo hàng.
+        Parallel.For(0, h, y =>
         {
             int outRow = y * rowBytes;
             int aRow = y * w;
@@ -272,7 +274,7 @@ internal sealed class BgRemovalPipeline
                 outPx[oi + 2] = ClampByte((fg[fi + 2] * av) + (255f * inv));
                 outPx[oi + 3] = 255;
             }
-        }
+        });
 
         Marshal.Copy(outPx, 0, output.GetPixels(), outPx.Length);
         return output;

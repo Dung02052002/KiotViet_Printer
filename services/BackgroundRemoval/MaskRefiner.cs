@@ -130,9 +130,21 @@ public sealed class MaskRefiner
         float spatialDen = 2f * _opt.EdgeSmoothSpatialSigma * _opt.EdgeSmoothSpatialSigma;
         float rangeDen = 2f * _opt.EdgeSmoothRangeSigma * _opt.EdgeSmoothRangeSigma;
 
+        // spatial chỉ phụ thuộc (dx,dy), không phụ thuộc pixel/gc — tính sẵn một
+        // lần (lưới (2r+1)²) thay vì gọi lại MathF.Exp cho mỗi lân cận của mỗi
+        // pixel biên (giá trị ra giống hệt vì cùng công thức, cùng input).
+        int side = (2 * r) + 1;
+        float[] spatialWeight = new float[side * side];
+        for (int dy = -r; dy <= r; dy++)
+            for (int dx = -r; dx <= r; dx++)
+                spatialWeight[((dy + r) * side) + (dx + r)] = MathF.Exp(-((dx * dx) + (dy * dy)) / spatialDen);
+
         float[] src = (float[])a.Clone();
 
-        for (int y = 0; y < h; y++)
+        // Mỗi hàng y chỉ đọc band/guide/src (không đổi trong vòng lặp) và chỉ
+        // ghi vào a[c] của chính hàng đó — độc lập giữa các hàng nên song song
+        // hoá an toàn, kết quả từng phần tử giống hệt bản tuần tự.
+        Parallel.For(0, h, y =>
         {
             for (int x = 0; x < w; x++)
             {
@@ -153,7 +165,7 @@ public sealed class MaskRefiner
                         if (nx < 0 || nx >= w) continue;
 
                         int n = (ny * w) + nx;
-                        float spatial = MathF.Exp(-((dx * dx) + (dy * dy)) / spatialDen);
+                        float spatial = spatialWeight[((dy + r) * side) + (dx + r)];
                         float dg = guide[n] - gc;
                         float range = MathF.Exp(-(dg * dg) / rangeDen);
                         float wgt = spatial * range;
@@ -166,6 +178,6 @@ public sealed class MaskRefiner
                 if (accW > 1e-6f)
                     a[c] = accV / accW;
             }
-        }
+        });
     }
 }

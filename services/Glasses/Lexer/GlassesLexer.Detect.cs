@@ -6,6 +6,41 @@ namespace KiotVietLabelPrinter.Services.Glasses.Lexer;
 public static partial class GlassesLexer
 {
     //---------------------------------------------------------
+    // Regex tĩnh dựng sẵn 1 lần — DetectType chạy cho MỌI token của MỌI dòng
+    // sản phẩm khi import Excel; overload tĩnh Regex.IsMatch(value, pattern)
+    // chỉ cache 15 pattern gần nhất/tiến trình nên với ~18 pattern trong hàm
+    // này (cộng thêm pattern ở các class khác dùng xen kẽ) rất dễ bị đẩy khỏi
+    // cache, gây biên dịch lại liên tục.
+    //---------------------------------------------------------
+
+    private static readonly Regex MkRegex = new(@"^MK\d+$", RegexOptions.Compiled);
+    private static readonly Regex KRegex = new(@"^K\d+$", RegexOptions.Compiled);
+    private static readonly Regex PcnRegex = new(@"^PCN\d*$", RegexOptions.Compiled);
+    private static readonly Regex PureNumberRegex = new(@"^\d+$", RegexOptions.Compiled);
+    private static readonly Regex LettersDigitsRegex = new(@"^[A-Z]{1,6}\d+$", RegexOptions.Compiled);
+    private static readonly Regex LettersDigitsHyphenDigitsRegex =
+        new(@"^[A-Z]{1,6}\d+-\d+$", RegexOptions.Compiled);
+    private static readonly Regex LettersDigitsHyphenLettersDigitsRegex =
+        new(@"^[A-Z]{1,6}\d+-[A-Z]{1,6}\d+$", RegexOptions.Compiled);
+    private static readonly Regex DigitsLettersHyphenDigitsRegex =
+        new(@"^\d+[A-Z]{1,6}-\d+$", RegexOptions.Compiled);
+    private static readonly Regex CurrencyLikeRegex = new(@"^\d+K$", RegexOptions.Compiled);
+    private static readonly Regex DigitsLettersRegex = new(@"^\d+[A-Z]{1,6}$", RegexOptions.Compiled);
+    private static readonly Regex DigitsHyphenDigitsRegex = new(@"^\d+-\d+$", RegexOptions.Compiled);
+    private static readonly Regex LetterDigitsSlashDigitsRegex =
+        new(@"^[A-Z]?\d+/\d+$", RegexOptions.Compiled);
+    private static readonly Regex KmDashRegex = new(@"^[A-Z]{2,6}-\d{2}-\d+$", RegexOptions.Compiled);
+    private static readonly Regex ThreeSegmentDashRegex =
+        new(@"^[A-Z0-9]{1,6}-[A-Z0-9]{1,6}-[A-Z0-9]{1,6}$", RegexOptions.Compiled);
+    private static readonly Regex LettersDigitsLettersRegex =
+        new(@"^[A-Z]{1,3}\d{2,6}[A-Z]{1,3}(-\d{1,3})?$", RegexOptions.Compiled);
+    private static readonly Regex LettersDashDigitsRegex = new(@"^[A-Z]{2,6}-\d{3,6}$", RegexOptions.Compiled);
+    private static readonly Regex DigitsDashLetterDigitsRegex =
+        new(@"^\d{2,6}-[A-Z]{1,3}\d{1,7}$", RegexOptions.Compiled);
+    private static readonly Regex DigitsDashDigitsLetterRegex =
+        new(@"^\d{2,4}-\d{1,3}[A-Z]{1,3}$", RegexOptions.Compiled);
+
+    //---------------------------------------------------------
     // Detect TokenType
     //---------------------------------------------------------
 
@@ -42,34 +77,22 @@ public static partial class GlassesLexer
         // MK
         //-----------------------------------------------------
 
-        if (Regex.IsMatch(
-            value,
-            @"^MK\d+$"))
-        {
+        if (MkRegex.IsMatch(value))
             return TokenType.Mk;
-        }
 
         //-----------------------------------------------------
         // K020
         //-----------------------------------------------------
 
-        if (Regex.IsMatch(
-            value,
-            @"^K\d+$"))
-        {
+        if (KRegex.IsMatch(value))
             return TokenType.K;
-        }
 
         //-----------------------------------------------------
         // PCN
         //-----------------------------------------------------
 
-        if (Regex.IsMatch(
-            value,
-            @"^PCN\d*$"))
-        {
+        if (PcnRegex.IsMatch(value))
             return TokenType.Pcn;
-        }
 
         //-----------------------------------------------------
         // COLOR
@@ -91,12 +114,8 @@ public static partial class GlassesLexer
         //----------------------------------------------------
         //----------------------------------------------------
 
-        if (Regex.IsMatch(
-            value,
-            @"^\d+$"))
-        {
+        if (PureNumberRegex.IsMatch(value))
             return TokenType.Code;
-        }
 
         //-----------------------------------------------------
         // XY35096
@@ -104,23 +123,15 @@ public static partial class GlassesLexer
         // P8315
         //-----------------------------------------------------
 
-        if (Regex.IsMatch(
-            value,
-            @"^[A-Z]{1,6}\d+$"))
-        {
+        if (LettersDigitsRegex.IsMatch(value))
             return TokenType.Code;
-        }
 
         //-----------------------------------------------------
         // P850-01 (letters+digits-hyphen-digits)
         //-----------------------------------------------------
 
-        if (Regex.IsMatch(
-            value,
-            @"^[A-Z]{1,6}\d+-\d+$"))
-        {
+        if (LettersDigitsHyphenDigitsRegex.IsMatch(value))
             return TokenType.Code;
-        }
 
         //-----------------------------------------------------
         // D2823-K026
@@ -128,23 +139,15 @@ public static partial class GlassesLexer
         // letters+digits-hyphen-letters+digits
         //-----------------------------------------------------
 
-        if (Regex.IsMatch(
-            value,
-            @"^[A-Z]{1,6}\d+-[A-Z]{1,6}\d+$"))
-        {
+        if (LettersDigitsHyphenLettersDigitsRegex.IsMatch(value))
             return TokenType.Code;
-        }
 
         //-----------------------------------------------------
         // 3162P-01 (digits+letters-hyphen-digits)
         //-----------------------------------------------------
 
-        if (Regex.IsMatch(
-            value,
-            @"^\d+[A-Z]{1,6}-\d+$"))
-        {
+        if (DigitsLettersHyphenDigitsRegex.IsMatch(value))
             return TokenType.Code;
-        }
 
         //-----------------------------------------------------
         // 999K, 500K -> viết tắt tiền tệ (nghìn đồng), KHÔNG phải mã
@@ -152,97 +155,63 @@ public static partial class GlassesLexer
         // "K"; các suffix khác (P, R...) vẫn là mã hợp lệ như 6215P.
         //-----------------------------------------------------
 
-        if (Regex.IsMatch(
-            value,
-            @"^\d+K$"))
-        {
+        if (CurrencyLikeRegex.IsMatch(value))
             return TokenType.Word;
-        }
 
         //-----------------------------------------------------
         // 6215P (digits+letters, no hyphen)
         //-----------------------------------------------------
 
-        if (Regex.IsMatch(
-            value,
-            @"^\d+[A-Z]{1,6}$"))
-        {
+        if (DigitsLettersRegex.IsMatch(value))
             return TokenType.Code;
-        }
 
         //-----------------------------------------------------
         // 9805-01
         // 6250-2
         //-----------------------------------------------------
 
-        if (Regex.IsMatch(
-            value,
-            @"^\d+-\d+$"))
-        {
+        if (DigitsHyphenDigitsRegex.IsMatch(value))
             return TokenType.Code;
-        }
 
         //-----------------------------------------------------
         // B305/147
         // 6233/66503
         //-----------------------------------------------------
 
-        if (Regex.IsMatch(
-            value,
-            @"^[A-Z]?\d+/\d+$"))
-        {
+        if (LetterDigitsSlashDigitsRegex.IsMatch(value))
             return TokenType.Code;
-        }
 
         //-----------------------------------------------------
         // KM-05-8820
         //-----------------------------------------------------
 
-        if (Regex.IsMatch(
-            value,
-            @"^[A-Z]{2,6}-\d{2}-\d+$"))
-        {
+        if (KmDashRegex.IsMatch(value))
             return TokenType.Code;
-        }
 
         //-----------------------------------------------------
         // K05-17513-81K / Q07-10275-20C / 3485-47-18
         // Mã 3 đoạn nối gạch ngang (chữ+số/số thuần), mỗi đoạn alnum
         //-----------------------------------------------------
 
-        if (Regex.IsMatch(
-            value,
-            @"^[A-Z0-9]{1,6}-[A-Z0-9]{1,6}-[A-Z0-9]{1,6}$"))
-        {
+        if (ThreeSegmentDashRegex.IsMatch(value))
             return TokenType.Code;
-        }
 
         //-----------------------------------------------------
         // F1923B, F1736B (chữ+số+chữ, không gạch ngang)
         // F1923B-1, F1320A-2 (có thêm hậu tố -số phân biệt biến thể)
         //-----------------------------------------------------
 
-        if (Regex.IsMatch(
-            value,
-            @"^[A-Z]{1,3}\d{2,6}[A-Z]{1,3}(-\d{1,3})?$"))
-        {
+        if (LettersDigitsLettersRegex.IsMatch(value))
             return TokenType.Code;
-        }
 
         //-----------------------------------------------------
         // GF-50501 (chữ thuần - số), 163-G57 / 622-K1170043
         // (số - chữ+số), 360-3A (số - số+chữ)
         //-----------------------------------------------------
 
-        if (Regex.IsMatch(
-            value,
-            @"^[A-Z]{2,6}-\d{3,6}$") ||
-            Regex.IsMatch(
-                value,
-                @"^\d{2,6}-[A-Z]{1,3}\d{1,7}$") ||
-            Regex.IsMatch(
-                value,
-                @"^\d{2,4}-\d{1,3}[A-Z]{1,3}$"))
+        if (LettersDashDigitsRegex.IsMatch(value) ||
+            DigitsDashLetterDigitsRegex.IsMatch(value) ||
+            DigitsDashDigitsLetterRegex.IsMatch(value))
         {
             return TokenType.Code;
         }

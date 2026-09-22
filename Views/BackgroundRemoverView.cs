@@ -843,7 +843,7 @@ public class BackgroundRemoverView : UserControl
     // mà mỗi nét cọ lại nhảy về Fit thì không sửa được gì).
     private void RefreshAfterPaint()
     {
-        RebuildSessionLayers();
+        InvalidateSessionLayers();
         ApplyPreviewMode(resetView: false);
     }
 
@@ -1061,13 +1061,17 @@ public class BackgroundRemoverView : UserControl
 
             SetEditSession(session);
             SwapPreviewLayers(new PreviewLayers { Original = original });
-            RebuildSessionLayers();
+            InvalidateSessionLayers();
             ApplyPreviewMode(resetView: true);
         }, TaskScheduler.FromCurrentSynchronizationContext());
     }
 
-    // Dựng lại 3 layer phụ thuộc mask từ phiên sửa hiện tại.
-    private void RebuildSessionLayers()
+    // Invalidate 3 layer phụ thuộc mask (dispose + null hoá) — KHÔNG dựng lại
+    // ngay. ApplyPreviewMode() dựng lại đúng layer đang hiển thị qua
+    // EnsureLayerBuilt() khi cần. Trước đây dựng cả 3 layer (Mask/Cutout/
+    // Result) mỗi lần dù chỉ 1 layer được hiển thị — đây là đường chạy dày
+    // đặc nhất (mỗi nét cọ khi sửa mask), 2 layer còn lại chỉ tốn công vô ích.
+    private void InvalidateSessionLayers()
     {
         if (_previewLayers == null)
             return;
@@ -1078,16 +1082,36 @@ public class BackgroundRemoverView : UserControl
         _previewLayers.Mask = null;
         _previewLayers.Cutout = null;
         _previewLayers.Result = null;
+    }
 
-        if (_editSession == null)
+    // Dựng đúng layer cần cho preview mode nếu chưa có (mới invalidate hoặc
+    // chưa từng xem qua) — cùng công thức, cùng dữ liệu nguồn (_editSession)
+    // như bản dựng cả 3 layer trước đây, chỉ khác thời điểm tính.
+    private void EnsureLayerBuilt(PreviewMode mode)
+    {
+        if (_previewLayers == null || _editSession == null)
             return;
 
-        using (SKBitmap mask = _editSession.RenderMask())
-            _previewLayers.Mask = SkiaToBitmap(mask);
-        using (SKBitmap cutout = _editSession.RenderCutout())
-            _previewLayers.Cutout = SkiaToBitmap(cutout);
-        using (SKBitmap white = _editSession.RenderOnWhite())
-            _previewLayers.Result = SkiaToBitmap(white);
+        switch (mode)
+        {
+            case PreviewMode.Mask:
+                if (_previewLayers.Mask == null)
+                    using (SKBitmap mask = _editSession.RenderMask())
+                        _previewLayers.Mask = SkiaToBitmap(mask);
+                break;
+
+            case PreviewMode.Checkerboard:
+                if (_previewLayers.Cutout == null)
+                    using (SKBitmap cutout = _editSession.RenderCutout())
+                        _previewLayers.Cutout = SkiaToBitmap(cutout);
+                break;
+
+            case PreviewMode.Result:
+                if (_previewLayers.Result == null)
+                    using (SKBitmap white = _editSession.RenderOnWhite())
+                        _previewLayers.Result = SkiaToBitmap(white);
+                break;
+        }
     }
 
     private void SetEditSession(MaskEditSession? session)
@@ -1123,6 +1147,8 @@ public class BackgroundRemoverView : UserControl
 
     private void ApplyPreviewMode(bool resetView)
     {
+        EnsureLayerBuilt(_previewMode);
+
         Image? img = _previewMode switch
         {
             PreviewMode.Original => _previewLayers?.Original,
@@ -1258,16 +1284,27 @@ public class BackgroundRemoverView : UserControl
         HashSet<string> existing = new(_items.Select(i => i.FilePath), StringComparer.OrdinalIgnoreCase);
         List<BackgroundRemovalItem> added = new();
 
-        foreach (string file in files)
+        // Chọn cả trăm/nghìn ảnh cùng lúc → thêm từng row một sẽ layout lại
+        // lưới mỗi lần Add; SuspendLayout gộp lại thành 1 lần sau khi thêm hết,
+        // hiển thị cuối cùng giống hệt, chỉ nhanh hơn.
+        dgvImages.SuspendLayout();
+        try
         {
-            if (existing.Add(file))
+            foreach (string file in files)
             {
-                BackgroundRemovalItem item = new() { FilePath = file };
-                _items.Add(item);
-                added.Add(item);
+                if (existing.Add(file))
+                {
+                    BackgroundRemovalItem item = new() { FilePath = file };
+                    _items.Add(item);
+                    added.Add(item);
 
-                dgvImages.Rows.Add(DBNull.Value, item.FileName, "…", item.StatusText);
+                    dgvImages.Rows.Add(DBNull.Value, item.FileName, "…", item.StatusText);
+                }
             }
+        }
+        finally
+        {
+            dgvImages.ResumeLayout();
         }
 
         UpdateProgressIdle();
@@ -1722,32 +1759,45 @@ public class BackgroundRemoverView : UserControl
             bool gray = source.ColorType == SKColorType.Gray8;
             byte[] row = new byte[dst.Stride];
 
-            for (int y = 0; y < h; y++)
+            // "gray" không đổi trong suốt vòng lặp — tách hẳn 2 nhánh ra ngoài
+            // thay vì kiểm tra lại cho từng pixel (w*h lần/ảnh), kết quả từng
+            // byte giống hệt bản gộp chung trước đây.
+            if (gray)
             {
-                int srcRow = y * srcStride;
-                for (int x = 0; x < w; x++)
+                for (int y = 0; y < h; y++)
                 {
-                    int di = x * 4;
-                    if (gray)
+                    int srcRow = y * srcStride;
+                    for (int x = 0; x < w; x++)
                     {
+                        int di = x * 4;
                         byte g = src[srcRow + x];
                         row[di] = g;
                         row[di + 1] = g;
                         row[di + 2] = g;
                         row[di + 3] = 255;
                     }
-                    else
+
+                    Marshal.Copy(row, 0, IntPtr.Add(dst.Scan0, y * dst.Stride), dst.Stride);
+                }
+            }
+            else
+            {
+                for (int y = 0; y < h; y++)
+                {
+                    int srcRow = y * srcStride;
+                    for (int x = 0; x < w; x++)
                     {
                         // Skia RGBA -> GDI+ BGRA
+                        int di = x * 4;
                         int si = srcRow + (x * 4);
                         row[di] = src[si + 2];
                         row[di + 1] = src[si + 1];
                         row[di + 2] = src[si];
                         row[di + 3] = src[si + 3];
                     }
-                }
 
-                Marshal.Copy(row, 0, IntPtr.Add(dst.Scan0, y * dst.Stride), dst.Stride);
+                    Marshal.Copy(row, 0, IntPtr.Add(dst.Scan0, y * dst.Stride), dst.Stride);
+                }
             }
         }
         finally
