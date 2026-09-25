@@ -38,16 +38,18 @@ public class FormEditNames : Form
         {
             string originalName = string.IsNullOrWhiteSpace(p.ProductNameWithAttr) ? p.ProductName : p.ProductNameWithAttr;
 
-            string newNameText = !string.IsNullOrWhiteSpace(p.ProductCode) &&
+            // Nếu sản phẩm đã có override từ lần sửa trước, hiển thị sẵn tên đã
+            // sửa để người dùng sửa tiếp ngay trong ô, không cần gõ lại từ đầu.
+            string displayName = !string.IsNullOrWhiteSpace(p.ProductCode) &&
                 existingOverrides.TryGetValue(p.ProductCode, out string? overridden)
                     ? overridden
-                    : "";
+                    : originalName;
 
             return new NameEditRow
             {
                 ProductCode = p.ProductCode,
-                ProductName = originalName,
-                NewNameText = newNameText
+                OriginalName = originalName,
+                ProductName = displayName
             };
         }).ToList();
 
@@ -63,7 +65,7 @@ public class FormEditNames : Form
         lblTitle.ForeColor = AppTheme.Colors.TextPrimary;
         Controls.Add(lblTitle);
 
-        lblSummary.Text = $"{_allRows.Count:N0} sản phẩm - để trống \"Tên hàng mới\" nếu muốn giữ nguyên tên gốc.";
+        lblSummary.Text = $"{_allRows.Count:N0} sản phẩm - bấm vào \"Tên hàng hiện tại\" để sửa trực tiếp.";
         lblSummary.SetBounds(26, 52, 560, 22);
         lblSummary.Font = AppTheme.Fonts.Subtitle;
         lblSummary.ForeColor = AppTheme.Colors.TextSecondary;
@@ -98,13 +100,18 @@ public class FormEditNames : Form
         dgv.AutoGenerateColumns = false;
         dgv.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
         dgv.EditMode = DataGridViewEditMode.EditOnKeystrokeOrF2;
+        // Tên hàng dài phải xuống dòng thay vì bị cắt bằng "..." - để hàng tự
+        // giãn chiều cao theo nội dung. Dùng DisplayedCellsExceptHeaders (thay
+        // vì AllCells) để chỉ tính lại chiều cao các hàng đang hiển thị, tránh
+        // giật lag khi danh sách sản phẩm lớn.
+        dgv.AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.DisplayedCellsExceptHeaders;
         AppTheme.StyleGrid(dgv);
         BuildColumns();
         dgv.KeyDown += Dgv_KeyDown;
         pnlGridCard.Controls.Add(dgv);
 
-        lblFooterHint.Text = "Sản phẩm không nhập \"Tên hàng mới\" sẽ giữ nguyên tên hiện tại trong file Excel. " +
-            "Kéo chuột chọn nhiều ô rồi Ctrl+C/Ctrl+V để copy tên nhanh.";
+        lblFooterHint.Text = "Sản phẩm không đổi tên sẽ giữ nguyên tên gốc trong file Excel. " +
+            "Kéo chuột chọn nhiều ô rồi Ctrl+C/Ctrl+V để copy tên nhanh. Nhấn Esc khi đang sửa để hủy thay đổi ô đó.";
         lblFooterHint.SetBounds(24, ClientSize.Height - 54, 620, 22);
         lblFooterHint.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
         lblFooterHint.Font = AppTheme.Fonts.Hint;
@@ -145,28 +152,24 @@ public class FormEditNames : Form
             FillWeight = 90
         });
 
-        dgv.Columns.Add(new DataGridViewTextBoxColumn
+        // Cột "Tên hàng hiện tại" vừa hiển thị vừa cho sửa trực tiếp tại chỗ
+        // (double-click hoặc F2 để vào chế độ nhập, giống các ô khác trong
+        // bảng) - không còn cột "Tên hàng mới" riêng. WrapMode = True để tên
+        // dài tự xuống dòng thay vì bị cắt bằng "...".
+        DataGridViewTextBoxColumn nameColumn = new()
         {
             Name = "ProductName",
             HeaderText = "Tên hàng hiện tại",
             DataPropertyName = "ProductName",
-            ReadOnly = true,
-            FillWeight = 220
-        });
-
-        DataGridViewTextBoxColumn newNameColumn = new()
-        {
-            Name = "NewNameText",
-            HeaderText = "Tên hàng mới",
-            DataPropertyName = "NewNameText",
             ReadOnly = false,
-            FillWeight = 220,
+            FillWeight = 400,
             DefaultCellStyle = new DataGridViewCellStyle
             {
+                WrapMode = DataGridViewTriState.True,
                 BackColor = AppTheme.Colors.PrimaryLight
             }
         };
-        dgv.Columns.Add(newNameColumn);
+        dgv.Columns.Add(nameColumn);
     }
 
     // Cho phép kéo chuột chọn nhiều ô rồi Ctrl+V để dán nhanh, kể cả dán 1 tên
@@ -259,9 +262,14 @@ public class FormEditNames : Form
 
         foreach (NameEditRow row in _allRows)
         {
-            string newName = (row.NewNameText ?? "").Trim();
+            string newName = (row.ProductName ?? "").Trim();
 
-            if (newName.Length == 0 || string.IsNullOrWhiteSpace(row.ProductCode))
+            if (string.IsNullOrWhiteSpace(row.ProductCode))
+                continue;
+
+            // Tên trống hoặc không đổi so với tên gốc => không cần override,
+            // in tem sẽ tự dùng tên gốc trong file Excel.
+            if (newName.Length == 0 || string.Equals(newName, row.OriginalName.Trim(), StringComparison.Ordinal))
                 continue;
 
             ResultOverrides[row.ProductCode] = newName;
@@ -274,7 +282,7 @@ public class FormEditNames : Form
     private class NameEditRow
     {
         public string ProductCode { get; set; } = "";
+        public string OriginalName { get; set; } = "";
         public string ProductName { get; set; } = "";
-        public string NewNameText { get; set; } = "";
     }
 }
