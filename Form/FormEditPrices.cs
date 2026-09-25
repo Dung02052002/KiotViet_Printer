@@ -100,6 +100,10 @@ public class FormEditPrices : Form
         dgv.AutoGenerateColumns = false;
         dgv.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
         dgv.EditMode = DataGridViewEditMode.EditOnKeystrokeOrF2;
+        // Tên sản phẩm dài phải xuống dòng thay vì bị cắt bằng "..." - để hàng
+        // tự giãn chiều cao theo nội dung (giống FormEditNames). Chỉ tính lại
+        // các hàng đang hiển thị để không lag khi danh sách lớn.
+        dgv.AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.DisplayedCellsExceptHeaders;
         AppTheme.StyleGrid(dgv);
         BuildColumns();
         dgv.CellEndEdit += Dgv_CellEndEdit;
@@ -148,13 +152,17 @@ public class FormEditPrices : Form
             FillWeight = 90
         });
 
+        // WrapMode mặc định của DataGridView là không xuống dòng, khi đó ô tự
+        // vẽ chữ kèm "..." ở cuối - phải bật WrapMode = True để tên dài hiển
+        // thị đầy đủ trên nhiều dòng.
         dgv.Columns.Add(new DataGridViewTextBoxColumn
         {
             Name = "ProductName",
             HeaderText = "Tên sản phẩm",
             DataPropertyName = "ProductName",
             ReadOnly = true,
-            FillWeight = 260
+            FillWeight = 300,
+            DefaultCellStyle = new DataGridViewCellStyle { WrapMode = DataGridViewTriState.True }
         });
 
         dgv.Columns.Add(new DataGridViewTextBoxColumn

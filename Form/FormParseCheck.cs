@@ -224,5 +224,11 @@ public class FormParseCheck : Form
         if (cParsed != null) cParsed.FillWeight = 100;
         if (cFinal != null) cFinal.FillWeight = 110;
         if (cFlags != null) cFlags.FillWeight = 220;
+
+        // Grid tắt xuống dòng chung (WrapMode = False) nên ô tên hàng dài bị
+        // cắt bằng "..." - bật riêng cho 2 cột tên để hiển thị đầy đủ, hàng tự
+        // giãn nhờ AutoSizeRowsMode = AllCells.
+        if (cName != null) cName.DefaultCellStyle.WrapMode = DataGridViewTriState.True;
+        if (cNameAttr != null) cNameAttr.DefaultCellStyle.WrapMode = DataGridViewTriState.True;
     }
 }
