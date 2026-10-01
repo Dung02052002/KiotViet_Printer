@@ -42,6 +42,12 @@ public class LabelService
         return handler.BuildPreview(products, label, employeeCode);
     }
 
+    // Chỉ cho MỘT lệnh in chạy tại một thời điểm trong toàn app (màn hình
+    // chính + Xem trước). Khoá bao cả bước ghi file data lẫn bước gọi
+    // BarTender: nếu 2 lệnh chạy chồng nhau, lệnh sau ghi đè file data trong
+    // lúc BarTender của lệnh trước đang đọc → tem in lẫn dữ liệu.
+    private static readonly SemaphoreSlim PrintLock = new(1, 1);
+
     public int Print(
         string sourceExcelFile,
         string labelCode,
@@ -49,16 +55,33 @@ public class LabelService
         PriceOverride? priceOverride = null,
         Dictionary<string, string>? nameOverrides = null)
     {
-        List<ProductRow> products = ReadProducts(sourceExcelFile);
+        // Không xếp hàng chờ: người dùng bấm In lần 2 trong lúc lần 1 chưa
+        // xong thường là bấm nhầm/bấm lặp — báo rõ thay vì âm thầm in thêm.
+        if (!PrintLock.Wait(0))
+            throw new Exception(
+                "Đang có một lệnh in khác chưa xong.\n\n" +
+                "Vui lòng chờ lệnh in đó hoàn tất rồi bấm In lại.");
 
-        LabelDefinition label = _catalogService.GetByCode(labelCode);
+        List<ProductRow> products;
+        LabelDefinition label;
 
-        // GÁN FILE NGUỒN VÀO LABEL
-        label.SourceExcelFile = sourceExcelFile;
+        try
+        {
+            products = ReadProducts(sourceExcelFile);
 
-        var handler = _handlerFactory.GetHandler(label.HandlerType);
+            label = _catalogService.GetByCode(labelCode);
 
-        handler.PrepareDataAndPrint(products, label, employeeCode, priceOverride, nameOverrides);
+            // GÁN FILE NGUỒN VÀO LABEL
+            label.SourceExcelFile = sourceExcelFile;
+
+            var handler = _handlerFactory.GetHandler(label.HandlerType);
+
+            handler.PrepareDataAndPrint(products, label, employeeCode, priceOverride, nameOverrides);
+        }
+        finally
+        {
+            PrintLock.Release();
+        }
 
         _historyService.Add(new PrintHistory
         {
