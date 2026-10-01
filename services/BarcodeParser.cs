@@ -59,8 +59,12 @@ public static class BarcodeParser
         Regex[] regexes = new Regex[Keywords.Length];
         for (int i = 0; i < Keywords.Length; i++)
         {
+            // Từ khoá phải đứng thành từ riêng: không có chữ/số dính phía trước
+            // và không có chữ dính phía sau (vẫn cho số dính sau, VD "model6282").
+            // Thiếu ranh giới này "nam" khớp cả trong "Vietnam"/"Dynamo"/
+            // "Panama" → parse ra mã sai (VD "Dynamo D500" → "OD500").
             regexes[i] = new Regex(
-                $@"{Regex.Escape(Keywords[i])}\s*[:\-]?\s*([A-Za-z0-9\-]+)(?:\s+([A-Za-z0-9\-]+))?",
+                $@"(?<![\p{{L}}\p{{M}}\p{{N}}]){Regex.Escape(Keywords[i])}(?![\p{{L}}\p{{M}}])\s*[:\-]?\s*([A-Za-z0-9\-]+)(?:\s+([A-Za-z0-9\-]+))?",
                 RegexOptions.IgnoreCase | RegexOptions.Compiled);
         }
         return regexes;
