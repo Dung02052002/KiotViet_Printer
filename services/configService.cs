@@ -1,4 +1,4 @@
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using KiotVietLabelPrinter.Models;
 
 namespace KiotVietLabelPrinter.Services;
@@ -22,6 +22,19 @@ public class ConfigService
         Load();
     }
 
+    /// <summary>
+    /// Thông báo cho người dùng khi lần Load gần nhất phải khôi phục config
+    /// từ bản sao lưu hoặc tạo mới (null = đọc bình thường).
+    /// </summary>
+    public string? LoadWarning { get; private set; }
+
+    public void ClearLoadWarning() => LoadWarning = null;
+
+    private string BackupPath => _configPath + ".bak";
+
+    // Không xoá LoadWarning ở đầu Load(): constructor đã Load() một lần rồi
+    // Program gọi Load() lại — lần 2 đọc được bản vừa khôi phục nhưng cảnh
+    // báo của lần 1 vẫn phải tới được người dùng (Program hiển thị rồi xoá).
     public void Load()
     {
         try
@@ -30,61 +43,173 @@ public class ConfigService
 
             if (!string.IsNullOrWhiteSpace(folder) && !Directory.Exists(folder))
                 Directory.CreateDirectory(folder);
-
-            if (!File.Exists(_configPath))
-            {
-                Config = CreateDefaultConfig();
-                Save();
-                return;
-            }
-
-            string json = File.ReadAllText(_configPath);
-
-            if (string.IsNullOrWhiteSpace(json))
-            {
-                Config = CreateDefaultConfig();
-                Save();
-                return;
-            }
-
-            Config = JsonConvert.DeserializeObject<AppConfig>(json)
-                     ?? CreateDefaultConfig();
-
-            // Phòng trường hợp config cũ hoặc labels null
-            if (Config.Labels == null)
-                Config.Labels = new List<LabelDefinition>();
-
-            if (Config.Labels.Count == 0)
-            {
-                Config = CreateDefaultConfig();
-                Save();
-            }
-
-            // Config cũ (trước khi có CÔNG CỤ HÌNH ẢNH) sẽ không có Tools —
-            // bổ sung mặc định thay vì bắt người dùng xoá config để có lại card.
-            if (Config.Tools == null)
-                Config.Tools = new List<ToolDefinition>();
-
-            if (Config.Tools.Count == 0)
-            {
-                Config.Tools = DefaultTools();
-                Save();
-            }
-            // Config cũ (trước khi có "Giảm dung lượng ảnh") sẽ có Tools nhưng
-            // thiếu đúng tool này — bổ sung thay vì bắt người dùng xoá config.
-            else if (!Config.Tools.Any(t => t.Code == "IMAGE_COMPRESS"))
-            {
-                Config.Tools.Add(ImageCompressTool());
-                Save();
-            }
         }
         catch
         {
+            // Không tạo được thư mục — TryRead bên dưới sẽ tự thất bại.
+        }
+
+        // KHÔNG BAO GIỜ ghi đè config đang có bằng config mặc định chỉ vì đọc
+        // lỗi (JSON hỏng do mất điện giữa lúc ghi, file đang bị OneDrive/
+        // antivirus khoá...): thử bản sao lưu .bak trước, và luôn giữ lại file
+        // hỏng để có thể khôi phục bằng tay.
+        if (TryRead(_configPath, out AppConfig? config, out string? error))
+        {
+            Config = config!;
+        }
+        else if (TryRead(BackupPath, out AppConfig? backup, out _))
+        {
+            PreserveBrokenFile();
+            Config = backup!;
+            LoadWarning =
+                "File cấu hình bị lỗi nên đã được khôi phục từ bản sao lưu gần nhất." +
+                (error == null ? "" : $"\n\nChi tiết: {error}");
+            TrySave();
+        }
+        else if (!File.Exists(_configPath) && !File.Exists(BackupPath))
+        {
+            // Lần chạy đầu tiên: chưa có config.
             Config = CreateDefaultConfig();
-            Save();
+            TrySave();
+            return;
+        }
+        else
+        {
+            bool preserved = PreserveBrokenFile();
+            Config = CreateDefaultConfig();
+            LoadWarning =
+                "Không đọc được file cấu hình và không có bản sao lưu hợp lệ — " +
+                "phần mềm tạm dùng cấu hình mặc định, vui lòng kiểm tra lại Cấu hình." +
+                (preserved ? $"\n\nFile cũ đã được giữ lại trong thư mục:\n{Path.GetDirectoryName(_configPath)}" : "") +
+                (error == null ? "" : $"\n\nChi tiết: {error}");
+
+            // File gốc còn đó (đang bị khoá) thì không ghi đè lên nó.
+            if (preserved || !File.Exists(_configPath))
+                TrySave();
+
+            return;
+        }
+
+        NormalizeLoadedConfig();
+    }
+
+    private static bool TryRead(string path, out AppConfig? config, out string? error)
+    {
+        config = null;
+        error = null;
+
+        if (!File.Exists(path))
+            return false;
+
+        // Retry ngắn khi file đang bị tiến trình khác giữ tạm thời.
+        for (int attempt = 1; ; attempt++)
+        {
+            try
+            {
+                string json = File.ReadAllText(path);
+
+                if (string.IsNullOrWhiteSpace(json))
+                {
+                    error = "File cấu hình rỗng.";
+                    return false;
+                }
+
+                config = JsonConvert.DeserializeObject<AppConfig>(json);
+
+                if (config == null)
+                {
+                    error = "File cấu hình không có dữ liệu.";
+                    return false;
+                }
+
+                return true;
+            }
+            catch (IOException ex) when (attempt < 5)
+            {
+                error = ex.Message;
+                Thread.Sleep(200);
+            }
+            catch (Exception ex)
+            {
+                error = ex.Message;
+                return false;
+            }
         }
     }
 
+    /// <summary>
+    /// Đổi tên file config hỏng thành config.json.bad-&lt;thời gian&gt; để không
+    /// bị mất. Trả về false nếu không làm được (ví dụ file đang bị khoá).
+    /// </summary>
+    private bool PreserveBrokenFile()
+    {
+        try
+        {
+            if (!File.Exists(_configPath))
+                return false;
+
+            File.Move(_configPath, $"{_configPath}.bad-{DateTime.Now:yyyyMMdd_HHmmss}");
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private void TrySave()
+    {
+        try
+        {
+            Save();
+        }
+        catch
+        {
+            // Không lưu được lúc khởi động — giữ config trong bộ nhớ, lần
+            // Save() sau (khi người dùng đổi cấu hình) sẽ báo lỗi thật.
+        }
+    }
+
+    private void NormalizeLoadedConfig()
+    {
+        bool changed = false;
+
+        // Phòng trường hợp config cũ hoặc labels null — chỉ bổ sung danh
+        // sách tem mặc định, KHÔNG xoá các thiết lập khác (BarTender, máy in,
+        // thư mục gần nhất...).
+        if (Config.Labels == null || Config.Labels.Count == 0)
+        {
+            Config.Labels = CreateDefaultConfig().Labels;
+            changed = true;
+        }
+
+        // Config cũ (trước khi có CÔNG CỤ HÌNH ẢNH) sẽ không có Tools —
+        // bổ sung mặc định thay vì bắt người dùng xoá config để có lại card.
+        if (Config.Tools == null || Config.Tools.Count == 0)
+        {
+            Config.Tools = DefaultTools();
+            changed = true;
+        }
+        // Config cũ (trước khi có "Giảm dung lượng ảnh") sẽ có Tools nhưng
+        // thiếu đúng tool này — bổ sung thay vì bắt người dùng xoá config.
+        else if (!Config.Tools.Any(t => t.Code == "IMAGE_COMPRESS"))
+        {
+            Config.Tools.Add(ImageCompressTool());
+            changed = true;
+        }
+
+        // Lỗi lưu phần bổ sung không được làm mất config đã đọc được.
+        if (changed)
+            TrySave();
+    }
+
+    private static readonly object SaveLock = new();
+
+    /// <summary>
+    /// Ghi nguyên tử: ghi ra config.json.tmp rồi thay thế file thật, file cũ
+    /// được giữ làm config.json.bak. Mất điện / app bị tắt giữa lúc ghi không
+    /// thể để lại file config bị cụt.
+    /// </summary>
     public void Save()
     {
         string? folder = Path.GetDirectoryName(_configPath);
@@ -96,7 +221,23 @@ public class ConfigService
             Config,
             Formatting.Indented);
 
-        File.WriteAllText(_configPath, json);
+        lock (SaveLock)
+        {
+            string tempPath = _configPath + ".tmp";
+
+            using (FileStream fs = new(tempPath, FileMode.Create, FileAccess.Write, FileShare.None))
+            using (StreamWriter writer = new(fs, new System.Text.UTF8Encoding(false)))
+            {
+                writer.Write(json);
+                writer.Flush();
+                fs.Flush(true);
+            }
+
+            if (File.Exists(_configPath))
+                File.Replace(tempPath, _configPath, BackupPath, ignoreMetadataErrors: true);
+            else
+                File.Move(tempPath, _configPath);
+        }
     }
 
     public bool IsConfigured()

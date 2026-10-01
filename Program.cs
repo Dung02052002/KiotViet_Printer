@@ -1,4 +1,4 @@
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 using KiotVietLabelPrinter.Forms;
 using KiotVietLabelPrinter.Services;
 using KiotVietLabelPrinter.Services.BackgroundRemoval;
@@ -47,6 +47,13 @@ internal static class Program
         ApplicationConfiguration.Initialize();
 
         ConfigService.Instance.Load();
+
+        if (ConfigService.Instance.LoadWarning is string configWarning)
+        {
+            MessageBox.Show(configWarning, "Cấu hình",
+                MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            ConfigService.Instance.ClearLoadWarning();
+        }
 
         // Ghi log khởi động: version + đường dẫn .exe thật + BaseDirectory —
         // để xác nhận một máy đang chạy ĐÚNG build (không phải bản .exe cũ ở
