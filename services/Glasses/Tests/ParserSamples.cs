@@ -137,7 +137,10 @@ public static class ParserSamples
                 Name="MODEL WITH TRAILING MK",
                 Input="Kính râm, gọng bằng nhựa + sắt, mắt kính bằng mica, không phải kính thuốc, kt(16*16*7)cm(+/-10%), model 6215P, nhãn hiệu PUCINI, mới 100% - ( MK262 GREY )",
                 Expected="6215P"
-            }
+            },
+
+            // Thắt lưng: xem BeltSamples (dùng chung cho tem kính và tem mã vạch)
+            ..BeltSamples.Get()
         ];
     }
 }

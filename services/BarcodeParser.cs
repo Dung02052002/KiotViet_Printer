@@ -86,6 +86,16 @@ public static class BarcodeParser
             return result;
         }
 
+        // Thắt lưng: cắt thẳng mã từ Tên hàng, giữ nguyên văn (xem
+        // BeltCodeExtractor) — không để keyword "nam"/"nữ" bên dưới nhặt
+        // nhầm "THẮT LƯNG NAM TL14 MẪU 1" thành "TL14".
+        if (BeltCodeExtractor.TryExtract(text, out string beltCode, out _))
+        {
+            result.BarcodeCode = beltCode;
+            result.AttributeText = ExtractAttributeFallback(text);
+            return result;
+        }
+
         string normalized = Normalize(text);
 
         // =========================

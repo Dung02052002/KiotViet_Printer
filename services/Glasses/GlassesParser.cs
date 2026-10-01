@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Text.RegularExpressions;
 using KiotVietLabelPrinter.Models;
 using KiotVietLabelPrinter.Models.Glasses;
+using KiotVietLabelPrinter.Services;
 using KiotVietLabelPrinter.Services.Glasses.Lexer;
 using KiotVietLabelPrinter.Services.Glasses.Rules;
 
@@ -18,13 +19,15 @@ public class GlassesParser
     // thay vì cấp phát mới 10 rule object + 1 List cho mỗi GlassesParser/mỗi
     // dòng sản phẩm là an toàn.
     //
-    // Danh sách PHẢI giữ đúng thứ tự Priority tăng dần (10,15,20,30,40,50,60,
+    // Danh sách PHẢI giữ đúng thứ tự Priority tăng dần (10,20,30,40,50,60,
     // 70,80,90) — Parse() không còn OrderBy lại nữa (xem bên dưới), rule nào
     // thêm sau này phải tự chèn đúng vị trí.
+    //
+    // Thắt lưng không nằm trong danh sách này: được xử lý riêng bởi
+    // BeltCodeExtractor ngay trên Tên hàng gốc, TRƯỚC Lexer (xem Parse).
     private static readonly List<IGlassesRule> _rules =
     [
         new ModelRule(),
-        new BeltMauRule(),
         new KeywordRule(),
         new LeftOfMkRule(),
         new RightOfMkRule(),
@@ -126,6 +129,23 @@ public class GlassesParser
         result.NormalizedText = text;
 
         result.AddLog("Normalize OK");
+
+        //-----------------------------------------------------
+        // Thắt lưng: cắt thẳng mã từ Tên hàng, giữ nguyên văn
+        // (không qua Lexer, không NormalizeBaseCode viết hoa).
+        //-----------------------------------------------------
+
+        if (BeltCodeExtractor.TryExtract(text, out string beltCode, out string beltLog))
+        {
+            result.BaseCode = beltCode;
+            result.RuleName = BeltCodeExtractor.RuleName;
+            result.AddRuleTrace($"✔ {BeltCodeExtractor.RuleName}");
+            result.AddLog(beltLog);
+
+            sw.Stop();
+            result.Elapsed = sw.Elapsed;
+            return result;
+        }
 
         //-----------------------------------------------------
         // Lexer
