@@ -118,16 +118,24 @@ public class GlassesPrintService
     // qua Print XML Script dưới dạng Named Sub-String "GLASSES_INFO"
     // (đã quét parser và thay sẵn 2 dòng "Mã hàng"/"Mã vạch" bằng mã
     // ĐÃ PARSE) — không cần ghi ra file data nữa.
+    //
+    // KHÔNG được in tiếp khi ghi file data thất bại: file data lúc đó vẫn
+    // chứa số lượng / tên / giá của MÃ TRƯỚC, BarTender sẽ in tem lẫn dữ
+    // liệu (barcode mã này + số lượng/tên mã khác) mà không báo lỗi gì.
+    // Để lỗi ném ra → vòng in nhiều mã đưa mã này vào danh sách "in thiếu".
     try
     {
         _excelService.WriteSingleProduct(
             document.Product,
             label.DataFilePath);
     }
-    catch (IOException)
+    catch (IOException ex)
     {
-        // Khi file data đang bị app khác giữ lock, vẫn cho phép in bằng
-        // dữ liệu Named Sub-String để không làm gián đoạn thao tác in.
+        throw new Exception(
+            "Không ghi được file data tem kính (file đang bị chương trình " +
+            "khác mở/khoá) — đã bỏ qua mã này để tránh in sai dữ liệu.\n" +
+            $"File: {label.DataFilePath}\nChi tiết: {ex.Message}",
+            ex);
     }
 
     _barTenderService.Print(

@@ -88,16 +88,28 @@ public class GlassesExcelService
         // Save
         //=========================================
 
+        // Dựng xong toàn bộ nội dung trong bộ nhớ TRƯỚC khi mở file đích:
+        // FileMode.Create cắt file về rỗng ngay khi mở, nếu Write() lỗi giữa
+        // chừng thì file data bị hỏng/rỗng.
+        byte[] content;
+
+        using (MemoryStream output = new())
+        {
+            workbook.Write(output, leaveOpen: true);
+            content = output.ToArray();
+        }
+
+        workbook.Close();
+
         using (FileStream writeStream = OpenWithRetry(
             dataFile,
             FileMode.Create,
             FileAccess.Write,
             FileShare.ReadWrite))
         {
-            workbook.Write(writeStream);
+            writeStream.Write(content, 0, content.Length);
+            writeStream.Flush(true);
         }
-
-        workbook.Close();
     }
 
     /// <summary>

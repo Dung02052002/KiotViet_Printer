@@ -215,8 +215,19 @@ public class ExcelService
             Directory.CreateDirectory(folder);
         }
 
+        // Dựng nội dung trong bộ nhớ trước: FileMode.Create cắt file về rỗng
+        // ngay khi mở, nếu Write() lỗi giữa chừng thì file data bị hỏng.
+        byte[] content;
+
+        using (MemoryStream buffer = new())
+        {
+            workbook.Write(buffer, leaveOpen: true);
+            content = buffer.ToArray();
+        }
+
         using FileStream output = new(targetFile, FileMode.Create, FileAccess.Write, FileShare.ReadWrite);
-        workbook.Write(output);
+        output.Write(content, 0, content.Length);
+        output.Flush(true);
     }
 
     private static void ClearSheetData(ISheet sheet)
