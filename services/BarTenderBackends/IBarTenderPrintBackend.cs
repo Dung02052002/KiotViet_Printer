@@ -11,6 +11,10 @@ namespace KiotVietLabelPrinter.Services.BarTenderBackends;
 /// 2) <see cref="XmlScriptPrintBackend"/> — dùng /XMLScript=. CHỈ dùng khi
 ///    edition hỗ trợ (Enterprise Automation) và lệnh in cần Named Sub-String.
 ///
+/// 3) <see cref="ComAutomationPrintBackend"/> — COM BarTender.Application,
+///    instance riêng/ẩn. Ưu tiên khi có Automation, vì 2 backend trên chuyển
+///    lệnh vào BarTender đang mở và làm nó đóng các file người dùng đang mở.
+///
 /// <see cref="BarTenderService"/> tự chọn backend dựa trên nội dung request.
 /// </summary>
 public interface IBarTenderPrintBackend

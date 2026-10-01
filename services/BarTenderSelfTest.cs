@@ -94,7 +94,8 @@ public static class BarTenderSelfTest
         }
 
         sb.AppendLine("===========================================================");
-        sb.AppendLine("Kỳ vọng: Tem đầy đủ / Tem mã vạch → backend StandardCommandLine, Dùng XMLScript? KHÔNG.");
+        sb.AppendLine("Kỳ vọng: có COM Automation → mọi loại tem dùng backend ComAutomation (không đụng BarTender đang mở).");
+        sb.AppendLine("         Không có COM: Tem đầy đủ / Tem mã vạch → backend StandardCommandLine, Dùng XMLScript? KHÔNG.");
         sb.AppendLine("         Tem kính → XmlScript (nếu Edition có Enterprise) hoặc báo cần nâng cấp license.");
         sb.AppendLine();
 

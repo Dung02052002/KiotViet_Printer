@@ -8,6 +8,9 @@ namespace KiotVietLabelPrinter.Services;
 /// Điều phối in BarTender. KHÔNG tự chạy tiến trình — chọn backend phù hợp
 /// rồi giao việc:
 ///
+///   - Có COM Automation          → ComAutomationPrintBackend (instance riêng, ẩn;
+///                                   không đụng các file BarTender người dùng đang mở).
+///                                   Không dùng được → quay về 2 backend dưới.
 ///   - Không có Named Sub-String  → StandardCommandLinePrintBackend (/F /PRN /P /X).
 ///                                   Chạy trên MỌI edition, không bao giờ có popup #3112.
 ///   - Có Named Sub-String        → XmlScriptPrintBackend (/XMLScript=).
@@ -20,6 +23,7 @@ public class BarTenderService
 
     private readonly StandardCommandLinePrintBackend _standardBackend = new();
     private readonly XmlScriptPrintBackend _xmlScriptBackend = new();
+    private readonly ComAutomationPrintBackend _comBackend = new();
 
     public void Print(string btwFile)
     {
@@ -35,6 +39,30 @@ public class BarTenderService
         try
         {
             BarTenderPrintRequest request = BuildRequest(btwFile, namedSubStrings);
+
+            // Ưu tiên COM Automation: in bằng instance BarTender RIÊNG, ẩn — không
+            // chuyển lệnh vào cửa sổ BarTender người dùng đang mở (dòng lệnh làm
+            // BarTender đóng hết các file đang mở, chỉ còn file vừa in).
+            if (ComAutomationPrintBackend.IsAvailable(request.BarTenderExe))
+            {
+                BarTenderCommandLog.Write(
+                    $"SELECT backend={_comBackend.Name} template={request.TemplatePath} " +
+                    $"needsNamedSubStrings={request.RequiresNamedSubStrings}");
+
+                try
+                {
+                    _comBackend.Print(request, printStopwatch);
+                    return;
+                }
+                catch (ComAutomationUnavailableException ex)
+                {
+                    // Chưa gửi lệnh in nào ⇒ quay về backend dòng lệnh, không in trùng.
+                    BarTenderCommandLog.Write(
+                        $"COM không dùng được ({ex.Message}) → fallback backend dòng lệnh");
+                    PrintDiagnosticsLog.Write(
+                        $"COM fallback template={request.TemplatePath} reason={ex.Message}");
+                }
+            }
 
             IBarTenderPrintBackend backend = SelectBackend(request);
 
@@ -68,7 +96,9 @@ public class BarTenderService
         out string backendName)
     {
         BarTenderPrintRequest request = BuildRequest(btwFile, namedSubStrings, validateFiles: false);
-        IBarTenderPrintBackend backend = SelectBackend(request, throwWhenUnsupported: false);
+        IBarTenderPrintBackend backend = ComAutomationPrintBackend.IsAvailable(request.BarTenderExe)
+            ? _comBackend
+            : SelectBackend(request, throwWhenUnsupported: false);
         backendName = backend.Name;
         return backend.DescribeCommand(request);
     }
