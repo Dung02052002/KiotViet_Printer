@@ -12,9 +12,9 @@ namespace KiotVietLabelPrinter.Services;
 //   2. "PUTLxx"      -> "THẮT LƯNG PUTL01 - Da A"          -> "PUTL01"
 //   3. "TLxx"        -> "THẮT LƯNG NAM TL10 - Da A - XIÊN" -> "TL10"
 //   4. Là thắt lưng nhưng không có mã nào ở trên            -> "Thắt lưng"
-// (1) và (2) đủ đặc trưng nên áp dụng cả khi tên không ghi chữ "thắt lưng"
-// (VD "... PCN-TL15 MẪU 9" -> "TL15 MẪU 9"); (3) và (4) chỉ áp dụng khi tên
-// là thắt lưng, tránh nhặt nhầm "TLxx" của sản phẩm khác.
+// CHỈ áp dụng khi Tên hàng có chữ "thắt lưng" (có dấu hoặc không dấu). Tên
+// không phải thắt lưng trả về false ngay, để mọi sản phẩm khác đi đúng luồng
+// parser cũ như trước, không bị quy tắc này chen vào.
 public static class BeltCodeExtractor
 {
     public const string RuleName = "BeltRule";
@@ -57,6 +57,9 @@ public static class BeltCodeExtractor
         // "Ma" + dấu rời -> chuẩn về NFC để regex khớp được.
         string text = productName.Normalize(NormalizationForm.FormC).Trim();
 
+        if (!BeltNameRegex.IsMatch(text))
+            return false;
+
         Match match = TlMauRegex.Match(text);
 
         if (match.Success)
@@ -74,9 +77,6 @@ public static class BeltCodeExtractor
             log = $"BELT PUTLxx -> {code}";
             return true;
         }
-
-        if (!BeltNameRegex.IsMatch(text))
-            return false;
 
         match = TlRegex.Match(text);
 

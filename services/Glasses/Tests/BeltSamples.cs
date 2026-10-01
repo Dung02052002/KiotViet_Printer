@@ -29,7 +29,9 @@ public static class BeltSamples
             new() { Name="BELT 3. TL tiền tố PCN-", Input="THẮT LƯNG NAM PCN-TL15 - VUÔNG", Expected="TL15" },
             new() { Name="BELT 3. TL có TLC phía sau", Input="THẮT LƯNG NAM TL10 - Da A (TLC)", Expected="TL10" },
             new() { Name="BELT 4. Không mã có XIÊN", Input="THẮT LƯNG NAM - Da A - XIÊN", Expected="Thắt lưng" },
-            new() { Name="BELT 4. Không mã chỉ có TLC", Input="THẮT LƯNG DA BÒ (TLC)", Expected="Thắt lưng" }
+            new() { Name="BELT 4. Không mã chỉ có TLC", Input="THẮT LƯNG DA BÒ (TLC)", Expected="Thắt lưng" },
+            new() { Name="BELT 5. Không phải thắt lưng, dây đồng hồ TLxx", Input="DÂY ĐỒNG HỒ TL20 - BLACK", Expected="TL20" },
+            new() { Name="BELT 5. Không phải thắt lưng, kính model", Input="MODEL 6282", Expected="6282" }
         ];
     }
 }
