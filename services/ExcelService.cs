@@ -9,6 +9,7 @@ public class ExcelService
     private const int BarcodeColumnIndex = 5; // Cột F - cũng là "Tên hàng (thuộc tính)"
     private const int PriceColumnIndex = 8;   // Cột I - Giá bán
     private const int ProductCodeColumnIndex = 2; // Cột C - Mã hàng
+    private const int QuantityColumnIndex = 7; // Cột H - Số lượng
 
     #region PUBLIC API CHO PROJECT MỚI
 
@@ -25,20 +26,17 @@ public class ExcelService
             if (row == null)
                 continue;
 
+            // Cùng 1 quy tắc với CopyToBarTenderData — Xem trước / số sản phẩm /
+            // tổng tem / lịch sử phải khớp đúng với dữ liệu gửi cho BarTender.
+            if (!IsProductRow(row))
+                continue;
+
             string productCode = GetCellString(row, 2);         // C - Mã hàng
             string barcode = GetCellString(row, 3);             // D - Mã vạch
             string productName = GetCellString(row, 4);         // E - Tên hàng
             string productNameWithAttr = GetCellString(row, 5); // F - Tên hàng (thuộc tính)
-            double quantity = GetCellDouble(row, 7);            // H - Số lượng
             double price = GetCellDouble(row, 8);               // I - Giá bán
             string description = GetCellString(row, 9);         // J - Mô tả
-
-            if (string.IsNullOrWhiteSpace(productCode) &&
-                string.IsNullOrWhiteSpace(productName) &&
-                string.IsNullOrWhiteSpace(productNameWithAttr))
-            {
-                continue;
-            }
 
             products.Add(new ProductRow
             {
@@ -46,7 +44,7 @@ public class ExcelService
                 Barcode = barcode,
                 ProductName = productName,
                 ProductNameWithAttr = productNameWithAttr,
-                Quantity = quantity <= 0 ? 1 : quantity,
+                Quantity = ReadQuantity(row),
                 Price = price,
                 Description = description
             });
@@ -103,77 +101,72 @@ public class ExcelService
         // Xóa dữ liệu cũ, giữ header
         ClearSheetData(targetSheet);
 
-        // Copy nguyên từng hàng/cột từ source sang target
+        // Ghi các dòng sản phẩm LIỀN NHAU từ dòng 1 (không để lỗ hổng: dòng
+        // trống ở giữa file data bị BarTender đọc thành tem trắng), và chỉ lấy
+        // đúng những dòng ReadProducts coi là sản phẩm — để số dòng/số lượng
+        // gửi cho BarTender khớp với Xem trước.
+        int targetIndex = 1;
+
         for (int i = 1; i <= sourceSheet.LastRowNum; i++)
         {
             IRow? sourceRow = sourceSheet.GetRow(i);
-            if (sourceRow == null)
+            if (sourceRow == null || !IsProductRow(sourceRow))
                 continue;
 
-            // bỏ qua dòng hoàn toàn rỗng
-            if (IsRowEmpty(sourceRow))
-                continue;
+            IRow targetRow = targetSheet.CreateRow(targetIndex++);
 
-            IRow targetRow = targetSheet.GetRow(i) ?? targetSheet.CreateRow(i);
+            string productCode = GetCellString(sourceRow, ProductCodeColumnIndex);
 
-            string productCode = sourceRow.GetCell(ProductCodeColumnIndex)?.ToString()?.Trim() ?? "";
-
+            // Copy nguyên từng cột từ source sang target.
             for (int j = 0; j < sourceRow.LastCellNum; j++)
             {
-                // GIÁ BÁN: ghi đè theo chế độ đã chọn ở màn hình Tem đầy đủ (Sửa
-                // tất cả cùng 1 giá / Sửa giá một vài sản phẩm). Không đụng tới
-                // file Excel nguồn - chỉ áp dụng lên file data vừa ghi ra đây.
-                if (j == PriceColumnIndex && priceOverride != null && priceOverride.TryResolve(productCode, out double overriddenPrice))
-                {
-                    ICell overriddenCell = targetRow.GetCell(j) ?? targetRow.CreateCell(j);
-                    overriddenCell.SetCellValue(overriddenPrice);
-                    continue;
-                }
-
-                // TÊN HÀNG: ghi đè cột E/F theo tên đã sửa ở modal "Sửa tên hàng"
-                // (Tem đầy đủ). Không áp dụng cho tem mã vạch (cột F ở đó dùng để
-                // parse mã, không phải tên hiển thị). Không đụng tới file Excel
-                // nguồn - chỉ áp dụng lên file data vừa ghi ra đây.
-                if (!isBarcode && (j == ProductNameColumnIndex || j == BarcodeColumnIndex) &&
-                    nameOverrides != null && !string.IsNullOrWhiteSpace(productCode) &&
-                    nameOverrides.TryGetValue(productCode, out string? overriddenName) &&
-                    !string.IsNullOrWhiteSpace(overriddenName))
-                {
-                    ICell overriddenCell = targetRow.GetCell(j) ?? targetRow.CreateCell(j);
-                    overriddenCell.SetCellValue(overriddenName);
-                    continue;
-                }
-
                 ICell? sourceCell = sourceRow.GetCell(j);
                 if (sourceCell == null)
                     continue;
 
-                ICell targetCell = targetRow.GetCell(j) ?? targetRow.CreateCell(j);
+                CopyCellValue(sourceCell, targetRow.CreateCell(j));
+            }
 
-                string value = GetCellText(sourceCell);
+            // Các cột dưới đây ghi SAU khi copy và luôn ghi (kể cả khi dòng
+            // nguồn ngắn, không có tới cột đó) — trước đây nằm trong vòng lặp
+            // cột nên dòng thiếu cột cuối bị bỏ qua giá/tên đã sửa.
 
-                // TEM BARCODE: chỉ xử lý riêng cột F
-                if (isBarcode && j == BarcodeColumnIndex)
-                {
-                    string parsedCode = BarcodeParser.Parse(value);
+            // SỐ LƯỢNG: đúng con số Xem trước hiển thị (trống / <= 0 → 1).
+            SetNumber(targetRow, QuantityColumnIndex, ReadQuantity(sourceRow));
 
-                    if (string.IsNullOrWhiteSpace(parsedCode))
-                    {
-                        // fallback về mã hàng cột C
-                        parsedCode = sourceRow.GetCell(2)?.ToString()?.Trim() ?? "";
-                    }
+            // TEM BARCODE: cột F = mã parse (fallback mã hàng cột C) + mã nhân
+            // viên. Luôn ghi, kể cả khi cột F nguồn trống (trước đây ô trống bị
+            // bỏ qua → tem in mã rỗng trong khi Xem trước hiện mã hàng).
+            if (isBarcode)
+            {
+                string parsedCode = BarcodeParser.Parse(GetCellString(sourceRow, BarcodeColumnIndex));
 
-                    if (!string.IsNullOrWhiteSpace(employeeCode))
-                    {
-                        parsedCode = $"{parsedCode}-{employeeCode.Trim()}";
-                    }
+                if (string.IsNullOrWhiteSpace(parsedCode))
+                    parsedCode = productCode;
 
-                    value = parsedCode;
-                    targetCell.SetCellValue(value);
-                    continue;
-                }
+                if (!string.IsNullOrWhiteSpace(employeeCode))
+                    parsedCode = $"{parsedCode}-{employeeCode.Trim()}";
 
-                CopyCellValue(sourceCell, targetCell);
+                SetText(targetRow, BarcodeColumnIndex, parsedCode);
+            }
+
+            // GIÁ BÁN: ghi đè theo chế độ đã chọn ở màn hình Tem đầy đủ (Sửa
+            // tất cả cùng 1 giá / Sửa giá một vài sản phẩm). Không đụng tới
+            // file Excel nguồn - chỉ áp dụng lên file data vừa ghi ra đây.
+            if (priceOverride != null && priceOverride.TryResolve(productCode, out double overriddenPrice))
+                SetNumber(targetRow, PriceColumnIndex, overriddenPrice);
+
+            // TÊN HÀNG: ghi đè cột E/F theo tên đã sửa ở modal "Sửa tên hàng"
+            // (Tem đầy đủ). Không áp dụng cho tem mã vạch (cột F ở đó dùng để
+            // parse mã, không phải tên hiển thị). Không đụng tới file Excel
+            // nguồn - chỉ áp dụng lên file data vừa ghi ra đây.
+            if (!isBarcode &&
+                nameOverrides != null && !string.IsNullOrWhiteSpace(productCode) &&
+                nameOverrides.TryGetValue(productCode, out string? overriddenName) &&
+                !string.IsNullOrWhiteSpace(overriddenName))
+            {
+                SetText(targetRow, ProductNameColumnIndex, overriddenName);
+                SetText(targetRow, BarcodeColumnIndex, overriddenName);
             }
         }
 
@@ -240,18 +233,35 @@ public class ExcelService
         }
     }
 
-    private static bool IsRowEmpty(IRow row)
+    /// <summary>
+    /// Dòng có phải là một sản phẩm cần in không — quy tắc DUY NHẤT dùng cho
+    /// cả ReadProducts (Xem trước, đếm, lịch sử) lẫn ghi file data BarTender.
+    /// </summary>
+    private static bool IsProductRow(IRow row)
     {
-        for (int i = row.FirstCellNum; i < row.LastCellNum; i++)
-        {
-            if (i < 0) continue;
+        return !string.IsNullOrWhiteSpace(GetCellString(row, ProductCodeColumnIndex)) ||
+               !string.IsNullOrWhiteSpace(GetCellString(row, ProductNameColumnIndex)) ||
+               !string.IsNullOrWhiteSpace(GetCellString(row, BarcodeColumnIndex));
+    }
 
-            ICell? cell = row.GetCell(i);
-            if (cell != null && !string.IsNullOrWhiteSpace(GetCellText(cell)))
-                return false;
-        }
+    /// <summary>
+    /// Số lượng tem của dòng — quy tắc DUY NHẤT: trống / không phải số /
+    /// &lt;= 0 → 1 tem.
+    /// </summary>
+    private static double ReadQuantity(IRow row)
+    {
+        double quantity = GetCellDouble(row, QuantityColumnIndex);
+        return quantity <= 0 ? 1 : quantity;
+    }
 
-        return true;
+    private static void SetNumber(IRow row, int column, double value)
+    {
+        (row.GetCell(column) ?? row.CreateCell(column)).SetCellValue(value);
+    }
+
+    private static void SetText(IRow row, int column, string value)
+    {
+        (row.GetCell(column) ?? row.CreateCell(column)).SetCellValue(value);
     }
 
     private static void CopyCellValue(ICell sourceCell, ICell targetCell)
