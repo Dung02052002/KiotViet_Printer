@@ -48,6 +48,12 @@ public class LabelService
     // lúc BarTender của lệnh trước đang đọc → tem in lẫn dữ liệu.
     private static readonly SemaphoreSlim PrintLock = new(1, 1);
 
+    /// <summary>
+    /// Cảnh báo của lần Print gần nhất khi in THÀNH CÔNG nhưng có việc phụ
+    /// không làm được (ví dụ không ghi được lịch sử). null = không có.
+    /// </summary>
+    public string? LastWarning { get; private set; }
+
     public int Print(
         string sourceExcelFile,
         string labelCode,
@@ -55,6 +61,8 @@ public class LabelService
         PriceOverride? priceOverride = null,
         Dictionary<string, string>? nameOverrides = null)
     {
+        LastWarning = null;
+
         // Không xếp hàng chờ: người dùng bấm In lần 2 trong lúc lần 1 chưa
         // xong thường là bấm nhầm/bấm lặp — báo rõ thay vì âm thầm in thêm.
         if (!PrintLock.Wait(0))
@@ -83,18 +91,32 @@ public class LabelService
             PrintLock.Release();
         }
 
-        _historyService.Add(new PrintHistory
+        // Tem ĐÃ in xong — lỗi ghi lịch sử không được biến lệnh in thành
+        // "thất bại" (người dùng sẽ in lại → tem bị in trùng). Chỉ cảnh báo.
+        try
         {
-            PrintTime = DateTime.Now,
-            SourceExcelFile = sourceExcelFile,
-            LabelCode = label.Code,
-            LabelName = label.Name,
-            EmployeeCode = employeeCode,
-            ProductCount = products.Count,
-            TotalLabels = products.Sum(x => x.Quantity),
-            MachineName = Environment.MachineName,
-            UserName = Environment.UserName
-        });
+            _historyService.Add(new PrintHistory
+            {
+                PrintTime = DateTime.Now,
+                SourceExcelFile = sourceExcelFile,
+                LabelCode = label.Code,
+                LabelName = label.Name,
+                EmployeeCode = employeeCode,
+                ProductCount = products.Count,
+                TotalLabels = products.Sum(x => x.Quantity),
+                MachineName = Environment.MachineName,
+                UserName = Environment.UserName
+            });
+        }
+        catch (Exception ex)
+        {
+            PrintDiagnosticsLog.Write($"HISTORY write failed label={label.Code} error={ex.Message}");
+
+            LastWarning =
+                "Tem đã được gửi in xong, nhưng không ghi được lịch sử in.\n" +
+                "KHÔNG cần in lại.\n\n" +
+                $"Chi tiết: {ex.Message}";
+        }
 
         return products.Count;
     }

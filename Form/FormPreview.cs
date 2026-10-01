@@ -301,6 +301,9 @@ public class FormPreview : Form
                 _nameOverrides));
 
             ToastForm.ShowSuccess($"Đã xử lý {total} sản phẩm.");
+
+            if (_labelService.LastWarning is string warning)
+                MessageBox.Show(warning, "Cảnh báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             DialogResult = DialogResult.OK;
             Close();
         }

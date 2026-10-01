@@ -1399,6 +1399,9 @@ public class FormMain : Form
                     nameOverrides));
 
                 ToastForm.ShowSuccess($"In thành công. Số sản phẩm: {productCount}");
+
+                if (_labelService.LastWarning is string warning)
+                    MessageBox.Show(warning, "Cảnh báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
             finally
             {
