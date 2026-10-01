@@ -1,3 +1,4 @@
+using KiotVietLabelPrinter.Models;
 using KiotVietLabelPrinter.Models.Glasses;
 using KiotVietLabelPrinter.Services.Glasses;
 
@@ -14,7 +15,13 @@ public static class ParserTestRunner
         foreach (ParserTestCase test in ParserSamples.Get())
         {
             GlassesParserResult parse =
-                parser.Parse(test.Input);
+                string.IsNullOrEmpty(test.ProductName)
+                    ? parser.Parse(test.Input)
+                    : parser.Parse(new ProductRow
+                    {
+                        ProductName = test.ProductName,
+                        ProductNameWithAttr = test.Input
+                    });
 
             results.Add(new ParserTestResult
             {

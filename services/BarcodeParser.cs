@@ -70,12 +70,14 @@ public static class BarcodeParser
         return regexes;
     }
 
-    public static string Parse(string text, string fallbackCode = "")
+    // productName: Tên hàng gốc (cột E), chỉ dùng cho thắt lưng không có mã
+    // (lấy toàn bộ tên làm mã in tem, xem BeltCodeExtractor).
+    public static string Parse(string text, string fallbackCode = "", string productName = "")
     {
-        return ParseFull(text, fallbackCode).BarcodeCode;
+        return ParseFull(text, fallbackCode, productName).BarcodeCode;
     }
 
-    public static BarcodeParseResult ParseFull(string text, string fallbackCode = "")
+    public static BarcodeParseResult ParseFull(string text, string fallbackCode = "", string productName = "")
     {
         BarcodeParseResult result = new();
 
@@ -89,7 +91,7 @@ public static class BarcodeParser
         // Thắt lưng: cắt thẳng mã từ Tên hàng, giữ nguyên văn (xem
         // BeltCodeExtractor) — không để keyword "nam"/"nữ" bên dưới nhặt
         // nhầm "THẮT LƯNG NAM TL14 MẪU 1" thành "TL14".
-        if (BeltCodeExtractor.TryExtract(text, out string beltCode, out _))
+        if (BeltCodeExtractor.TryExtract(text, productName, out string beltCode, out _))
         {
             result.BarcodeCode = beltCode;
             result.AttributeText = ExtractAttributeFallback(text);

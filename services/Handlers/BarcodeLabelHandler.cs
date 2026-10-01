@@ -21,7 +21,8 @@ public class BarcodeLabelHandler : ILabelHandler
         {
             BarcodeParseResult parsed = BarcodeParser.ParseFull(
                 item.ProductNameWithAttr,
-                item.ProductCode);
+                item.ProductCode,
+                item.ProductName);
 
             string finalCode = parsed.BarcodeCode;
 

@@ -69,7 +69,7 @@ public class GlassesParser
                 ? product.ProductNameWithAttr
                 : product.ProductName;
 
-        GlassesParserResult result = Parse(text);
+        GlassesParserResult result = Parse(text, product.ProductName);
 
         ApplyProductCodeFallback(result, product);
 
@@ -103,6 +103,13 @@ public class GlassesParser
 
     public GlassesParserResult Parse(string? text)
     {
+        return Parse(text, null);
+    }
+
+    // fullName: Tên hàng gốc (cột E), chỉ dùng cho thắt lưng không có mã
+    // (BeltCodeExtractor lấy toàn bộ tên làm mã in tem).
+    private GlassesParserResult Parse(string? text, string? fullName)
+    {
         Stopwatch sw = Stopwatch.StartNew();
 
         GlassesParserResult result = new();
@@ -135,7 +142,7 @@ public class GlassesParser
         // (không qua Lexer, không NormalizeBaseCode viết hoa).
         //-----------------------------------------------------
 
-        if (BeltCodeExtractor.TryExtract(text, out string beltCode, out string beltLog))
+        if (BeltCodeExtractor.TryExtract(text, fullName, out string beltCode, out string beltLog))
         {
             result.BaseCode = beltCode;
             result.RuleName = BeltCodeExtractor.RuleName;

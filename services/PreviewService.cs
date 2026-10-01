@@ -16,7 +16,8 @@ public class PreviewService
         {
             string parsedCode = BarcodeParser.Parse(
                 item.ProductNameWithAttr,
-                item.ProductCode);
+                item.ProductCode,
+                item.ProductName);
 
             string finalBarcode = parsedCode;
 

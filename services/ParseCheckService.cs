@@ -58,12 +58,15 @@ public static class ParseCheckService
         if (core.Length <= 2)
             flags.Add("Mã quá ngắn, dễ trùng");
 
-        if (core.Length > 20)
+        // Mã thắt lưng được cắt nguyên văn từ Tên hàng (có khoảng trắng, dấu
+        // tiếng Việt; thắt lưng không có mã thì là cả Tên hàng) nên không
+        // cảnh báo "quá dài" / "ký tự lạ".
+        bool isBelt = IsBeltCode(row, parsed);
+
+        if (core.Length > 20 && !isBelt)
             flags.Add("Mã quá dài, có thể lẫn chữ thừa");
 
-        // Mã thắt lưng ("TL14 MẪU 1", "Thắt lưng") được cắt nguyên văn từ
-        // Tên hàng nên có khoảng trắng/dấu tiếng Việt là đúng, không cảnh báo.
-        if (Regex.IsMatch(core, @"[^A-Za-z0-9\-/xX]") && !IsBeltCode(row, parsed))
+        if (Regex.IsMatch(core, @"[^A-Za-z0-9\-/xX]") && !isBelt)
             flags.Add("Mã chứa ký tự lạ");
 
         if (string.IsNullOrWhiteSpace(final))
@@ -78,7 +81,7 @@ public static class ParseCheckService
             ? row.ProductNameWithAttr
             : row.ProductName;
 
-        return BeltCodeExtractor.TryExtract(name, out string beltCode, out _) &&
+        return BeltCodeExtractor.TryExtract(name, row.ProductName, out string beltCode, out _) &&
                string.Equals(beltCode, parsed, StringComparison.Ordinal);
     }
 }

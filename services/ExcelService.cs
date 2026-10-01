@@ -139,7 +139,10 @@ public class ExcelService
             // bỏ qua → tem in mã rỗng trong khi Xem trước hiện mã hàng).
             if (isBarcode)
             {
-                string parsedCode = BarcodeParser.Parse(GetCellString(sourceRow, BarcodeColumnIndex));
+                string parsedCode = BarcodeParser.Parse(
+                    GetCellString(sourceRow, BarcodeColumnIndex),
+                    "",
+                    GetCellString(sourceRow, ProductNameColumnIndex));
 
                 if (string.IsNullOrWhiteSpace(parsedCode))
                     parsedCode = productCode;

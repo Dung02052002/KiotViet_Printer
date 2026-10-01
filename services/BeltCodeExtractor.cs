@@ -9,17 +9,19 @@ namespace KiotVietLabelPrinter.Services;
 // (giữ nguyên văn, chỉ trim đầu/cuối), không đi qua Lexer/Rule Engine và
 // không bị NormalizeBaseCode viết hoa lại. Thứ tự ưu tiên bắt buộc:
 //   1. "TLxx Mẫuxx"  -> "THẮT LƯNG NAM TL10 Mẫu01 - Da bò" -> "TL10 Mẫu01"
+//      "TLxx - Mẫuxx" -> "THẮT LƯNG NAM TL12 - MẪU 1 (CHIẾC)" -> "TL12-MẪU 1"
+//      (có gạch ngang chen giữa thì nối lại bằng "-", bỏ khoảng trắng hai
+//      bên gạch; nếu không, MẪU 1/2/3/4 sẽ cùng ra "TL12" và trùng mã)
 //   2. "PUTLxx"      -> "THẮT LƯNG PUTL01 - Da A"          -> "PUTL01"
 //   3. "TLxx"        -> "THẮT LƯNG NAM TL10 - Da A - XIÊN" -> "TL10"
-//   4. Là thắt lưng nhưng không có mã nào ở trên            -> "Thắt lưng"
+//   4. Là thắt lưng nhưng không có mã nào ở trên -> lấy TOÀN BỘ Tên hàng
+//      (cột E, không kèm thuộc tính): "THẮT LƯNG NAM LOẠI XIÊN"
 // CHỈ áp dụng khi Tên hàng có chữ "thắt lưng" (có dấu hoặc không dấu). Tên
 // không phải thắt lưng trả về false ngay, để mọi sản phẩm khác đi đúng luồng
 // parser cũ như trước, không bị quy tắc này chen vào.
 public static class BeltCodeExtractor
 {
     public const string RuleName = "BeltRule";
-
-    public const string NoCodeText = "Thắt lưng";
 
     // Không cho dính chữ/số phía trước để "PUTL01" không bị hiểu là "TL01",
     // còn tiền tố kiểu "PCN-" (ngăn bằng gạch ngang) thì vẫn bỏ qua được.
@@ -28,6 +30,11 @@ public static class BeltCodeExtractor
 
     private static readonly Regex TlMauRegex =
         new(Start + @"TL\d+\s+M[ẪẫAa]U\s*\d+" + End,
+            RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Compiled);
+
+    // "TL12 - MẪU 1": nhóm 1 = "TL12", nhóm 2 = "MẪU 1" (giữ nguyên văn).
+    private static readonly Regex TlDashMauRegex =
+        new(Start + @"(TL\d+)\s*-\s*(M[ẪẫAa]U\s*\d+)" + End,
             RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Compiled);
 
     private static readonly Regex PutlRegex =
@@ -44,6 +51,18 @@ public static class BeltCodeExtractor
 
     public static bool TryExtract(
         string? productName,
+        out string code,
+        out string log)
+    {
+        return TryExtract(productName, null, out code, out log);
+    }
+
+    // productName: tên dùng để dò mã (thường là "Tên hàng (thuộc tính)",
+    // cột F). fullName: Tên hàng gốc (cột E), chỉ dùng cho mức 4 — trống thì
+    // lấy luôn productName.
+    public static bool TryExtract(
+        string? productName,
+        string? fullName,
         out string code,
         out string log)
     {
@@ -69,6 +88,15 @@ public static class BeltCodeExtractor
             return true;
         }
 
+        match = TlDashMauRegex.Match(text);
+
+        if (match.Success)
+        {
+            code = $"{match.Groups[1].Value}-{match.Groups[2].Value}";
+            log = $"BELT TLxx - MẪUxx -> {code}";
+            return true;
+        }
+
         match = PutlRegex.Match(text);
 
         if (match.Success)
@@ -87,8 +115,10 @@ public static class BeltCodeExtractor
             return true;
         }
 
-        code = NoCodeText;
-        log = $"BELT không có mã -> {code}";
+        code = !string.IsNullOrWhiteSpace(fullName)
+            ? fullName.Normalize(NormalizationForm.FormC).Trim()
+            : text;
+        log = $"BELT không có mã, lấy toàn bộ tên -> {code}";
         return true;
     }
 }
