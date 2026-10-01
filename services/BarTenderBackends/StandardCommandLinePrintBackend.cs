@@ -88,8 +88,7 @@ public sealed class StandardCommandLinePrintBackend : IBarTenderPrintBackend
                 $"STDOUT:\n{result.StdOut}");
 
         PrintCompletion.Confirm(
-            request.PrinterName,
-            request.TemplatePath,
+            request,
             hasRunningBarTender,
             printStopwatch,
             Name);

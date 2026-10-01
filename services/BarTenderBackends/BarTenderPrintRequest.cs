@@ -22,6 +22,13 @@ public sealed class BarTenderPrintRequest
     /// </summary>
     public IReadOnlyDictionary<string, string>? NamedSubStrings { get; init; }
 
+    /// <summary>
+    /// Các job đã có sẵn trong hàng đợi máy in NGAY TRƯỚC khi gửi lệnh in —
+    /// để chỉ chờ đúng job do lệnh in này tạo ra (xem PrintCompletion).
+    /// null = không chụp được (bỏ qua bước chờ).
+    /// </summary>
+    public IReadOnlySet<uint>? PreexistingJobIds { get; init; }
+
     public bool RequiresNamedSubStrings =>
         NamedSubStrings is { Count: > 0 };
 

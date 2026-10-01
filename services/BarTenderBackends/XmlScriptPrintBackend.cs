@@ -86,8 +86,7 @@ public sealed class XmlScriptPrintBackend : IBarTenderPrintBackend
             cap.MarkSupported();
 
         PrintCompletion.Confirm(
-            request.PrinterName,
-            request.TemplatePath,
+            request,
             hasRunningBarTender,
             printStopwatch,
             Name);

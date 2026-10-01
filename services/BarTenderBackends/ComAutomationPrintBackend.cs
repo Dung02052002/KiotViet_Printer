@@ -154,12 +154,14 @@ public sealed class ComAutomationPrintBackend : IBarTenderPrintBackend
         // Instance ẩn thường tự thoát sau Quit; nếu còn sót thì dọn.
         CleanupLeftoverInstances(request.BarTenderExe, pidsBefore);
 
+        // PrintOut + chờ IsPrinting là đồng bộ: khi tới đây job đã vào hàng
+        // đợi, không cần chờ lâu để "thấy" job như backend dòng lệnh.
         PrintCompletion.Confirm(
-            request.PrinterName,
-            request.TemplatePath,
+            request,
             hasRunningBarTender,
             printStopwatch,
-            Name);
+            Name,
+            startupGraceMs: 2000);
     }
 
     //---------------------------------------------------------

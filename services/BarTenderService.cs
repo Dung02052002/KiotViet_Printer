@@ -133,6 +133,10 @@ public class BarTenderService
             BarTenderExe = bartenderExe,
             TemplatePath = btwFile,
             PrinterName = printerName,
+            // Chụp hàng đợi NGAY TRƯỚC khi in để chỉ chờ job của lệnh in này.
+            PreexistingJobIds = validateFiles
+                ? BarTenderProcess.SnapshotJobIds(printerName)
+                : null,
             NamedSubStrings = namedSubStrings is { Count: > 0 }
                 ? new Dictionary<string, string>(namedSubStrings)
                 : null

@@ -1,4 +1,5 @@
 using KiotVietLabelPrinter.Models;
+using KiotVietLabelPrinter.Services.BarTenderBackends;
 
 namespace KiotVietLabelPrinter.Services;
 
@@ -72,9 +73,12 @@ public class LabelService
 
         List<ProductRow> products;
         LabelDefinition label;
+        List<string> warnings = new();
 
         try
         {
+            PrintWarnings.Reset();
+
             products = ReadProducts(sourceExcelFile);
 
             label = _catalogService.GetByCode(labelCode);
@@ -85,9 +89,14 @@ public class LabelService
             var handler = _handlerFactory.GetHandler(label.HandlerType);
 
             handler.PrepareDataAndPrint(products, label, employeeCode, priceOverride, nameOverrides);
+
+            // Cảnh báo không làm lệnh in thất bại (VD máy in đang tạm dừng /
+            // offline — job vẫn nằm trong hàng đợi, sẽ tự in khi máy in sẵn sàng).
+            warnings.AddRange(PrintWarnings.TakeAll());
         }
         finally
         {
+            PrintWarnings.Reset();
             PrintLock.Release();
         }
 
@@ -112,11 +121,14 @@ public class LabelService
         {
             PrintDiagnosticsLog.Write($"HISTORY write failed label={label.Code} error={ex.Message}");
 
-            LastWarning =
+            warnings.Add(
                 "Tem đã được gửi in xong, nhưng không ghi được lịch sử in.\n" +
                 "KHÔNG cần in lại.\n\n" +
-                $"Chi tiết: {ex.Message}";
+                $"Chi tiết: {ex.Message}");
         }
+
+        if (warnings.Count > 0)
+            LastWarning = string.Join("\n\n────────────\n\n", warnings);
 
         return products.Count;
     }
