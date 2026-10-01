@@ -27,7 +27,12 @@ UninstallDisplayIcon={app}\KiotViet Label Printer Pro V2.exe
 Name: "{userdesktop}\KiotViet Label Printer"
 
 [Files]
-Source: "publish\*"; DestDir: "{userdesktop}\KiotViet Label Printer"; Flags: ignoreversion recursesubdirs createallsubdirs
+; config.json / history.json là DỮ LIỆU của người dùng (đường dẫn template,
+; máy in, lịch sử in) — chỉ chép bản gốc khi máy chưa có, KHÔNG ghi đè khi
+; cài bản cập nhật, và không xoá khi gỡ cài đặt.
+Source: "publish\*"; DestDir: "{userdesktop}\KiotViet Label Printer"; Excludes: "config.json,history.json"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "publish\config\config.json"; DestDir: "{userdesktop}\KiotViet Label Printer\Config"; Flags: onlyifdoesntexist uninsneveruninstall
+Source: "publish\Data\history.json"; DestDir: "{userdesktop}\KiotViet Label Printer\Data"; Flags: onlyifdoesntexist uninsneveruninstall
 
 [Icons]
 Name: "{userdesktop}\In Tem KiotViet"; Filename: "{userdesktop}\KiotViet Label Printer\KiotViet Label Printer Pro V2.exe"; WorkingDir: "{userdesktop}\KiotViet Label Printer"
