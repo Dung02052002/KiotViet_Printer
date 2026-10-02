@@ -258,7 +258,8 @@ public class FormEditNames : Form
     {
         dgv.EndEdit();
 
-        ResultOverrides.Clear();
+        Dictionary<string, string> result = new(StringComparer.OrdinalIgnoreCase);
+        List<string> conflictCodes = new();
 
         foreach (NameEditRow row in _allRows)
         {
@@ -272,8 +273,32 @@ public class FormEditNames : Form
             if (newName.Length == 0 || string.Equals(newName, row.OriginalName.Trim(), StringComparison.Ordinal))
                 continue;
 
-            ResultOverrides[row.ProductCode] = newName;
+            // Tên sửa được áp theo Mã hàng — 2 dòng cùng mã mà sửa thành 2 tên
+            // khác nhau thì tên sau sẽ âm thầm đè tên trước trên mọi dòng.
+            if (result.TryGetValue(row.ProductCode, out string? existing) &&
+                !string.Equals(existing, newName, StringComparison.Ordinal))
+            {
+                if (!conflictCodes.Contains(row.ProductCode, StringComparer.OrdinalIgnoreCase))
+                    conflictCodes.Add(row.ProductCode);
+                continue;
+            }
+
+            result[row.ProductCode] = newName;
         }
+
+        if (conflictCodes.Count > 0)
+        {
+            MessageBox.Show(
+                "Các mã sau xuất hiện nhiều dòng nhưng được sửa thành các tên khác nhau:\n" +
+                string.Join(", ", conflictCodes.Take(10)) + (conflictCodes.Count > 10 ? ", ..." : "") +
+                "\n\nTên sửa được áp cho MỌI dòng cùng mã, vui lòng sửa các dòng này thành cùng một tên.",
+                "Tên hàng bị xung đột", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            return;
+        }
+
+        ResultOverrides.Clear();
+        foreach (var pair in result)
+            ResultOverrides[pair.Key] = pair.Value;
 
         DialogResult = DialogResult.OK;
         Close();

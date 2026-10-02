@@ -320,7 +320,8 @@ public class FormEditPrices : Form
             return;
         }
 
-        ResultOverrides.Clear();
+        Dictionary<string, double> result = new(StringComparer.OrdinalIgnoreCase);
+        List<string> conflictCodes = new();
 
         foreach (PriceEditRow row in _allRows)
         {
@@ -329,9 +330,34 @@ public class FormEditPrices : Form
             if (digits.Length == 0 || string.IsNullOrWhiteSpace(row.ProductCode))
                 continue;
 
-            if (long.TryParse(digits, out long price) && price >= 0)
-                ResultOverrides[row.ProductCode] = price;
+            if (!long.TryParse(digits, out long price) || price <= 0)
+                continue;
+
+            // Giá sửa được áp theo Mã hàng — 2 dòng cùng mã mà nhập 2 giá
+            // khác nhau thì giá sau sẽ âm thầm đè giá trước trên mọi dòng.
+            if (result.TryGetValue(row.ProductCode, out double existing) && existing != price)
+            {
+                if (!conflictCodes.Contains(row.ProductCode, StringComparer.OrdinalIgnoreCase))
+                    conflictCodes.Add(row.ProductCode);
+                continue;
+            }
+
+            result[row.ProductCode] = price;
         }
+
+        if (conflictCodes.Count > 0)
+        {
+            MessageBox.Show(
+                "Các mã sau xuất hiện nhiều dòng nhưng được nhập các giá khác nhau:\n" +
+                string.Join(", ", conflictCodes.Take(10)) + (conflictCodes.Count > 10 ? ", ..." : "") +
+                "\n\nGiá sửa được áp cho MỌI dòng cùng mã, vui lòng nhập cùng một giá cho các dòng này.",
+                "Giá bị xung đột", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            return;
+        }
+
+        ResultOverrides.Clear();
+        foreach (var pair in result)
+            ResultOverrides[pair.Key] = pair.Value;
 
         DialogResult = DialogResult.OK;
         Close();
