@@ -1,3 +1,4 @@
+using System.Globalization;
 using NPOI.SS.UserModel;
 using KiotVietLabelPrinter.Models;
 
@@ -307,10 +308,57 @@ public class ExcelService
         if (cell.CellType == CellType.Numeric)
             return cell.NumericCellValue;
 
-        if (double.TryParse(cell.ToString(), out double value))
-            return value;
+        if (cell.CellType == CellType.Formula && cell.CachedFormulaResultType == CellType.Numeric)
+            return cell.NumericCellValue;
 
-        return 0;
+        return ParseNumberText(cell.ToString());
+    }
+
+    /// <summary>
+    /// Đọc số dạng text KHÔNG phụ thuộc cài đặt vùng của máy. Trước đây dùng
+    /// double.TryParse theo culture hiện tại: "150.000" thành 150 trên máy
+    /// en-US. Quy tắc: có cả "." và "," thì dấu đứng sau là dấu thập phân;
+    /// chỉ có một loại dấu thì coi là dấu ngăn nghìn nếu xuất hiện nhiều lần
+    /// hoặc theo sau đúng 3 chữ số ("150.000", "1,250"), ngược lại là thập
+    /// phân ("2.5", "1,5").
+    /// </summary>
+    public static double ParseNumberText(string? text)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+            return 0;
+
+        string s = new(text
+            .Replace("VNĐ", "", StringComparison.OrdinalIgnoreCase)
+            .Replace("VND", "", StringComparison.OrdinalIgnoreCase)
+            .Where(c => char.IsDigit(c) || c == '.' || c == ',' || c == '-')
+            .ToArray());
+
+        if (s.Length == 0)
+            return 0;
+
+        int lastDot = s.LastIndexOf('.');
+        int lastComma = s.LastIndexOf(',');
+
+        if (lastDot >= 0 && lastComma >= 0)
+        {
+            char decimalSep = lastDot > lastComma ? '.' : ',';
+            char groupSep = decimalSep == '.' ? ',' : '.';
+            s = s.Replace(groupSep.ToString(), "").Replace(decimalSep, '.');
+        }
+        else if (lastDot >= 0 || lastComma >= 0)
+        {
+            char sep = lastDot >= 0 ? '.' : ',';
+            int count = s.Count(c => c == sep);
+            int digitsAfter = s.Length - s.LastIndexOf(sep) - 1;
+
+            s = count > 1 || digitsAfter == 3
+                ? s.Replace(sep.ToString(), "")
+                : s.Replace(sep, '.');
+        }
+
+        return double.TryParse(s, NumberStyles.Float, CultureInfo.InvariantCulture, out double value)
+            ? value
+            : 0;
     }
 
     private static string GetCellText(ICell cell)
