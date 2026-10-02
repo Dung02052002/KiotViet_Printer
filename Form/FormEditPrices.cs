@@ -300,6 +300,26 @@ public class FormEditPrices : Form
     {
         dgv.EndEdit();
 
+        // Giá mới = 0 gần như luôn là gõ nhầm - chặn lại thay vì in tem 0đ.
+        List<string> zeroCodes = _allRows
+            .Where(r => !string.IsNullOrWhiteSpace(r.ProductCode))
+            .Where(r =>
+            {
+                string d = new((r.NewPriceText ?? "").Where(char.IsDigit).ToArray());
+                return d.Length > 0 && long.TryParse(d, out long p) && p == 0;
+            })
+            .Select(r => r.ProductCode)
+            .ToList();
+
+        if (zeroCodes.Count > 0)
+        {
+            string list = string.Join(", ", zeroCodes.Take(10)) + (zeroCodes.Count > 10 ? ", ..." : "");
+            MessageBox.Show(
+                $"Giá mới phải lớn hơn 0. Vui lòng sửa hoặc xoá giá của các mã: {list}",
+                "Giá không hợp lệ", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            return;
+        }
+
         ResultOverrides.Clear();
 
         foreach (PriceEditRow row in _allRows)

@@ -964,7 +964,7 @@ public class FormMain : Form
     {
         string digits = new(txtUniformPrice.Text.Where(char.IsDigit).ToArray());
 
-        if (digits.Length == 0 || !long.TryParse(digits, out long value) || value < 0)
+        if (digits.Length == 0 || !long.TryParse(digits, out long value) || value <= 0)
         {
             price = 0;
             return false;
@@ -1442,7 +1442,7 @@ public class FormMain : Form
         {
             case PriceOverrideMode.Uniform:
                 if (!TryParseUniformPrice(out double uniformPrice))
-                    throw new Exception("Vui lòng nhập giá bán hợp lệ (không được để trống hoặc âm).");
+                    throw new Exception("Vui lòng nhập giá bán hợp lệ (phải lớn hơn 0).");
 
                 return new PriceOverride { Mode = PriceOverrideMode.Uniform, UniformPrice = uniformPrice };
 
