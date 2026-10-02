@@ -281,8 +281,21 @@ public class ExcelService
                 break;
 
             case CellType.Formula:
-                // Với file data BarTender, giữ nguyên kết quả text an toàn hơn
-                targetCell.SetCellValue(GetCellText(sourceCell));
+                // Ghi KẾT QUẢ của công thức (giá trị Excel đã tính sẵn), không
+                // phải chữ công thức: cell.ToString() của ô công thức trả về
+                // "100000*1.1" → tem in ra chữ đó trong khi Xem trước hiện 110000.
+                switch (sourceCell.CachedFormulaResultType)
+                {
+                    case CellType.Numeric:
+                        targetCell.SetCellValue(sourceCell.NumericCellValue);
+                        break;
+                    case CellType.Boolean:
+                        targetCell.SetCellValue(sourceCell.BooleanCellValue);
+                        break;
+                    default:
+                        targetCell.SetCellValue(GetCellText(sourceCell));
+                        break;
+                }
                 break;
 
             case CellType.Blank:
@@ -297,7 +310,8 @@ public class ExcelService
 
     private static string GetCellString(IRow row, int index)
     {
-        return row.GetCell(index)?.ToString()?.Trim() ?? "";
+        ICell? cell = row.GetCell(index);
+        return cell == null ? "" : GetCellText(cell);
     }
 
     private static double GetCellDouble(IRow row, int index)
@@ -311,7 +325,7 @@ public class ExcelService
         if (cell.CellType == CellType.Formula && cell.CachedFormulaResultType == CellType.Numeric)
             return cell.NumericCellValue;
 
-        return ParseNumberText(cell.ToString());
+        return ParseNumberText(GetCellText(cell));
     }
 
     /// <summary>
@@ -361,8 +375,23 @@ public class ExcelService
             : 0;
     }
 
+    /// <summary>
+    /// Nội dung hiển thị của ô. Ô công thức lấy KẾT QUẢ đã tính (không phải
+    /// chữ công thức như cell.ToString()).
+    /// </summary>
     private static string GetCellText(ICell cell)
     {
+        if (cell.CellType == CellType.Formula)
+        {
+            return cell.CachedFormulaResultType switch
+            {
+                CellType.String => cell.StringCellValue?.Trim() ?? "",
+                CellType.Numeric => cell.NumericCellValue.ToString(CultureInfo.InvariantCulture),
+                CellType.Boolean => cell.BooleanCellValue ? "TRUE" : "FALSE",
+                _ => ""
+            };
+        }
+
         return cell.ToString()?.Trim() ?? "";
     }
 
