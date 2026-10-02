@@ -1238,6 +1238,31 @@ public class FormMain : Form
     #endregion
 
     #region Events
+    // Đóng app giữa lúc in sẽ giết luồng in: tem kính (in từng mã) bị cắt
+    // ngang, các mã còn lại không được in và không được ghi lịch sử.
+    protected override void OnFormClosing(FormClosingEventArgs e)
+    {
+        if (e.CloseReason == CloseReason.UserClosing && LabelService.IsPrinting)
+        {
+            DialogResult answer = MessageBox.Show(
+                "Đang có lệnh in chưa xong.\n\n" +
+                "Thoát bây giờ sẽ dừng in giữa chừng: các tem còn lại sẽ KHÔNG được in " +
+                "và không được ghi lịch sử.\n\nBạn vẫn muốn thoát?",
+                "Đang in",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Warning,
+                MessageBoxDefaultButton.Button2);
+
+            if (answer != DialogResult.Yes)
+            {
+                e.Cancel = true;
+                return;
+            }
+        }
+
+        base.OnFormClosing(e);
+    }
+
     private void CheckConfigOnStart()
     {
         if (!ConfigService.Instance.IsConfigured())

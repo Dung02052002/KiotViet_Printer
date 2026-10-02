@@ -16,6 +16,8 @@ public class FormPreview : Form
     private readonly LabelService _labelService = new();
     private readonly LabelCatalogService _catalogService = new();
 
+    private bool _printing;
+
     private readonly string _sourceExcelFile;
     private readonly string _labelCode;
     private readonly string _employeeCode;
@@ -279,6 +281,22 @@ public class FormPreview : Form
         dgvPreview.DefaultCellStyle.WrapMode = DataGridViewTriState.True;
     }
 
+    // Nút Đóng bị khoá khi in, nhưng X / Alt+F4 / Esc vẫn đóng được cửa sổ:
+    // lệnh in chạy tiếp ngầm, người dùng không biết khi nào xong hay lỗi.
+    protected override void OnFormClosing(FormClosingEventArgs e)
+    {
+        if (_printing && e.CloseReason == CloseReason.UserClosing)
+        {
+            e.Cancel = true;
+            MessageBox.Show(
+                "Đang in, vui lòng chờ lệnh in hoàn tất rồi mới đóng cửa sổ.",
+                "Đang in", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
+        }
+
+        base.OnFormClosing(e);
+    }
+
     private async void BtnPrint_Click(object? sender, EventArgs e)
     {
         // In số lượng lớn có thể mất nhiều phút (phải chờ máy in xử lý
@@ -290,6 +308,7 @@ public class FormPreview : Form
         string originalText = btnPrint.Text;
         btnPrint.Text = "Đang in...";
         Cursor = Cursors.WaitCursor;
+        _printing = true;
 
         try
         {
@@ -304,6 +323,7 @@ public class FormPreview : Form
 
             if (_labelService.LastWarning is string warning)
                 MessageBox.Show(warning, "Cảnh báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            _printing = false;
             DialogResult = DialogResult.OK;
             Close();
         }
@@ -313,6 +333,7 @@ public class FormPreview : Form
         }
         finally
         {
+            _printing = false;
             Cursor = Cursors.Default;
             btnPrint.Text = originalText;
             btnPrint.Enabled = true;

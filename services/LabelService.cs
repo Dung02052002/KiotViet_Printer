@@ -50,6 +50,12 @@ public class LabelService
     private static readonly SemaphoreSlim PrintLock = new(1, 1);
 
     /// <summary>
+    /// Có lệnh in đang chạy (đang giữ PrintLock) — dùng để cảnh báo khi
+    /// người dùng đóng app/cửa sổ giữa lúc in.
+    /// </summary>
+    public static bool IsPrinting => PrintLock.CurrentCount == 0;
+
+    /// <summary>
     /// Cảnh báo của lần Print gần nhất khi in THÀNH CÔNG nhưng có việc phụ
     /// không làm được (ví dụ không ghi được lịch sử). null = không có.
     /// </summary>
