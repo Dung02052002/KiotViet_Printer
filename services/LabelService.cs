@@ -80,6 +80,7 @@ public class LabelService
         List<ProductRow> products;
         LabelDefinition label;
         List<string> warnings = new();
+        PartialPrintException? partial = null;
 
         try
         {
@@ -94,7 +95,16 @@ public class LabelService
 
             var handler = _handlerFactory.GetHandler(label.HandlerType);
 
-            handler.PrepareDataAndPrint(products, label, employeeCode, priceOverride, nameOverrides);
+            try
+            {
+                handler.PrepareDataAndPrint(products, label, employeeCode, priceOverride, nameOverrides);
+            }
+            catch (PartialPrintException ex)
+            {
+                // In được một phần: vẫn phải ghi lịch sử cho các mã đã in
+                // (bên dưới), sau đó mới báo lỗi "in thiếu" cho người dùng.
+                partial = ex;
+            }
 
             // Cảnh báo không làm lệnh in thất bại (VD máy in đang tạm dừng /
             // offline — job vẫn nằm trong hàng đợi, sẽ tự in khi máy in sẵn sàng).
@@ -105,6 +115,11 @@ public class LabelService
             PrintWarnings.Reset();
             PrintLock.Release();
         }
+
+        // Chỉ ghi lịch sử cho những mã thật sự đã in.
+        List<ProductRow> printed = partial != null
+            ? partial.PrintedProducts.ToList()
+            : products;
 
         // Tem ĐÃ in xong — lỗi ghi lịch sử không được biến lệnh in thành
         // "thất bại" (người dùng sẽ in lại → tem bị in trùng). Chỉ cảnh báo.
@@ -117,8 +132,8 @@ public class LabelService
                 LabelCode = label.Code,
                 LabelName = label.Name,
                 EmployeeCode = employeeCode,
-                ProductCount = products.Count,
-                TotalLabels = products.Sum(x => x.Quantity),
+                ProductCount = printed.Count,
+                TotalLabels = printed.Sum(x => x.Quantity),
                 MachineName = Environment.MachineName,
                 UserName = Environment.UserName
             });
@@ -128,9 +143,23 @@ public class LabelService
             PrintDiagnosticsLog.Write($"HISTORY write failed label={label.Code} error={ex.Message}");
 
             warnings.Add(
-                "Tem đã được gửi in xong, nhưng không ghi được lịch sử in.\n" +
-                "KHÔNG cần in lại.\n\n" +
+                (partial != null
+                    ? "Không ghi được lịch sử cho các mã ĐÃ in ở trên (KHÔNG cần in lại các mã đó).\n\n"
+                    : "Tem đã được gửi in xong, nhưng không ghi được lịch sử in.\n" +
+                      "KHÔNG cần in lại.\n\n") +
                 $"Chi tiết: {ex.Message}");
+        }
+
+        // Lệnh in vẫn là "lỗi" để người dùng biết phải in bù các mã thiếu —
+        // nhưng lịch sử của phần đã in đã được ghi ở trên.
+        if (partial != null)
+        {
+            string separator = "\n\n────────────\n\n";
+            string message = warnings.Count > 0
+                ? partial.Message + separator + string.Join(separator, warnings)
+                : partial.Message;
+
+            throw new Exception(message, partial);
         }
 
         if (warnings.Count > 0)

@@ -64,6 +64,7 @@ public class GlassesPrintService
         // mã" khi in nhiều mã, mỗi mã số lượng lớn. Vẫn in tiếp các mã còn
         // lại rồi báo cáo đầy đủ mã nào bị lỗi để người dùng in bù.
         List<string> failedProducts = new();
+        List<ProductRow> printedProducts = new();
 
         foreach (ProductRow product in products)
         {
@@ -73,6 +74,8 @@ public class GlassesPrintService
                     product,
                     label,
                     colorCode);
+
+                printedProducts.Add(product);
             }
             catch (Exception ex)
             {
@@ -82,9 +85,15 @@ public class GlassesPrintService
 
         if (failedProducts.Count > 0)
         {
-            throw new Exception(
+            string message =
                 $"In thiếu {failedProducts.Count}/{products.Count} mã do lỗi:\n\n" +
-                string.Join("\n", failedProducts));
+                string.Join("\n", failedProducts);
+
+            // Còn mã đã in được → báo để LabelService ghi lịch sử cho chúng.
+            if (printedProducts.Count > 0)
+                throw new PartialPrintException(message, printedProducts);
+
+            throw new Exception(message);
         }
     }
 
