@@ -18,6 +18,11 @@ public class FormPreview : Form
 
     private bool _printing;
 
+    // Dấu file Excel lúc dựng Xem trước. Lệnh In đọc lại file Excel từ đầu,
+    // nên nếu file bị sửa/xuất lại sau khi xem thì tem in ra sẽ khác bảng
+    // người dùng vừa kiểm tra — phải phát hiện và bắt xem lại.
+    private (DateTime WriteTimeUtc, long Length)? _previewStamp;
+
     private readonly string _sourceExcelFile;
     private readonly string _labelCode;
     private readonly string _employeeCode;
@@ -123,6 +128,8 @@ public class FormPreview : Form
 
         try
         {
+            _previewStamp = GetSourceStamp();
+
             List<PreviewRow> rows = await Task.Run(() => _labelService.BuildPreview(
                     _sourceExcelFile,
                     _labelCode,
@@ -297,8 +304,31 @@ public class FormPreview : Form
         base.OnFormClosing(e);
     }
 
+    private (DateTime WriteTimeUtc, long Length)? GetSourceStamp()
+    {
+        try
+        {
+            var info = new FileInfo(_sourceExcelFile);
+            return info.Exists ? (info.LastWriteTimeUtc, info.Length) : null;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
     private async void BtnPrint_Click(object? sender, EventArgs e)
     {
+        if (_previewStamp != null && GetSourceStamp() != _previewStamp)
+        {
+            MessageBox.Show(
+                "File Excel đã thay đổi sau khi mở Xem trước.\n\n" +
+                "Xem trước sẽ được tải lại theo dữ liệu mới — vui lòng kiểm tra lại rồi bấm In.",
+                "File Excel đã thay đổi", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            await LoadPreviewAsync();
+            return;
+        }
+
         // In số lượng lớn có thể mất nhiều phút (phải chờ máy in xử lý
         // xong từng mã trước khi in mã kế tiếp — xem BarTenderService).
         // Chạy trên UI thread sẽ làm app "Not Responding", khiến người
