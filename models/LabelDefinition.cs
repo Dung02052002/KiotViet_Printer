@@ -15,7 +15,15 @@ public class LabelDefinition
 
     // Tên handler xử lý tem này
     // Ví dụ: FULL, BARCODE, GENERIC
-    public string HandlerType { get; set; } = "GENERIC";
+    // Luôn chuẩn hoá về chữ HOA: factory tra không phân biệt hoa/thường, còn
+    // giao diện so sánh == "FULL"... — config sửa tay ghi "full" vẫn in được
+    // nhưng mất ô sửa giá/tên nếu không chuẩn hoá.
+    private string _handlerType = "GENERIC";
+    public string HandlerType
+    {
+        get => _handlerType;
+        set => _handlerType = (value ?? "").Trim().ToUpperInvariant();
+    }
 
     // Có cần nhập mã nhân viên không
     public bool RequiresEmployeeCode { get; set; }
