@@ -14,6 +14,10 @@ public class AppConfig
     public string? BarTenderCapabilityMachine { get; set; }
     public bool? BarTenderXmlScriptSupported { get; set; }
     public string? BarTenderXmlScriptDetail { get; set; }
+    // In qua COM Automation dùng được không (cùng điều kiện cache ở trên).
+    // false = đã thử và thất bại trước khi gửi lệnh in → bỏ qua COM ngay,
+    // không phải chờ timeout khởi động mỗi lần mở app.
+    public bool? BarTenderComUsable { get; set; }
     public string LastFolder { get; set; } = "";
     public string LastExcelFile { get; set; } = "";
     public bool AutoOpenLastFolder { get; set; } = true;

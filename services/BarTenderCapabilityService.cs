@@ -25,6 +25,25 @@ public class BarTenderCapabilityService
     public bool? XmlScriptSupported { get; private set; }
     public string? Detail { get; private set; }
 
+    /// <summary>
+    /// In qua COM Automation dùng được không — null = chưa biết. Được ghi nhớ
+    /// qua các lần mở app: máy không đọc được edition mà COM lại treo/lỗi lúc
+    /// khởi động thì trước đây LẦN IN ĐẦU MỖI PHIÊN đều phải chờ ~60 giây.
+    /// </summary>
+    public bool? ComAutomationUsable { get; private set; }
+
+    public void MarkComUsable(bool usable, string? reason = null)
+    {
+        if (ComAutomationUsable == usable)
+            return;
+
+        ComAutomationUsable = usable;
+        SaveToConfig();
+
+        PrintDiagnosticsLog.Write(
+            $"CAPABILITY COM={usable}{(reason == null ? "" : " reason=" + reason)}");
+    }
+
     /// <summary>Edition đọc được từ registry lần dò gần nhất (nếu có).</summary>
     public string? DetectedEdition { get; private set; }
 
@@ -146,6 +165,7 @@ public class BarTenderCapabilityService
     {
         XmlScriptSupported = null;
         Detail = null;
+        ComAutomationUsable = null;
         DetectedEdition = null;
         _probedThisSession = false;
 
@@ -154,6 +174,7 @@ public class BarTenderCapabilityService
         config.BarTenderCapabilityMachine = null;
         config.BarTenderXmlScriptSupported = null;
         config.BarTenderXmlScriptDetail = null;
+        config.BarTenderComUsable = null;
         ConfigService.Instance.Save();
     }
 
@@ -240,6 +261,7 @@ public class BarTenderCapabilityService
 
         XmlScriptSupported = config.BarTenderXmlScriptSupported;
         Detail = config.BarTenderXmlScriptDetail;
+        ComAutomationUsable = config.BarTenderComUsable;
     }
 
     private void SaveToConfig()
@@ -250,6 +272,7 @@ public class BarTenderCapabilityService
         config.BarTenderCapabilityMachine = Environment.MachineName;
         config.BarTenderXmlScriptSupported = XmlScriptSupported;
         config.BarTenderXmlScriptDetail = Detail;
+        config.BarTenderComUsable = ComAutomationUsable;
 
         ConfigService.Instance.Save();
     }

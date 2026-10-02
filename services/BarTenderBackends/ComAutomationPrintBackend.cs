@@ -37,9 +37,6 @@ public sealed class ComAutomationPrintBackend : IBarTenderPrintBackend
     // Thời gian tối đa cho giai đoạn in (lệnh in lớn, nhiều bản).
     private const int PrintTimeoutMs = 600000;
 
-    // null = chưa biết, false = phiên này đã xác nhận không dùng được COM.
-    private static bool? s_comUsable;
-
     public string Name => "ComAutomation";
 
     /// <summary>
@@ -48,13 +45,16 @@ public sealed class ComAutomationPrintBackend : IBarTenderPrintBackend
     /// </summary>
     public static bool IsAvailable(string bartenderExe)
     {
-        if (s_comUsable == false)
-            return false;
-
         if (Type.GetTypeFromProgID(ProgId, throwOnError: false) == null)
             return false;
 
         BarTenderCapabilityService cap = BarTenderCapabilityService.Instance;
+
+        // Đã thử thật và thất bại (ghi nhớ qua các lần mở app, tự xoá khi
+        // đổi BarTender.exe hoặc bấm "Kiểm tra lại" trong Cấu hình).
+        if (cap.ComAutomationUsable == false)
+            return false;
+
         cap.EnsureProbed(bartenderExe);
 
         // Edition đọc được và không có Automation (Starter/Professional...)
@@ -110,7 +110,7 @@ public sealed class ComAutomationPrintBackend : IBarTenderPrintBackend
 
             if (job.Stage < JobStage.Printing)
             {
-                s_comUsable = false;
+                BarTenderCapabilityService.Instance.MarkComUsable(false, $"treo ở bước {job.Stage}");
                 throw new ComAutomationUnavailableException(
                     $"Treo ở bước {job.Stage} (chưa gửi lệnh in).");
             }
@@ -129,7 +129,7 @@ public sealed class ComAutomationPrintBackend : IBarTenderPrintBackend
             if (job.Stage < JobStage.Printing)
             {
                 if (job.Stage == JobStage.Creating)
-                    s_comUsable = false;
+                    BarTenderCapabilityService.Instance.MarkComUsable(false, $"không tạo được instance: {job.Error.Message}");
 
                 throw new ComAutomationUnavailableException(
                     $"Lỗi ở bước {job.Stage}: {job.Error.Message}",
@@ -144,7 +144,7 @@ public sealed class ComAutomationPrintBackend : IBarTenderPrintBackend
                 job.Error);
         }
 
-        s_comUsable = true;
+        BarTenderCapabilityService.Instance.MarkComUsable(true);
 
         if (job.SkippedSubStrings.Count > 0)
             BarTenderCommandLog.Write(
