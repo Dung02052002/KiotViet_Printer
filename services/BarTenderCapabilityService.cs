@@ -22,15 +22,54 @@ public class BarTenderCapabilityService
         LoadFromConfig();
     }
 
-    public bool? XmlScriptSupported { get; private set; }
-    public string? Detail { get; private set; }
+    // BarTender.exe mà trạng thái trong bộ nhớ đang thuộc về. Người dùng đổi
+    // đường dẫn trong Cấu hình giữa phiên → kết quả dò của BarTender CŨ không
+    // còn đúng (và trước đây còn bị lưu lại kèm đường dẫn MỚI) → phải dò lại.
+    private string _stateExe = "";
+
+    private bool? _xmlScriptSupported;
+    private string? _detail;
+    private bool? _comAutomationUsable;
+
+    public bool? XmlScriptSupported
+    {
+        get { SyncWithConfiguredExe(); return _xmlScriptSupported; }
+        private set => _xmlScriptSupported = value;
+    }
+
+    public string? Detail
+    {
+        get { SyncWithConfiguredExe(); return _detail; }
+        private set => _detail = value;
+    }
 
     /// <summary>
     /// In qua COM Automation dùng được không — null = chưa biết. Được ghi nhớ
     /// qua các lần mở app: máy không đọc được edition mà COM lại treo/lỗi lúc
     /// khởi động thì trước đây LẦN IN ĐẦU MỖI PHIÊN đều phải chờ ~60 giây.
     /// </summary>
-    public bool? ComAutomationUsable { get; private set; }
+    public bool? ComAutomationUsable
+    {
+        get { SyncWithConfiguredExe(); return _comAutomationUsable; }
+        private set => _comAutomationUsable = value;
+    }
+
+    private void SyncWithConfiguredExe()
+    {
+        string currentExe = ConfigService.Instance.Config.BarTenderExe ?? string.Empty;
+
+        if (string.Equals(_stateExe, currentExe, StringComparison.OrdinalIgnoreCase))
+            return;
+
+        _stateExe = currentExe;
+        _xmlScriptSupported = null;
+        _detail = null;
+        _comAutomationUsable = null;
+        DetectedEdition = null;
+        _probedThisSession = false;
+
+        PrintDiagnosticsLog.Write($"CAPABILITY reset: BarTender.exe đổi thành \"{currentExe}\"");
+    }
 
     public void MarkComUsable(bool usable, string? reason = null)
     {
@@ -57,6 +96,8 @@ public class BarTenderCapabilityService
     /// </summary>
     public void EnsureProbed(string? bartenderExe)
     {
+        SyncWithConfiguredExe();
+
         if (_probedThisSession)
             return;
 
@@ -247,6 +288,8 @@ public class BarTenderCapabilityService
         string? cachedExe = config.BarTenderCapabilityExePath;
         string currentExe = config.BarTenderExe ?? string.Empty;
         string? cachedMachine = config.BarTenderCapabilityMachine;
+
+        _stateExe = currentExe;
 
         // Cache chỉ đáng tin khi:
         //   - đường dẫn BarTender.exe chưa đổi (không cài lại/nâng cấp), VÀ
