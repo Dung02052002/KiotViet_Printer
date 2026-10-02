@@ -250,35 +250,50 @@ internal static class BarTenderProcess
 
     private readonly record struct JobInfo(uint Id, uint Status, string Document);
 
+    private const int ErrorInsufficientBuffer = 122;
+
     private static List<JobInfo>? GetJobs(IntPtr hPrinter)
     {
-        EnumJobs(hPrinter, 0, 1000, 1, IntPtr.Zero, 0, out uint needed, out _);
-
-        if (needed == 0)
-            return new List<JobInfo>(); // hàng đợi rỗng
-
-        IntPtr buffer = Marshal.AllocHGlobal((int)needed);
-
-        try
+        // Hỏi kích thước rồi mới đọc: nếu có job mới vào hàng đợi đúng giữa 2
+        // lần gọi thì lần đọc báo thiếu buffer — trước đây trả null ngay và
+        // việc chờ job bị bỏ dở ("enum-failed"). Thử lại vài lần.
+        for (int attempt = 1; attempt <= 5; attempt++)
         {
-            if (!EnumJobs(hPrinter, 0, 1000, 1, buffer, needed, out _, out uint returned))
-                return null;
+            EnumJobs(hPrinter, 0, 1000, 1, IntPtr.Zero, 0, out uint needed, out _);
 
-            int size = Marshal.SizeOf<JOB_INFO_1>();
-            List<JobInfo> jobs = new((int)returned);
+            if (needed == 0)
+                return new List<JobInfo>(); // hàng đợi rỗng
 
-            for (int i = 0; i < returned; i++)
+            IntPtr buffer = Marshal.AllocHGlobal((int)needed);
+
+            try
             {
-                JOB_INFO_1 info = Marshal.PtrToStructure<JOB_INFO_1>(buffer + i * size);
-                jobs.Add(new JobInfo(info.JobId, info.Status, info.pDocument ?? string.Empty));
-            }
+                if (!EnumJobs(hPrinter, 0, 1000, 1, buffer, needed, out _, out uint returned))
+                {
+                    if (Marshal.GetLastWin32Error() == ErrorInsufficientBuffer)
+                        continue;
 
-            return jobs;
+                    return null;
+                }
+
+                int size = Marshal.SizeOf<JOB_INFO_1>();
+                List<JobInfo> jobs = new((int)returned);
+
+                for (int i = 0; i < returned; i++)
+                {
+                    JOB_INFO_1 info = Marshal.PtrToStructure<JOB_INFO_1>(buffer + i * size);
+                    jobs.Add(new JobInfo(info.JobId, info.Status, info.pDocument ?? string.Empty));
+                }
+
+                return jobs;
+            }
+            finally
+            {
+                Marshal.FreeHGlobal(buffer);
+            }
         }
-        finally
-        {
-            Marshal.FreeHGlobal(buffer);
-        }
+
+        return null;
     }
 
     private static uint GetPrinterStatus(IntPtr hPrinter)
