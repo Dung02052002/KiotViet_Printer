@@ -1318,7 +1318,17 @@ public class FormMain : Form
             if (!string.IsNullOrWhiteSpace(folder))
             {
                 ConfigService.Instance.Config.LastFolder = folder;
-                ConfigService.Instance.Save();
+
+                // Chỉ là ghi nhớ thư mục gần nhất — lưu thất bại (file cấu
+                // hình đang bị khoá...) không được chặn việc chọn file.
+                try
+                {
+                    ConfigService.Instance.Save();
+                }
+                catch (Exception ex)
+                {
+                    PrintDiagnosticsLog.Write($"CONFIG save LastFolder failed: {ex.Message}");
+                }
             }
         }
     }

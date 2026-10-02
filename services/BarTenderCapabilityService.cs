@@ -274,6 +274,16 @@ public class BarTenderCapabilityService
         config.BarTenderXmlScriptDetail = Detail;
         config.BarTenderComUsable = ComAutomationUsable;
 
-        ConfigService.Instance.Save();
+        // Chỉ là cache — được gọi cả NGAY SAU khi in xong (MarkComUsable):
+        // lưu lỗi mà ném ra sẽ biến lệnh in đã ra tem thành "thất bại" →
+        // người dùng in lại → trùng tem. Lần sau sẽ tự dò lại.
+        try
+        {
+            ConfigService.Instance.Save();
+        }
+        catch (Exception ex)
+        {
+            PrintDiagnosticsLog.Write($"CAPABILITY cache save failed: {ex.Message}");
+        }
     }
 }

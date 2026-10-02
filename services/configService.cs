@@ -37,6 +37,8 @@ public class ConfigService
     // báo của lần 1 vẫn phải tới được người dùng (Program hiển thị rồi xoá).
     public void Load()
     {
+        _preserveRealFileBeforeSave = false;
+
         try
         {
             string? folder = Path.GetDirectoryName(_configPath);
@@ -83,9 +85,13 @@ public class ConfigService
                 (preserved ? $"\n\nFile cũ đã được giữ lại trong thư mục:\n{Path.GetDirectoryName(_configPath)}" : "") +
                 (error == null ? "" : $"\n\nChi tiết: {error}");
 
-            // File gốc còn đó (đang bị khoá) thì không ghi đè lên nó.
+            // File gốc còn đó (đang bị khoá) thì không ghi đè lên nó — và các
+            // lần Save() sau trong phiên này (lưu thư mục gần nhất, cache
+            // BarTender...) phải giữ lại bản thật trước khi ghi cấu hình tạm.
             if (preserved || !File.Exists(_configPath))
                 TrySave();
+            else
+                _preserveRealFileBeforeSave = true;
 
             return;
         }
@@ -205,6 +211,10 @@ public class ConfigService
 
     private static readonly object SaveLock = new();
 
+    // true = Config đang là cấu hình TẠM (mặc định) vì không đọc được file
+    // thật đang bị khoá — xem Load() và Save().
+    private bool _preserveRealFileBeforeSave;
+
     /// <summary>
     /// Ghi nguyên tử: ghi ra config.json.tmp rồi thay thế file thật, file cũ
     /// được giữ làm config.json.bak. Mất điện / app bị tắt giữa lúc ghi không
@@ -223,6 +233,26 @@ public class ConfigService
 
         lock (SaveLock)
         {
+            // Đang dùng cấu hình TẠM vì file thật bị khoá lúc mở app: chép
+            // file thật ra .bad-* trước. Nếu không, lần lưu này đẩy bản thật
+            // sang .bak và lần lưu kế tiếp ghi đè luôn .bak → mất trắng cấu hình.
+            if (_preserveRealFileBeforeSave && File.Exists(_configPath))
+            {
+                try
+                {
+                    File.Copy(_configPath, $"{_configPath}.bad-{DateTime.Now:yyyyMMdd_HHmmss}", overwrite: true);
+                }
+                catch (Exception ex)
+                {
+                    throw new IOException(
+                        "Không lưu cấu hình vì file cấu hình gốc vẫn đang bị khoá " +
+                        "(ghi đè lúc này sẽ làm mất cấu hình thật). Hãy đóng và mở lại phần mềm.",
+                        ex);
+                }
+
+                _preserveRealFileBeforeSave = false;
+            }
+
             string tempPath = _configPath + ".tmp";
 
             using (FileStream fs = new(tempPath, FileMode.Create, FileAccess.Write, FileShare.None))
