@@ -32,8 +32,8 @@ public class ExcelService
             if (!IsProductRow(row))
                 continue;
 
-            string productCode = GetCellString(row, 2);         // C - Mã hàng
-            string barcode = GetCellString(row, 3);             // D - Mã vạch
+            string productCode = GetCodeCellString(row, ProductCodeColumnIndex); // C - Mã hàng
+            string barcode = GetCodeCellString(row, 3);                          // D - Mã vạch
             string productName = GetCellString(row, 4);         // E - Tên hàng
             string productNameWithAttr = GetCellString(row, 5); // F - Tên hàng (thuộc tính)
             double price = GetCellDouble(row, 8);               // I - Giá bán
@@ -52,6 +52,58 @@ public class ExcelService
         }
 
         return products;
+    }
+
+    /// <summary>
+    /// Đọc sheet đầu tiên thành bảng chữ (mỗi dòng một danh sách ô) cho "Tạo
+    /// mã vạch" hàng loạt — việc chọn cột Tên hàng/Mã hàng do
+    /// Code128BarcodeService.ParseLabelTable đảm nhận, dùng chung với CSV.
+    /// Ô được đọc đúng như Excel hiển thị (giữ số 0 ở đầu).
+    /// </summary>
+    public List<List<string>> ReadTextTable(string sourceFile)
+    {
+        using IWorkbook workbook = OpenWorkbook(sourceFile);
+        ISheet sheet = workbook.GetSheetAt(0);
+        DataFormatter formatter = new(CultureInfo.InvariantCulture);
+
+        List<List<string>> rows = new();
+        for (int i = sheet.FirstRowNum; i <= sheet.LastRowNum; i++)
+        {
+            IRow? row = sheet.GetRow(i);
+            List<string> cells = new();
+            if (row != null)
+            {
+                for (int c = 0; c < row.LastCellNum; c++)
+                {
+                    ICell? cell = row.GetCell(c);
+                    cells.Add(cell == null
+                        ? ""
+                        : cell.CellType == CellType.Numeric
+                            ? FormatNumericCode(cell, formatter)
+                            : GetCellText(cell));
+                }
+            }
+
+            rows.Add(cells);
+        }
+
+        return rows;
+    }
+
+    // Ô số định dạng "General" (mặc định) bị DataFormatter rút gọn thành
+    // "8.93505E+12" với mã vạch 13 số — số nguyên thì ghi đủ chữ số. Ô có
+    // định dạng riêng (vd "000000" giữ số 0 ở đầu) đọc đúng như Excel hiển thị.
+    private static string FormatNumericCode(ICell cell, DataFormatter formatter)
+    {
+        double value = cell.NumericCellValue;
+        bool isGeneral = cell.CellStyle == null ||
+                         cell.CellStyle.DataFormat == 0 ||
+                         string.Equals(cell.CellStyle.GetDataFormatString(), "General", StringComparison.OrdinalIgnoreCase);
+
+        if (isGeneral && value == Math.Floor(value) && Math.Abs(value) < 1e15)
+            return value.ToString("0", CultureInfo.InvariantCulture);
+
+        return formatter.FormatCellValue(cell).Trim();
     }
 
     /// <summary>
@@ -116,7 +168,7 @@ public class ExcelService
 
             IRow targetRow = targetSheet.CreateRow(targetIndex++);
 
-            string productCode = GetCellString(sourceRow, ProductCodeColumnIndex);
+            string productCode = GetCodeCellString(sourceRow, ProductCodeColumnIndex);
 
             // Copy nguyên từng cột từ source sang target.
             for (int j = 0; j < sourceRow.LastCellNum; j++)
@@ -125,7 +177,13 @@ public class ExcelService
                 if (sourceCell == null)
                     continue;
 
-                CopyCellValue(sourceCell, targetRow.CreateCell(j));
+                // Mã hàng / mã vạch dạng số có định dạng giữ số 0 ở đầu: ghi
+                // đúng chữ Excel hiển thị — copy số thô sẽ mất định dạng và
+                // BarTender in "123456" thay vì "00123456".
+                if (j is ProductCodeColumnIndex or 3 && TryFormatZeroPaddedCode(sourceCell, out string paddedCode))
+                    targetRow.CreateCell(j).SetCellValue(paddedCode);
+                else
+                    CopyCellValue(sourceCell, targetRow.CreateCell(j));
             }
 
             // Các cột dưới đây ghi SAU khi copy và luôn ghi (kể cả khi dòng
@@ -312,6 +370,38 @@ public class ExcelService
     {
         ICell? cell = row.GetCell(index);
         return cell == null ? "" : GetCellText(cell);
+    }
+
+    // Cột mã (Mã hàng / Mã vạch): như GetCellString, riêng ô số có định dạng
+    // giữ số 0 ở đầu thì lấy đúng chữ Excel hiển thị.
+    private static string GetCodeCellString(IRow row, int index)
+    {
+        ICell? cell = row.GetCell(index);
+        if (cell == null)
+            return "";
+
+        return TryFormatZeroPaddedCode(cell, out string padded) ? padded : GetCellText(cell);
+    }
+
+    /// <summary>
+    /// Ô số nguyên có định dạng chỉ gồm số 0 (vd "00000000" — cách thường
+    /// dùng để giữ số 0 ở đầu mã) → chuỗi đã đệm 0 đúng như Excel hiển thị
+    /// ("00123456"). Ô khác trả false để giữ nguyên cách đọc cũ.
+    /// </summary>
+    private static bool TryFormatZeroPaddedCode(ICell cell, out string text)
+    {
+        text = "";
+        if (cell.CellType != CellType.Numeric)
+            return false;
+
+        string? format = cell.CellStyle?.GetDataFormatString();
+        double value = cell.NumericCellValue;
+        if (string.IsNullOrEmpty(format) || format.Any(c => c != '0') ||
+            value < 0 || value != Math.Floor(value) || value >= 1e15)
+            return false;
+
+        text = ((long)value).ToString(new string('0', format.Length), CultureInfo.InvariantCulture);
+        return true;
     }
 
     private static double GetCellDouble(IRow row, int index)

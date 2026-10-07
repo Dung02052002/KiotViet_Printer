@@ -61,6 +61,12 @@
       "Name": "Giảm dung lượng ảnh",
       "Description": "Nén và tối ưu dung lượng ảnh hàng loạt",
       "IsEnabled": true
+    },
+    {
+      "Code": "BARCODE_GENERATE",
+      "Name": "Tạo mã vạch",
+      "Description": "Tạo barcode Code 128 từ mã hàng",
+      "IsEnabled": true
     }
   ]
 }

@@ -33,6 +33,7 @@ public class FormMain : Form
     // show/hide với pnlWorkspace, xem ShowHome/OpenBackgroundRemover).
     private readonly BackgroundRemoverView bgRemoverView = new();
     private readonly ImageCompressorView imageCompressorView = new();
+    private readonly BarcodeGeneratorView barcodeGeneratorView = new();
 
     // Workspace
     private readonly RoundedPanel pnlWorkspace = new();
@@ -117,6 +118,7 @@ public class FormMain : Form
         BuildWorkspacePanel();
         BuildBackgroundRemoverPanel();
         BuildImageCompressorPanel();
+        BuildBarcodeGeneratorPanel();
     }
 
     #region Header
@@ -392,7 +394,12 @@ public class FormMain : Form
 
     private Control CreateToolCard(ToolDefinition tool)
     {
-        IconGlyphs.Kind icon = tool.Code == "IMAGE_COMPRESS" ? IconGlyphs.Kind.Compress : IconGlyphs.Kind.Image;
+        IconGlyphs.Kind icon = tool.Code switch
+        {
+            "IMAGE_COMPRESS" => IconGlyphs.Kind.Compress,
+            "BARCODE_GENERATE" => IconGlyphs.Kind.Barcode,
+            _ => IconGlyphs.Kind.Image
+        };
         return BuildCard(tool.Name, tool.Description, icon, null, (_, _) => OpenTool(tool));
     }
 
@@ -400,6 +407,8 @@ public class FormMain : Form
     {
         if (tool.Code == "IMAGE_COMPRESS")
             OpenImageCompressor(tool);
+        else if (tool.Code == "BARCODE_GENERATE")
+            OpenBarcodeGenerator(tool);
         else
             OpenBackgroundRemover(tool);
     }
@@ -558,6 +567,21 @@ public class FormMain : Form
         imageCompressorView.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Bottom;
         imageCompressorView.Visible = false;
         Controls.Add(imageCompressorView);
+    }
+    #endregion
+
+    #region Barcode generator panel
+    // Nhúng cùng vị trí/kích thước với các công cụ hình ảnh khác — cùng cơ chế
+    // show/hide (xem ShowHome/OpenBarcodeGenerator), không tạo Form/dialog mới.
+    private void BuildBarcodeGeneratorPanel()
+    {
+        barcodeGeneratorView.Left = 32;
+        barcodeGeneratorView.Top = 204;
+        barcodeGeneratorView.Width = ClientSize.Width - 64;
+        barcodeGeneratorView.Height = ClientSize.Height - 236;
+        barcodeGeneratorView.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Bottom;
+        barcodeGeneratorView.Visible = false;
+        Controls.Add(barcodeGeneratorView);
     }
     #endregion
 
@@ -1121,6 +1145,7 @@ public class FormMain : Form
         pnlWorkspace.Visible = false;
         bgRemoverView.Visible = false;
         imageCompressorView.Visible = false;
+        barcodeGeneratorView.Visible = false;
         btnBack.Visible = false;
 
         lblSubtitle.Text = "Chọn danh mục tem để bắt đầu";
@@ -1134,6 +1159,7 @@ public class FormMain : Form
         pnlCategory.Visible = false;
         pnlWorkspace.Visible = false;
         imageCompressorView.Visible = false;
+        barcodeGeneratorView.Visible = false;
         btnBack.Visible = true;
 
         UiMotion.SlideIn(bgRemoverView, 32, 14);
@@ -1146,9 +1172,23 @@ public class FormMain : Form
         pnlCategory.Visible = false;
         pnlWorkspace.Visible = false;
         bgRemoverView.Visible = false;
+        barcodeGeneratorView.Visible = false;
         btnBack.Visible = true;
 
         UiMotion.SlideIn(imageCompressorView, 32, 14);
+
+        lblSubtitle.Text = $"Công cụ: {tool.Name}";
+    }
+
+    private void OpenBarcodeGenerator(ToolDefinition tool)
+    {
+        pnlCategory.Visible = false;
+        pnlWorkspace.Visible = false;
+        bgRemoverView.Visible = false;
+        imageCompressorView.Visible = false;
+        btnBack.Visible = true;
+
+        UiMotion.SlideIn(barcodeGeneratorView, 32, 14);
 
         lblSubtitle.Text = $"Công cụ: {tool.Name}";
     }
@@ -1160,6 +1200,7 @@ public class FormMain : Form
         pnlCategory.Visible = false;
         bgRemoverView.Visible = false;
         imageCompressorView.Visible = false;
+        barcodeGeneratorView.Visible = false;
         btnBack.Visible = true;
 
         UiMotion.SlideIn(pnlWorkspace, 32, 14);
@@ -1259,6 +1300,26 @@ public class FormMain : Form
                 return;
             }
         }
+        else if (e.CloseReason == CloseReason.UserClosing &&
+                 (bgRemoverView.IsBusy || imageCompressorView.IsBusy || barcodeGeneratorView.IsBusy))
+        {
+            // Công cụ hình ảnh / tạo mã vạch chạy nền: đóng app sẽ bỏ dở các
+            // ảnh chưa xử lý mà không có thông báo nào.
+            DialogResult answer = MessageBox.Show(
+                "Công cụ hình ảnh / tạo mã vạch đang xử lý chưa xong.\n\n" +
+                "Thoát bây giờ sẽ dừng giữa chừng: các ảnh chưa xử lý sẽ KHÔNG được tạo.\n\n" +
+                "Bạn vẫn muốn thoát?",
+                "Đang xử lý",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Warning,
+                MessageBoxDefaultButton.Button2);
+
+            if (answer != DialogResult.Yes)
+            {
+                e.Cancel = true;
+                return;
+            }
+        }
 
         base.OnFormClosing(e);
     }
@@ -1269,14 +1330,20 @@ public class FormMain : Form
         {
             MessageBox.Show("Phần mềm chưa được cấu hình đầy đủ. Vui lòng kiểm tra cấu hình trước khi sử dụng.");
 
+            // Lỗi mở form cấu hình không được chặn app mở lên, nhưng phải báo
+            // (trước đây bị nuốt im lặng → người dùng vào app chưa cấu hình mà
+            // không biết vì sao).
             try
             {
                 using FormConfig formConfig = new();
                 formConfig.ShowDialog();
             }
-            catch
+            catch (Exception ex)
             {
-                // Nếu FormConfig chưa refactor xong thì bỏ qua để app vẫn mở được
+                PrintDiagnosticsLog.Write($"CONFIG form failed on start: {ex}");
+                MessageBox.Show($"Không mở được màn hình cấu hình:\n{ex.Message}\n\n" +
+                                "Bạn có thể mở lại bằng nút Cấu hình trong màn hình in tem.",
+                    "Cấu hình", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
         }
     }

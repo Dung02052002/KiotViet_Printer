@@ -70,6 +70,10 @@ public static class AppTheme
         public static readonly Font BodyBold = new(Family, 10f, FontStyle.Bold);
         public static readonly Font Hint = new(Family, 9f, FontStyle.Regular);
         public static readonly Font Button = new(Family, 10f, FontStyle.Bold);
+        // Nút chính trong các hộp thoại + dấu ✓ của toast. Dùng chung một
+        // instance — trước đây mỗi lần mở hộp thoại / hiện toast tạo một Font
+        // GDI mới không ai Dispose.
+        public static readonly Font ButtonLarge = new(Family, 10.5f, FontStyle.Bold);
         public static readonly Font ButtonRegular = new(Family, 10f, FontStyle.Regular);
         public static readonly Font Icon = new("Segoe UI Emoji", 20f, FontStyle.Regular);
         public static readonly Font IconSmall = new("Segoe UI Emoji", 14f, FontStyle.Regular);

@@ -27,6 +27,9 @@ public class BackgroundRemoverView : UserControl
     private CancellationTokenSource? _cts;
     private bool _isRunning;
 
+    /// <summary>Đang xoá nền — FormMain hỏi lại trước khi đóng app.</summary>
+    public bool IsBusy => _isRunning;
+
     // Card nền (giống pnlWorkspace) — chứa toàn bộ nội dung màn hình.
     private readonly RoundedPanel pnlCard = new();
 
@@ -1342,6 +1345,12 @@ public class BackgroundRemoverView : UserControl
                     dgvImages.Rows[rowIndex].Cells[0].Value = thumb;
                     dgvImages.Rows[rowIndex].Cells[2].Value = item.Resolution;
                 }
+                else
+                {
+                    // Danh sách đã bị xoá trong lúc đang tạo thumbnail — không
+                    // còn dòng để gắn, phải tự giải phóng.
+                    thumb.Dispose();
+                }
             }
             catch (Exception ex)
             {
@@ -1361,7 +1370,7 @@ public class BackgroundRemoverView : UserControl
         }
 
         _items.Clear();
-        dgvImages.Rows.Clear();
+        dgvImages.ClearRowsAndDisposeImages();
 
         // Hủy mọi lượt nạp preview đang chạy nền + trả Preview về trạng thái rỗng
         // trước khi xóa file cache (tránh nạp lại file vừa bị xóa).

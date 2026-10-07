@@ -124,7 +124,7 @@ public class FormEditNames : Form
         btnApply.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
         btnApply.Variant = ButtonVariant.Primary;
         btnApply.ContainerColor = AppTheme.Colors.Background;
-        btnApply.Font = new Font(AppTheme.Fonts.Button.FontFamily, 10.5f, FontStyle.Bold);
+        btnApply.Font = AppTheme.Fonts.ButtonLarge;
         btnApply.Click += BtnApply_Click;
         Controls.Add(btnApply);
 
@@ -187,10 +187,23 @@ public class FormEditNames : Form
 
     private void PasteFromClipboard()
     {
-        if (!Clipboard.ContainsText())
-            return;
+        // Clipboard đang bị ứng dụng khác giữ (Excel, Remote Desktop...) thì
+        // Windows ném ExternalException — báo người dùng thử lại thay vì lỗi.
+        string text;
+        try
+        {
+            if (!Clipboard.ContainsText())
+                return;
 
-        string text = Clipboard.GetText();
+            text = Clipboard.GetText();
+        }
+        catch (System.Runtime.InteropServices.ExternalException ex)
+        {
+            MessageBox.Show($"Không đọc được dữ liệu đã sao chép, vui lòng thử dán lại.\n{ex.Message}",
+                "Dán dữ liệu", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            return;
+        }
+
         if (string.IsNullOrEmpty(text))
             return;
 

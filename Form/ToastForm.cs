@@ -65,7 +65,7 @@ public class ToastForm : Form
             Dock = DockStyle.Fill,
             ForeColor = accentColor,
             BackColor = Color.Transparent,
-            Font = new Font(AppTheme.Fonts.Body.FontFamily, 10.5f, FontStyle.Bold),
+            Font = AppTheme.Fonts.ButtonLarge,
             TextAlign = ContentAlignment.MiddleCenter
         };
         statusBadge.Controls.Add(statusGlyph);

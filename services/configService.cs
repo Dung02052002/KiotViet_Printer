@@ -198,10 +198,20 @@ public class ConfigService
         }
         // Config cũ (trước khi có "Giảm dung lượng ảnh") sẽ có Tools nhưng
         // thiếu đúng tool này — bổ sung thay vì bắt người dùng xoá config.
-        else if (!Config.Tools.Any(t => t.Code == "IMAGE_COMPRESS"))
+        else
         {
-            Config.Tools.Add(ImageCompressTool());
-            changed = true;
+            if (!Config.Tools.Any(t => t.Code == "IMAGE_COMPRESS"))
+            {
+                Config.Tools.Add(ImageCompressTool());
+                changed = true;
+            }
+
+            // Tương tự cho "Tạo mã vạch" (thêm sau "Giảm dung lượng ảnh").
+            if (!Config.Tools.Any(t => t.Code == "BARCODE_GENERATE"))
+            {
+                Config.Tools.Add(BarcodeGenerateTool());
+                changed = true;
+            }
         }
 
         // Lỗi lưu phần bổ sung không được làm mất config đã đọc được.
@@ -341,7 +351,8 @@ public class ConfigService
                 Description = "Xóa nền tự động + thay nền trắng",
                 IsEnabled = true
             },
-            ImageCompressTool()
+            ImageCompressTool(),
+            BarcodeGenerateTool()
         };
     }
 
@@ -352,6 +363,17 @@ public class ConfigService
             Code = "IMAGE_COMPRESS",
             Name = "Giảm dung lượng ảnh",
             Description = "Nén và tối ưu dung lượng ảnh hàng loạt",
+            IsEnabled = true
+        };
+    }
+
+    private static ToolDefinition BarcodeGenerateTool()
+    {
+        return new ToolDefinition
+        {
+            Code = "BARCODE_GENERATE",
+            Name = "Tạo mã vạch",
+            Description = "Tạo barcode Code 128 từ mã hàng",
             IsEnabled = true
         };
     }

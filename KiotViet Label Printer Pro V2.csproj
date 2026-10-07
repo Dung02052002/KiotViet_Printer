@@ -7,7 +7,7 @@
     <Nullable>enable</Nullable>
     <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
-    <AcceptNPOISMFLicense>true</AcceptNPOISMFLicense>
+    <AcceptNPOIOSMFLicense>true</AcceptNPOIOSMFLicense>
 
     <!-- Phiên bản hiển thị trong app + ghi log lúc khởi động, để xác nhận
          máy nào đang chạy đúng build nào (xem services/AppInfo.cs). Tăng số
@@ -35,6 +35,7 @@
     <PackageReference Include="NPOI" Version="2.8.0" />
     <PackageReference Include="Microsoft.ML.OnnxRuntime.DirectML" Version="1.20.1" />
     <PackageReference Include="SkiaSharp" Version="3.119.2" />
+    <PackageReference Include="ZXing.Net" Version="0.16.11" />
   </ItemGroup>
   <ItemGroup>
   <None Update="Config\**\*">

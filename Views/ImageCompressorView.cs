@@ -24,6 +24,9 @@ public class ImageCompressorView : UserControl
     private CancellationTokenSource? _cts;
     private bool _isRunning;
 
+    /// <summary>Đang nén ảnh — FormMain hỏi lại trước khi đóng app.</summary>
+    public bool IsBusy => _isRunning;
+
     private CompressionItem? _previewItem;
     private Guid _previewToken;
 
@@ -918,6 +921,12 @@ public class ImageCompressorView : UserControl
                     dgvImages.Rows[rowIndex].Cells[2].Value = FormatBytes(bytes);
                     dgvImages.Rows[rowIndex].Cells[4].Value = item.OriginalResolution;
                 }
+                else
+                {
+                    // Danh sách đã bị xoá trong lúc đang tạo thumbnail — không
+                    // còn dòng để gắn, phải tự giải phóng.
+                    thumb?.Dispose();
+                }
             }
             catch (Exception ex)
             {
@@ -939,7 +948,7 @@ public class ImageCompressorView : UserControl
         }
 
         _items.Clear();
-        dgvImages.Rows.Clear();
+        dgvImages.ClearRowsAndDisposeImages();
 
         _previewItem = null;
         _previewToken = Guid.NewGuid();

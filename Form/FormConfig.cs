@@ -429,7 +429,7 @@ public class FormConfig : Form
         btnSave.SetBounds(ClientSize.Width - 200, ClientSize.Height - 62, 180, 44);
         btnSave.Variant = ButtonVariant.Primary;
         btnSave.ContainerColor = AppTheme.Colors.Background;
-        btnSave.Font = new Font(AppTheme.Fonts.Button.FontFamily, 10.5f, FontStyle.Bold);
+        btnSave.Font = AppTheme.Fonts.ButtonLarge;
         btnSave.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
         btnSave.Click += BtnSave_Click;
         Controls.Add(btnSave);

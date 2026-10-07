@@ -8,7 +8,7 @@ public class GenericLabelHandler : ILabelHandler
     private readonly ExcelService _excelService = new();
     private readonly BarTenderService _barTenderService = new();
 
-    public string HandlerType => "FULL";
+    public string HandlerType => "GENERIC";
 
     public List<PreviewRow> BuildPreview(
         List<ProductRow> products,
@@ -43,8 +43,16 @@ public class GenericLabelHandler : ILabelHandler
         PriceOverride? priceOverride = null,
         Dictionary<string, string>? nameOverrides = null)
     {
-        if (string.IsNullOrWhiteSpace(label.SourceExcelFile))
-            throw new Exception("Không tìm thấy file Excel nguồn.");
+        // Cùng các kiểm tra như FullLabelHandler: thiếu file data/template thì
+        // báo đúng file nào, thay vì lỗi khó hiểu từ NPOI/BarTender sau đó.
+        if (string.IsNullOrWhiteSpace(label.SourceExcelFile) || !File.Exists(label.SourceExcelFile))
+            throw new Exception($"Không tìm thấy file Excel nguồn:\n{label.SourceExcelFile}");
+
+        if (string.IsNullOrWhiteSpace(label.DataFilePath) || !File.Exists(label.DataFilePath))
+            throw new Exception($"Không tìm thấy file data tem:\n{label.DataFilePath}");
+
+        if (string.IsNullOrWhiteSpace(label.TemplatePath) || !File.Exists(label.TemplatePath))
+            throw new Exception($"Không tìm thấy file template BarTender:\n{label.TemplatePath}");
 
         _excelService.WriteGenericLabelData(
             label.SourceExcelFile,

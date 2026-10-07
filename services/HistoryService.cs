@@ -30,9 +30,10 @@ public class HistoryService
                 File.WriteAllText(_historyFile, "[]");
             }
         }
-        catch
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            // bỏ qua
+            // Add() sẽ tự tạo lại thư mục/file khi ghi — chỉ ghi log để biết.
+            PrintDiagnosticsLog.Write($"HISTORY init failed path={_historyFile} error={ex.Message}");
         }
     }
 

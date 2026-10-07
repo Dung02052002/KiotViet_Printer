@@ -104,7 +104,7 @@ public class FormPreview : Form
         btnPrint.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
         btnPrint.Variant = ButtonVariant.Primary;
         btnPrint.ContainerColor = AppTheme.Colors.Background;
-        btnPrint.Font = new Font(AppTheme.Fonts.Button.FontFamily, 10.5f, FontStyle.Bold);
+        btnPrint.Font = AppTheme.Fonts.ButtonLarge;
         btnPrint.Enabled = false;
         btnPrint.Click += BtnPrint_Click;
         Controls.Add(btnPrint);
