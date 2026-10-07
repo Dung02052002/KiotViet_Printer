@@ -5,47 +5,70 @@ using KiotVietLabelPrinter.Services.Barcodes;
 
 namespace KiotVietLabelPrinter.Infrastructure.Printing;
 
+/// <summary>
+/// Kết quả so kích thước tem lớn nhất với vùng in được của khổ giấy đang chọn.
+/// Không đọc được vùng in (máy in không báo) thì coi như vừa.
+/// </summary>
+public sealed record PageFitCheck(
+    bool Fits,
+    double LabelWidthMm,
+    double LabelHeightMm,
+    double PrintableWidthMm,
+    double PrintableHeightMm);
+
 // In tem của "Tạo mã vạch" trực tiếp ra máy in Windows (không qua
 // BarTender). Mỗi dòng hàng hoá (Tên hàng + Mã hàng) đúng một tem / một trang.
 // Ảnh được vẽ LẠI theo đúng độ phân giải của máy in và đặt 1 pixel ảnh = 1
 // điểm in, nên vạch không bị nội suy/kéo giãn — kích thước thật đúng như
 // thiết lập (mm).
+// Hộp thoại chọn máy in và hỏi xác nhận thuộc về màn hình (xem
+// BarcodeGeneratorView.PrintLabels) — service này không hiện UI.
 public class BarcodePrintService
 {
     private readonly Code128BarcodeService _barcodeService = new();
 
-    /// <summary>
-    /// Hiện PrintDialog cho chọn máy in/số bản rồi in. Trả về false nếu người
-    /// dùng huỷ.
-    /// </summary>
-    public bool Print(IWin32Window owner, IReadOnlyList<BarcodeLabelItem> items, BarcodeRenderOptions options)
+    public PrintDocument CreateDocument(IReadOnlyList<BarcodeLabelItem> items) => new()
     {
-        if (items.Count == 0)
-            return false;
+        DocumentName = items.Count == 1 ? $"Mã vạch {items[0].Code}" : $"Mã vạch ({items.Count} tem)",
+        OriginAtMargins = false
+    };
 
-        using PrintDocument document = new()
+    // Vẽ thử TẤT CẢ tem trước khi gửi lệnh in (500 tem chỉ mất cỡ 0,2 giây):
+    // tem nào lỗi bố cục thì báo ngay, không để lệnh in dừng giữa chừng làm
+    // thiếu tem. Đồng thời lấy kích thước tem lớn nhất để so với khổ giấy.
+    // Không tự thu nhỏ tem cho vừa giấy (sẽ làm sai tỷ lệ vạch) — chỉ báo lại.
+    public PageFitCheck CheckFitsPage(PrintDocument document, IReadOnlyList<BarcodeLabelItem> items, BarcodeRenderOptions options)
+    {
+        double maxWidthMm = 0;
+        double maxHeightMm = 0;
+        for (int i = 0; i < items.Count; i++)
         {
-            DocumentName = items.Count == 1 ? $"Mã vạch {items[0].Code}" : $"Mã vạch ({items.Count} tem)",
-            OriginAtMargins = false
-        };
+            try
+            {
+                using BarcodeImage probe = _barcodeService.Render(items[i].Code, items[i].Name, options);
+                maxWidthMm = Math.Max(maxWidthMm, probe.WidthMm);
+                maxHeightMm = Math.Max(maxHeightMm, probe.HeightMm);
+            }
+            catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
+            {
+                throw new InvalidOperationException(
+                    $"Tem thứ {i + 1} (mã \"{items[i].Code}\") không tạo được, chưa gửi lệnh in tem nào.\n{ex.Message}", ex);
+            }
+        }
 
-        using PrintDialog dialog = new()
-        {
-            Document = document,
-            UseEXDialog = true,
-            AllowSomePages = false,
-            AllowSelection = false
-        };
+        RectangleF printable = document.DefaultPageSettings.PrintableArea; // 1/100 inch
+        if (printable.Width <= 0 || printable.Height <= 0)
+            return new PageFitCheck(true, maxWidthMm, maxHeightMm, 0, 0);
 
-        if (dialog.ShowDialog(owner) != DialogResult.OK)
-            return false;
+        double printableWmm = printable.Width * 0.254;
+        double printableHmm = printable.Height * 0.254;
+        bool fits = maxWidthMm <= printableWmm + 0.5 && maxHeightMm <= printableHmm + 0.5;
+        return new PageFitCheck(fits, maxWidthMm, maxHeightMm, printableWmm, printableHmm);
+    }
 
-        // PrintDocument gửi từng trang trên luồng UI (cơ chế của WinForms) —
-        // hiện con trỏ chờ trong lúc kiểm tra và gửi lệnh in.
-        Cursor.Current = Cursors.WaitCursor;
-        if (!ConfirmFitsPage(owner, document, items, options))
-            return false;
-
+    /// <summary>Gửi lệnh in: mỗi tem một trang, theo máy in đã chọn trên document.</summary>
+    public void Print(PrintDocument document, IReadOnlyList<BarcodeLabelItem> items, BarcodeRenderOptions options)
+    {
         int index = 0;
         document.PrintPage += (_, e) =>
         {
@@ -79,47 +102,5 @@ public class BarcodePrintService
         };
 
         document.Print();
-        return true;
-    }
-
-    // Vẽ thử TẤT CẢ tem trước khi gửi lệnh in (500 tem chỉ mất cỡ 0,2 giây):
-    // tem nào lỗi bố cục thì báo ngay, không để lệnh in dừng giữa chừng làm
-    // thiếu tem. Đồng thời lấy kích thước tem lớn nhất để so với khổ giấy.
-    // Không tự thu nhỏ tem cho vừa giấy (sẽ làm sai tỷ lệ vạch) — chỉ cảnh báo.
-    private bool ConfirmFitsPage(IWin32Window owner, PrintDocument document, IReadOnlyList<BarcodeLabelItem> items, BarcodeRenderOptions options)
-    {
-        double maxWidthMm = 0;
-        double maxHeightMm = 0;
-        for (int i = 0; i < items.Count; i++)
-        {
-            try
-            {
-                using BarcodeImage probe = _barcodeService.Render(items[i].Code, items[i].Name, options);
-                maxWidthMm = Math.Max(maxWidthMm, probe.WidthMm);
-                maxHeightMm = Math.Max(maxHeightMm, probe.HeightMm);
-            }
-            catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
-            {
-                throw new InvalidOperationException(
-                    $"Tem thứ {i + 1} (mã \"{items[i].Code}\") không tạo được, chưa gửi lệnh in tem nào.\n{ex.Message}", ex);
-            }
-        }
-
-        RectangleF printable = document.DefaultPageSettings.PrintableArea; // 1/100 inch
-        if (printable.Width <= 0 || printable.Height <= 0)
-            return true;
-
-        double printableWmm = printable.Width * 0.254;
-        double printableHmm = printable.Height * 0.254;
-        if (maxWidthMm <= printableWmm + 0.5 && maxHeightMm <= printableHmm + 0.5)
-            return true;
-
-        DialogResult answer = MessageBox.Show(owner,
-            $"Tem ({maxWidthMm:0.#} × {maxHeightMm:0.#} mm) lớn hơn vùng in của khổ giấy đang chọn " +
-            $"({printableWmm:0.#} × {printableHmm:0.#} mm), phần thừa sẽ bị cắt.\n\n" +
-            "Chương trình không tự thu nhỏ để tránh làm sai tỷ lệ vạch. Vẫn in?",
-            "Tem lớn hơn khổ giấy", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2);
-
-        return answer == DialogResult.Yes;
     }
 }

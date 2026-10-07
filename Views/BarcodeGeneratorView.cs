@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Drawing.Drawing2D;
+using System.Drawing.Printing;
 using System.Runtime.InteropServices;
 using KiotVietLabelPrinter.Forms;
 using KiotVietLabelPrinter.Infrastructure.Excel;
@@ -1023,13 +1024,55 @@ public class BarcodeGeneratorView : UserControl
     {
         try
         {
-            if (_printService.Print(FindForm()!, items, ReadOptions()))
+            if (PrintLabels(FindForm()!, items, ReadOptions()))
                 ToastForm.ShowSuccess(items.Count == 1 ? "Đã gửi lệnh in" : $"Đã gửi lệnh in {items.Count} tem");
         }
         catch (Exception ex)
         {
             MessageBox.Show($"Không in được:\n{ex.Message}", "Lỗi in", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
+    }
+
+    /// <summary>
+    /// Hiện PrintDialog cho chọn máy in/số bản rồi in. Trả về false nếu người
+    /// dùng huỷ.
+    /// </summary>
+    private bool PrintLabels(IWin32Window owner, IReadOnlyList<BarcodeLabelItem> items, BarcodeRenderOptions options)
+    {
+        if (items.Count == 0)
+            return false;
+
+        using PrintDocument document = _printService.CreateDocument(items);
+
+        using PrintDialog dialog = new()
+        {
+            Document = document,
+            UseEXDialog = true,
+            AllowSomePages = false,
+            AllowSelection = false
+        };
+
+        if (dialog.ShowDialog(owner) != DialogResult.OK)
+            return false;
+
+        // PrintDocument gửi từng trang trên luồng UI (cơ chế của WinForms) —
+        // hiện con trỏ chờ trong lúc kiểm tra và gửi lệnh in.
+        Cursor.Current = Cursors.WaitCursor;
+        PageFitCheck fit = _printService.CheckFitsPage(document, items, options);
+        if (!fit.Fits)
+        {
+            DialogResult answer = MessageBox.Show(owner,
+                $"Tem ({fit.LabelWidthMm:0.#} × {fit.LabelHeightMm:0.#} mm) lớn hơn vùng in của khổ giấy đang chọn " +
+                $"({fit.PrintableWidthMm:0.#} × {fit.PrintableHeightMm:0.#} mm), phần thừa sẽ bị cắt.\n\n" +
+                "Chương trình không tự thu nhỏ để tránh làm sai tỷ lệ vạch. Vẫn in?",
+                "Tem lớn hơn khổ giấy", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2);
+
+            if (answer != DialogResult.Yes)
+                return false;
+        }
+
+        _printService.Print(document, items, options);
+        return true;
     }
     #endregion
 
