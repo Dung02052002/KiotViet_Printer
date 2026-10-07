@@ -1,0 +1,1055 @@
+[
+  {
+    "Name": "MODEL",
+    "Parse": "6282",
+    "Full": {
+      "BarcodeCode": "6282",
+      "BaseCode": "",
+      "AttributeText": "",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  },
+  {
+    "Name": "MODEL-2",
+    "Parse": "P850-01",
+    "Full": {
+      "BarcodeCode": "P850-01",
+      "BaseCode": "",
+      "AttributeText": "",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  },
+  {
+    "Name": "MODEL-3",
+    "Parse": "3162P-01",
+    "Full": {
+      "BarcodeCode": "3162P-01",
+      "BaseCode": "",
+      "AttributeText": "(MK293 BLACK BROWN)",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  },
+  {
+    "Name": "LEFT MK",
+    "Parse": "MK108",
+    "Full": {
+      "BarcodeCode": "MK108",
+      "BaseCode": "",
+      "AttributeText": "",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  },
+  {
+    "Name": "LEFT MK 2",
+    "Parse": "RD1007-MK228",
+    "Full": {
+      "BarcodeCode": "RD1007-MK228",
+      "BaseCode": "",
+      "AttributeText": "",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  },
+  {
+    "Name": "LEFT MK 3",
+    "Parse": "MK221",
+    "Full": {
+      "BarcodeCode": "MK221",
+      "BaseCode": "",
+      "AttributeText": "",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  },
+  {
+    "Name": "LEFT MK 4",
+    "Parse": "MK112",
+    "Full": {
+      "BarcodeCode": "MK112",
+      "BaseCode": "",
+      "AttributeText": "",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  },
+  {
+    "Name": "RIGHT MK",
+    "Parse": "MK109-P8315",
+    "Full": {
+      "BarcodeCode": "MK109-P8315",
+      "BaseCode": "",
+      "AttributeText": "",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  },
+  {
+    "Name": "RIGHT MK 2",
+    "Parse": "MK061-AB102",
+    "Full": {
+      "BarcodeCode": "MK061-AB102",
+      "BaseCode": "",
+      "AttributeText": "",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  },
+  {
+    "Name": "MK ONLY",
+    "Parse": "MK081",
+    "Full": {
+      "BarcodeCode": "MK081",
+      "BaseCode": "",
+      "AttributeText": "",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  },
+  {
+    "Name": "K ONLY",
+    "Parse": "K020",
+    "Full": {
+      "BarcodeCode": "K020",
+      "BaseCode": "",
+      "AttributeText": "",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  },
+  {
+    "Name": "PCN",
+    "Parse": "PCN15",
+    "Full": {
+      "BarcodeCode": "PCN15",
+      "BaseCode": "",
+      "AttributeText": "",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  },
+  {
+    "Name": "CODE",
+    "Parse": "XY35096",
+    "Full": {
+      "BarcodeCode": "XY35096",
+      "BaseCode": "",
+      "AttributeText": "",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  },
+  {
+    "Name": "NUMBER",
+    "Parse": "FALLBACK",
+    "Full": {
+      "BarcodeCode": "FALLBACK",
+      "BaseCode": "",
+      "AttributeText": "",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  },
+  {
+    "Name": "MÃ",
+    "Parse": "P8315",
+    "Full": {
+      "BarcodeCode": "P8315",
+      "BaseCode": "",
+      "AttributeText": "",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  },
+  {
+    "Name": "CODE KEYWORD",
+    "Parse": "AB102",
+    "Full": {
+      "BarcodeCode": "AB102",
+      "BaseCode": "",
+      "AttributeText": "",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  },
+  {
+    "Name": "GLASSES NAME D-CODE",
+    "Parse": "D2823-K026",
+    "Full": {
+      "BarcodeCode": "D2823-K026",
+      "BaseCode": "",
+      "AttributeText": "(Chiếc)",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  },
+  {
+    "Name": "MK WITH CODE PAIR",
+    "Parse": "MK101",
+    "Full": {
+      "BarcodeCode": "MK101",
+      "BaseCode": "",
+      "AttributeText": "(Chiếc)",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  },
+  {
+    "Name": "MODEL WITH TRAILING MK",
+    "Parse": "6215P",
+    "Full": {
+      "BarcodeCode": "6215P",
+      "BaseCode": "",
+      "AttributeText": "( MK262 GREY )",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  },
+  {
+    "Name": "BELT 1. TL-MAU dính số",
+    "Parse": "TL10 Mẫu01",
+    "Full": {
+      "BarcodeCode": "TL10 Mẫu01",
+      "BaseCode": "",
+      "AttributeText": "",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  },
+  {
+    "Name": "BELT 1. TL-MAU không NAM",
+    "Parse": "TL25 Mẫu03",
+    "Full": {
+      "BarcodeCode": "TL25 Mẫu03",
+      "BaseCode": "",
+      "AttributeText": "",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  },
+  {
+    "Name": "BELT 1. TL-MAU cách số",
+    "Parse": "TL14 MẪU 1",
+    "Full": {
+      "BarcodeCode": "TL14 MẪU 1",
+      "BaseCode": "",
+      "AttributeText": "(TLC)",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  },
+  {
+    "Name": "BELT 1. TL-MAU 2 chữ số",
+    "Parse": "TL14 MẪU 47",
+    "Full": {
+      "BarcodeCode": "TL14 MẪU 47",
+      "BaseCode": "",
+      "AttributeText": "(TLC)",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  },
+  {
+    "Name": "BELT 1. TL-MAU tiền tố PCN-",
+    "Parse": "TL15 MẪU 9",
+    "Full": {
+      "BarcodeCode": "TL15 MẪU 9",
+      "BaseCode": "",
+      "AttributeText": "(TLC)",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  },
+  {
+    "Name": "BELT 1. TL-MAU thắt lưng nữ",
+    "Parse": "TL16 MẪU 1",
+    "Full": {
+      "BarcodeCode": "TL16 MẪU 1",
+      "BaseCode": "",
+      "AttributeText": "(TLC)",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  },
+  {
+    "Name": "BELT 1. TL-MAU có TLC phía sau",
+    "Parse": "TL14 MẪU 35",
+    "Full": {
+      "BarcodeCode": "TL14 MẪU 35",
+      "BaseCode": "",
+      "AttributeText": "(Chiếc)",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  },
+  {
+    "Name": "BELT 1. TL-MAU chữ thường",
+    "Parse": "tl10 mẫu01",
+    "Full": {
+      "BarcodeCode": "tl10 mẫu01",
+      "BaseCode": "",
+      "AttributeText": "",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  },
+  {
+    "Name": "BELT 1. TL-MAU không dấu",
+    "Parse": "TL10 MAU 01",
+    "Full": {
+      "BarcodeCode": "TL10 MAU 01",
+      "BaseCode": "",
+      "AttributeText": "",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  },
+  {
+    "Name": "BELT 1. TL-MAU khoảng trắng đầu/cuối",
+    "Parse": "TL25 Mẫu03",
+    "Full": {
+      "BarcodeCode": "TL25 Mẫu03",
+      "BaseCode": "",
+      "AttributeText": "",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  },
+  {
+    "Name": "BELT 1. TL - MẪU (gạch ngang), MẪU 1",
+    "Parse": "TL12-MẪU 1",
+    "Full": {
+      "BarcodeCode": "TL12-MẪU 1",
+      "BaseCode": "",
+      "AttributeText": "(CHIẾC)",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  },
+  {
+    "Name": "BELT 1. TL - MẪU (gạch ngang), MẪU 4 khác MẪU 1",
+    "Parse": "TL12-MẪU 4",
+    "Full": {
+      "BarcodeCode": "TL12-MẪU 4",
+      "BaseCode": "",
+      "AttributeText": "(CHIẾC)",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  },
+  {
+    "Name": "BELT 1. TL - MẪU (gạch ngang), 2 chữ số",
+    "Parse": "TL12-MẪU 12",
+    "Full": {
+      "BarcodeCode": "TL12-MẪU 12",
+      "BaseCode": "",
+      "AttributeText": "(CHIẾC)",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  },
+  {
+    "Name": "BELT 1. TL-Mẫu dính gạch, chữ thường",
+    "Parse": "TL12-Mẫu 3",
+    "Full": {
+      "BarcodeCode": "TL12-Mẫu 3",
+      "BaseCode": "",
+      "AttributeText": "",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  },
+  {
+    "Name": "BELT 1. TL -Mẫu dính số",
+    "Parse": "TL12-Mẫu05",
+    "Full": {
+      "BarcodeCode": "TL12-Mẫu05",
+      "BaseCode": "",
+      "AttributeText": "",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  },
+  {
+    "Name": "BELT 1. Có cả TLxx Mẫuxx và TLxx - Mẫuxx thì lấy dạng khoảng trắng",
+    "Parse": "TL10 Mẫu01",
+    "Full": {
+      "BarcodeCode": "TL10 Mẫu01",
+      "BaseCode": "",
+      "AttributeText": "",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  },
+  {
+    "Name": "BELT 1. TL-MAU thắng PUTL",
+    "Parse": "TL10 Mẫu02",
+    "Full": {
+      "BarcodeCode": "TL10 Mẫu02",
+      "BaseCode": "",
+      "AttributeText": "",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  },
+  {
+    "Name": "BELT 1. TL-MAU có model/mã khác",
+    "Parse": "TL10 Mẫu05",
+    "Full": {
+      "BarcodeCode": "TL10 Mẫu05",
+      "BaseCode": "",
+      "AttributeText": "",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  },
+  {
+    "Name": "BELT 2. PUTL có mô tả",
+    "Parse": "PUTL01",
+    "Full": {
+      "BarcodeCode": "PUTL01",
+      "BaseCode": "",
+      "AttributeText": "",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  },
+  {
+    "Name": "BELT 2. PUTL thắt lưng nam",
+    "Parse": "PUTL25",
+    "Full": {
+      "BarcodeCode": "PUTL25",
+      "BaseCode": "",
+      "AttributeText": "",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  },
+  {
+    "Name": "BELT 2. PUTL thắng TLxx",
+    "Parse": "PUTL05",
+    "Full": {
+      "BarcodeCode": "PUTL05",
+      "BaseCode": "",
+      "AttributeText": "",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  },
+  {
+    "Name": "BELT 2. PUTL không bị hiểu là TL Mẫu",
+    "Parse": "PUTL01",
+    "Full": {
+      "BarcodeCode": "PUTL01",
+      "BaseCode": "",
+      "AttributeText": "",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  },
+  {
+    "Name": "BELT 3. TL có XIÊN",
+    "Parse": "TL10",
+    "Full": {
+      "BarcodeCode": "TL10",
+      "BaseCode": "",
+      "AttributeText": "",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  },
+  {
+    "Name": "BELT 3. TL có Da B",
+    "Parse": "TL25",
+    "Full": {
+      "BarcodeCode": "TL25",
+      "BaseCode": "",
+      "AttributeText": "",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  },
+  {
+    "Name": "BELT 3. TL tiền tố PCN-",
+    "Parse": "TL15",
+    "Full": {
+      "BarcodeCode": "TL15",
+      "BaseCode": "",
+      "AttributeText": "",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  },
+  {
+    "Name": "BELT 3. TL - VUÔNG (gạch ngang nhưng không phải MẪU)",
+    "Parse": "TL12",
+    "Full": {
+      "BarcodeCode": "TL12",
+      "BaseCode": "",
+      "AttributeText": "(CHIẾC)",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  },
+  {
+    "Name": "BELT 3. TL có TLC phía sau",
+    "Parse": "TL10",
+    "Full": {
+      "BarcodeCode": "TL10",
+      "BaseCode": "",
+      "AttributeText": "(TLC)",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  },
+  {
+    "Name": "BELT 4. Không mã, lấy toàn bộ Tên hàng (cột E)",
+    "Parse": "THẮT LƯNG NAM LOẠI XIÊN",
+    "Full": {
+      "BarcodeCode": "THẮT LƯNG NAM LOẠI XIÊN",
+      "BaseCode": "",
+      "AttributeText": "(Chiếc)",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  },
+  {
+    "Name": "BELT 4. Không mã, cột E trống thì lấy cả tên đang có",
+    "Parse": "THẮT LƯNG DA BÒ (TLC)",
+    "Full": {
+      "BarcodeCode": "THẮT LƯNG DA BÒ (TLC)",
+      "BaseCode": "",
+      "AttributeText": "(TLC)",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  },
+  {
+    "Name": "BELT 5. Không phải thắt lưng, dây đồng hồ TLxx",
+    "Parse": "TL20",
+    "Full": {
+      "BarcodeCode": "TL20",
+      "BaseCode": "",
+      "AttributeText": "",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  },
+  {
+    "Name": "BELT 5. Không phải thắt lưng, kính model",
+    "Parse": "6282",
+    "Full": {
+      "BarcodeCode": "6282",
+      "BaseCode": "",
+      "AttributeText": "",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  },
+  {
+    "Name": "BELT 1. TL-MAU dính số",
+    "Parse": "TL10 Mẫu01",
+    "Full": {
+      "BarcodeCode": "TL10 Mẫu01",
+      "BaseCode": "",
+      "AttributeText": "",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  },
+  {
+    "Name": "BELT 1. TL-MAU không NAM",
+    "Parse": "TL25 Mẫu03",
+    "Full": {
+      "BarcodeCode": "TL25 Mẫu03",
+      "BaseCode": "",
+      "AttributeText": "",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  },
+  {
+    "Name": "BELT 1. TL-MAU cách số",
+    "Parse": "TL14 MẪU 1",
+    "Full": {
+      "BarcodeCode": "TL14 MẪU 1",
+      "BaseCode": "",
+      "AttributeText": "(TLC)",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  },
+  {
+    "Name": "BELT 1. TL-MAU 2 chữ số",
+    "Parse": "TL14 MẪU 47",
+    "Full": {
+      "BarcodeCode": "TL14 MẪU 47",
+      "BaseCode": "",
+      "AttributeText": "(TLC)",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  },
+  {
+    "Name": "BELT 1. TL-MAU tiền tố PCN-",
+    "Parse": "TL15 MẪU 9",
+    "Full": {
+      "BarcodeCode": "TL15 MẪU 9",
+      "BaseCode": "",
+      "AttributeText": "(TLC)",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  },
+  {
+    "Name": "BELT 1. TL-MAU thắt lưng nữ",
+    "Parse": "TL16 MẪU 1",
+    "Full": {
+      "BarcodeCode": "TL16 MẪU 1",
+      "BaseCode": "",
+      "AttributeText": "(TLC)",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  },
+  {
+    "Name": "BELT 1. TL-MAU có TLC phía sau",
+    "Parse": "TL14 MẪU 35",
+    "Full": {
+      "BarcodeCode": "TL14 MẪU 35",
+      "BaseCode": "",
+      "AttributeText": "(Chiếc)",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  },
+  {
+    "Name": "BELT 1. TL-MAU chữ thường",
+    "Parse": "tl10 mẫu01",
+    "Full": {
+      "BarcodeCode": "tl10 mẫu01",
+      "BaseCode": "",
+      "AttributeText": "",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  },
+  {
+    "Name": "BELT 1. TL-MAU không dấu",
+    "Parse": "TL10 MAU 01",
+    "Full": {
+      "BarcodeCode": "TL10 MAU 01",
+      "BaseCode": "",
+      "AttributeText": "",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  },
+  {
+    "Name": "BELT 1. TL-MAU khoảng trắng đầu/cuối",
+    "Parse": "TL25 Mẫu03",
+    "Full": {
+      "BarcodeCode": "TL25 Mẫu03",
+      "BaseCode": "",
+      "AttributeText": "",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  },
+  {
+    "Name": "BELT 1. TL - MẪU (gạch ngang), MẪU 1",
+    "Parse": "TL12-MẪU 1",
+    "Full": {
+      "BarcodeCode": "TL12-MẪU 1",
+      "BaseCode": "",
+      "AttributeText": "(CHIẾC)",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  },
+  {
+    "Name": "BELT 1. TL - MẪU (gạch ngang), MẪU 4 khác MẪU 1",
+    "Parse": "TL12-MẪU 4",
+    "Full": {
+      "BarcodeCode": "TL12-MẪU 4",
+      "BaseCode": "",
+      "AttributeText": "(CHIẾC)",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  },
+  {
+    "Name": "BELT 1. TL - MẪU (gạch ngang), 2 chữ số",
+    "Parse": "TL12-MẪU 12",
+    "Full": {
+      "BarcodeCode": "TL12-MẪU 12",
+      "BaseCode": "",
+      "AttributeText": "(CHIẾC)",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  },
+  {
+    "Name": "BELT 1. TL-Mẫu dính gạch, chữ thường",
+    "Parse": "TL12-Mẫu 3",
+    "Full": {
+      "BarcodeCode": "TL12-Mẫu 3",
+      "BaseCode": "",
+      "AttributeText": "",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  },
+  {
+    "Name": "BELT 1. TL -Mẫu dính số",
+    "Parse": "TL12-Mẫu05",
+    "Full": {
+      "BarcodeCode": "TL12-Mẫu05",
+      "BaseCode": "",
+      "AttributeText": "",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  },
+  {
+    "Name": "BELT 1. Có cả TLxx Mẫuxx và TLxx - Mẫuxx thì lấy dạng khoảng trắng",
+    "Parse": "TL10 Mẫu01",
+    "Full": {
+      "BarcodeCode": "TL10 Mẫu01",
+      "BaseCode": "",
+      "AttributeText": "",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  },
+  {
+    "Name": "BELT 1. TL-MAU thắng PUTL",
+    "Parse": "TL10 Mẫu02",
+    "Full": {
+      "BarcodeCode": "TL10 Mẫu02",
+      "BaseCode": "",
+      "AttributeText": "",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  },
+  {
+    "Name": "BELT 1. TL-MAU có model/mã khác",
+    "Parse": "TL10 Mẫu05",
+    "Full": {
+      "BarcodeCode": "TL10 Mẫu05",
+      "BaseCode": "",
+      "AttributeText": "",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  },
+  {
+    "Name": "BELT 2. PUTL có mô tả",
+    "Parse": "PUTL01",
+    "Full": {
+      "BarcodeCode": "PUTL01",
+      "BaseCode": "",
+      "AttributeText": "",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  },
+  {
+    "Name": "BELT 2. PUTL thắt lưng nam",
+    "Parse": "PUTL25",
+    "Full": {
+      "BarcodeCode": "PUTL25",
+      "BaseCode": "",
+      "AttributeText": "",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  },
+  {
+    "Name": "BELT 2. PUTL thắng TLxx",
+    "Parse": "PUTL05",
+    "Full": {
+      "BarcodeCode": "PUTL05",
+      "BaseCode": "",
+      "AttributeText": "",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  },
+  {
+    "Name": "BELT 2. PUTL không bị hiểu là TL Mẫu",
+    "Parse": "PUTL01",
+    "Full": {
+      "BarcodeCode": "PUTL01",
+      "BaseCode": "",
+      "AttributeText": "",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  },
+  {
+    "Name": "BELT 3. TL có XIÊN",
+    "Parse": "TL10",
+    "Full": {
+      "BarcodeCode": "TL10",
+      "BaseCode": "",
+      "AttributeText": "",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  },
+  {
+    "Name": "BELT 3. TL có Da B",
+    "Parse": "TL25",
+    "Full": {
+      "BarcodeCode": "TL25",
+      "BaseCode": "",
+      "AttributeText": "",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  },
+  {
+    "Name": "BELT 3. TL tiền tố PCN-",
+    "Parse": "TL15",
+    "Full": {
+      "BarcodeCode": "TL15",
+      "BaseCode": "",
+      "AttributeText": "",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  },
+  {
+    "Name": "BELT 3. TL - VUÔNG (gạch ngang nhưng không phải MẪU)",
+    "Parse": "TL12",
+    "Full": {
+      "BarcodeCode": "TL12",
+      "BaseCode": "",
+      "AttributeText": "(CHIẾC)",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  },
+  {
+    "Name": "BELT 3. TL có TLC phía sau",
+    "Parse": "TL10",
+    "Full": {
+      "BarcodeCode": "TL10",
+      "BaseCode": "",
+      "AttributeText": "(TLC)",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  },
+  {
+    "Name": "BELT 4. Không mã, lấy toàn bộ Tên hàng (cột E)",
+    "Parse": "THẮT LƯNG NAM LOẠI XIÊN",
+    "Full": {
+      "BarcodeCode": "THẮT LƯNG NAM LOẠI XIÊN",
+      "BaseCode": "",
+      "AttributeText": "(Chiếc)",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  },
+  {
+    "Name": "BELT 4. Không mã, cột E trống thì lấy cả tên đang có",
+    "Parse": "THẮT LƯNG DA BÒ (TLC)",
+    "Full": {
+      "BarcodeCode": "THẮT LƯNG DA BÒ (TLC)",
+      "BaseCode": "",
+      "AttributeText": "(TLC)",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  },
+  {
+    "Name": "BELT 5. Không phải thắt lưng, dây đồng hồ TLxx",
+    "Parse": "TL20",
+    "Full": {
+      "BarcodeCode": "TL20",
+      "BaseCode": "",
+      "AttributeText": "",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  },
+  {
+    "Name": "BELT 5. Không phải thắt lưng, kính model",
+    "Parse": "6282",
+    "Full": {
+      "BarcodeCode": "6282",
+      "BaseCode": "",
+      "AttributeText": "",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  }
+]

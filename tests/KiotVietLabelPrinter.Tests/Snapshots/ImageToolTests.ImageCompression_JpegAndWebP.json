@@ -1,0 +1,49 @@
+{
+  "results": [
+    {
+      "Quality": "Balanced",
+      "Format": "Jpeg",
+      "Success": true,
+      "Error": null,
+      "OriginalWidth": 2000,
+      "OriginalHeight": 1200,
+      "OutputWidth": 1600,
+      "OutputHeight": 960,
+      "OutputBytes": 20384,
+      "OriginalKept": false,
+      "OutputName": "input_compressed.jpg"
+    },
+    {
+      "Quality": "Strong",
+      "Format": "WebP",
+      "Success": true,
+      "Error": null,
+      "OriginalWidth": 2000,
+      "OriginalHeight": 1200,
+      "OutputWidth": 1000,
+      "OutputHeight": 600,
+      "OutputBytes": 5148,
+      "OriginalKept": false,
+      "OutputName": "input_compressed.webp"
+    },
+    {
+      "Quality": "High",
+      "Format": "Jpeg",
+      "Success": true,
+      "Error": null,
+      "OriginalWidth": 2000,
+      "OriginalHeight": 1200,
+      "OutputWidth": 2000,
+      "OutputHeight": 1200,
+      "OutputBytes": 71043,
+      "OriginalKept": false,
+      "OutputName": "input_compressed_2.jpg"
+    }
+  ],
+  "Thumb": {
+    "Width": 200,
+    "Height": 200,
+    "w": 2000,
+    "h": 1200
+  }
+}

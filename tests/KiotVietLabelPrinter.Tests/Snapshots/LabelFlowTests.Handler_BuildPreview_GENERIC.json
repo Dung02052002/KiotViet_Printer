@@ -1,0 +1,1950 @@
+{
+  "Rows": [
+    {
+      "ProductCode": "SP000",
+      "ProductName": "MODEL 6282",
+      "ProductNameWithAttr": "MODEL 6282",
+      "ParsedBarcodeCode": "SP000",
+      "FinalBarcodeCode": "SP000",
+      "Quantity": 1,
+      "Price": 10000,
+      "IsFullLabel": true,
+      "IsBarcodeLabel": false
+    },
+    {
+      "ProductCode": "SP001",
+      "ProductName": "MODEL P850-01",
+      "ProductNameWithAttr": "MODEL P850-01",
+      "ParsedBarcodeCode": "SP001",
+      "FinalBarcodeCode": "SP001",
+      "Quantity": 2,
+      "Price": 20000,
+      "IsFullLabel": true,
+      "IsBarcodeLabel": false
+    },
+    {
+      "ProductCode": "SP002",
+      "ProductName": "model 3162p-01 (MK293 BLACK BROWN)",
+      "ProductNameWithAttr": "model 3162p-01 (MK293 BLACK BROWN)",
+      "ParsedBarcodeCode": "SP002",
+      "FinalBarcodeCode": "SP002",
+      "Quantity": 3,
+      "Price": 30000,
+      "IsFullLabel": true,
+      "IsBarcodeLabel": false
+    },
+    {
+      "ProductCode": "SP003",
+      "ProductName": "2113-MK108",
+      "ProductNameWithAttr": "2113-MK108",
+      "ParsedBarcodeCode": "SP003",
+      "FinalBarcodeCode": "SP003",
+      "Quantity": 1,
+      "Price": 40000,
+      "IsFullLabel": true,
+      "IsBarcodeLabel": false
+    },
+    {
+      "ProductCode": "SP004",
+      "ProductName": "RD1007-MK228",
+      "ProductNameWithAttr": "RD1007-MK228",
+      "ParsedBarcodeCode": "SP004",
+      "FinalBarcodeCode": "SP004",
+      "Quantity": 2,
+      "Price": 50000,
+      "IsFullLabel": true,
+      "IsBarcodeLabel": false
+    },
+    {
+      "ProductCode": "SP005",
+      "ProductName": "6233/66503-MK221",
+      "ProductNameWithAttr": "6233/66503-MK221",
+      "ParsedBarcodeCode": "SP005",
+      "FinalBarcodeCode": "SP005",
+      "Quantity": 3,
+      "Price": 60000,
+      "IsFullLabel": true,
+      "IsBarcodeLabel": false
+    },
+    {
+      "ProductCode": "SP006",
+      "ProductName": "6250-2-MK112",
+      "ProductNameWithAttr": "6250-2-MK112",
+      "ParsedBarcodeCode": "SP006",
+      "FinalBarcodeCode": "SP006",
+      "Quantity": 1,
+      "Price": 70000,
+      "IsFullLabel": true,
+      "IsBarcodeLabel": false
+    },
+    {
+      "ProductCode": "SP007",
+      "ProductName": "MK109-P8315",
+      "ProductNameWithAttr": "MK109-P8315",
+      "ParsedBarcodeCode": "SP007",
+      "FinalBarcodeCode": "SP007",
+      "Quantity": 2,
+      "Price": 80000,
+      "IsFullLabel": true,
+      "IsBarcodeLabel": false
+    },
+    {
+      "ProductCode": "SP008",
+      "ProductName": "MK061-AB102",
+      "ProductNameWithAttr": "MK061-AB102",
+      "ParsedBarcodeCode": "SP008",
+      "FinalBarcodeCode": "SP008",
+      "Quantity": 3,
+      "Price": 90000,
+      "IsFullLabel": true,
+      "IsBarcodeLabel": false
+    },
+    {
+      "ProductCode": "SP009",
+      "ProductName": "MK081",
+      "ProductNameWithAttr": "MK081",
+      "ParsedBarcodeCode": "SP009",
+      "FinalBarcodeCode": "SP009",
+      "Quantity": 1,
+      "Price": 100000,
+      "IsFullLabel": true,
+      "IsBarcodeLabel": false
+    },
+    {
+      "ProductCode": "SP010",
+      "ProductName": "K020",
+      "ProductNameWithAttr": "K020",
+      "ParsedBarcodeCode": "SP010",
+      "FinalBarcodeCode": "SP010",
+      "Quantity": 2,
+      "Price": 110000,
+      "IsFullLabel": true,
+      "IsBarcodeLabel": false
+    },
+    {
+      "ProductCode": "SP011",
+      "ProductName": "PCN15",
+      "ProductNameWithAttr": "PCN15",
+      "ParsedBarcodeCode": "SP011",
+      "FinalBarcodeCode": "SP011",
+      "Quantity": 3,
+      "Price": 120000,
+      "IsFullLabel": true,
+      "IsBarcodeLabel": false
+    },
+    {
+      "ProductCode": "SP012",
+      "ProductName": "XY35096",
+      "ProductNameWithAttr": "XY35096",
+      "ParsedBarcodeCode": "SP012",
+      "FinalBarcodeCode": "SP012",
+      "Quantity": 1,
+      "Price": 130000,
+      "IsFullLabel": true,
+      "IsBarcodeLabel": false
+    },
+    {
+      "ProductCode": "SP013",
+      "ProductName": "2113",
+      "ProductNameWithAttr": "2113",
+      "ParsedBarcodeCode": "SP013",
+      "FinalBarcodeCode": "SP013",
+      "Quantity": 2,
+      "Price": 140000,
+      "IsFullLabel": true,
+      "IsBarcodeLabel": false
+    },
+    {
+      "ProductCode": "SP014",
+      "ProductName": "MÃ P8315",
+      "ProductNameWithAttr": "MÃ P8315",
+      "ParsedBarcodeCode": "SP014",
+      "FinalBarcodeCode": "SP014",
+      "Quantity": 3,
+      "Price": 150000,
+      "IsFullLabel": true,
+      "IsBarcodeLabel": false
+    },
+    {
+      "ProductCode": "SP015",
+      "ProductName": "CODE AB102",
+      "ProductNameWithAttr": "CODE AB102",
+      "ParsedBarcodeCode": "SP015",
+      "FinalBarcodeCode": "SP015",
+      "Quantity": 1,
+      "Price": 160000,
+      "IsFullLabel": true,
+      "IsBarcodeLabel": false
+    },
+    {
+      "ProductCode": "SP016",
+      "ProductName": "KÍNH PUCINI D2823-K026 - WHITE (Chiếc)",
+      "ProductNameWithAttr": "KÍNH PUCINI D2823-K026 - WHITE (Chiếc)",
+      "ParsedBarcodeCode": "SP016",
+      "FinalBarcodeCode": "SP016",
+      "Quantity": 2,
+      "Price": 170000,
+      "IsFullLabel": true,
+      "IsBarcodeLabel": false
+    },
+    {
+      "ProductCode": "SP017",
+      "ProductName": "KÍNH PUCINI MK101 - H008 X H019 - BLACK - PCN2 (Chiếc)",
+      "ProductNameWithAttr": "KÍNH PUCINI MK101 - H008 X H019 - BLACK - PCN2 (Chiếc)",
+      "ParsedBarcodeCode": "SP017",
+      "FinalBarcodeCode": "SP017",
+      "Quantity": 3,
+      "Price": 180000,
+      "IsFullLabel": true,
+      "IsBarcodeLabel": false
+    },
+    {
+      "ProductCode": "SP018",
+      "ProductName": "Kính râm, gọng bằng nhựa + sắt, mắt kính bằng mica, không phải kính thuốc, kt(16*16*7)cm(+/-10%), model 6215P, nhãn hiệu PUCINI, mới 100% - ( MK262 GREY )",
+      "ProductNameWithAttr": "Kính râm, gọng bằng nhựa + sắt, mắt kính bằng mica, không phải kính thuốc, kt(16*16*7)cm(+/-10%), model 6215P, nhãn hiệu PUCINI, mới 100% - ( MK262 GREY )",
+      "ParsedBarcodeCode": "SP018",
+      "FinalBarcodeCode": "SP018",
+      "Quantity": 1,
+      "Price": 190000,
+      "IsFullLabel": true,
+      "IsBarcodeLabel": false
+    },
+    {
+      "ProductCode": "SP019",
+      "ProductName": "THẮT LƯNG NAM TL10 Mẫu01 - Da bò",
+      "ProductNameWithAttr": "THẮT LƯNG NAM TL10 Mẫu01 - Da bò",
+      "ParsedBarcodeCode": "SP019",
+      "FinalBarcodeCode": "SP019",
+      "Quantity": 2,
+      "Price": 200000,
+      "IsFullLabel": true,
+      "IsBarcodeLabel": false
+    },
+    {
+      "ProductCode": "SP020",
+      "ProductName": "THẮT LƯNG TL25 Mẫu03",
+      "ProductNameWithAttr": "THẮT LƯNG TL25 Mẫu03",
+      "ParsedBarcodeCode": "SP020",
+      "FinalBarcodeCode": "SP020",
+      "Quantity": 3,
+      "Price": 210000,
+      "IsFullLabel": true,
+      "IsBarcodeLabel": false
+    },
+    {
+      "ProductCode": "SP021",
+      "ProductName": "THẮT LƯNG NAM TL14 MẪU 1 - VUÔNG (TLC)",
+      "ProductNameWithAttr": "THẮT LƯNG NAM TL14 MẪU 1 - VUÔNG (TLC)",
+      "ParsedBarcodeCode": "SP021",
+      "FinalBarcodeCode": "SP021",
+      "Quantity": 1,
+      "Price": 220000,
+      "IsFullLabel": true,
+      "IsBarcodeLabel": false
+    },
+    {
+      "ProductCode": "SP022",
+      "ProductName": "THẮT LƯNG NAM TL14 MẪU 47 - VUÔNG (TLC)",
+      "ProductNameWithAttr": "THẮT LƯNG NAM TL14 MẪU 47 - VUÔNG (TLC)",
+      "ParsedBarcodeCode": "SP022",
+      "FinalBarcodeCode": "SP022",
+      "Quantity": 2,
+      "Price": 230000,
+      "IsFullLabel": true,
+      "IsBarcodeLabel": false
+    },
+    {
+      "ProductCode": "SP023",
+      "ProductName": "THẮT LƯNG NAM PCN-TL15 MẪU 9 - VUÔNG (TLC)",
+      "ProductNameWithAttr": "THẮT LƯNG NAM PCN-TL15 MẪU 9 - VUÔNG (TLC)",
+      "ParsedBarcodeCode": "SP023",
+      "FinalBarcodeCode": "SP023",
+      "Quantity": 3,
+      "Price": 240000,
+      "IsFullLabel": true,
+      "IsBarcodeLabel": false
+    },
+    {
+      "ProductCode": "SP024",
+      "ProductName": "THẮT LƯNG NỮ TL16 MẪU 1 - VUÔNG - Da A (TLC)",
+      "ProductNameWithAttr": "THẮT LƯNG NỮ TL16 MẪU 1 - VUÔNG - Da A (TLC)",
+      "ParsedBarcodeCode": "SP024",
+      "FinalBarcodeCode": "SP024",
+      "Quantity": 1,
+      "Price": 250000,
+      "IsFullLabel": true,
+      "IsBarcodeLabel": false
+    },
+    {
+      "ProductCode": "SP025",
+      "ProductName": "THẮT LƯNG NAM TL14 MẪU 35 - TLC (Chiếc)",
+      "ProductNameWithAttr": "THẮT LƯNG NAM TL14 MẪU 35 - TLC (Chiếc)",
+      "ParsedBarcodeCode": "SP025",
+      "FinalBarcodeCode": "SP025",
+      "Quantity": 2,
+      "Price": 260000,
+      "IsFullLabel": true,
+      "IsBarcodeLabel": false
+    },
+    {
+      "ProductCode": "SP026",
+      "ProductName": "thắt lưng nam tl10 mẫu01 - da bò",
+      "ProductNameWithAttr": "thắt lưng nam tl10 mẫu01 - da bò",
+      "ParsedBarcodeCode": "SP026",
+      "FinalBarcodeCode": "SP026",
+      "Quantity": 3,
+      "Price": 270000,
+      "IsFullLabel": true,
+      "IsBarcodeLabel": false
+    },
+    {
+      "ProductCode": "SP027",
+      "ProductName": "THAT LUNG NAM TL10 MAU 01",
+      "ProductNameWithAttr": "THAT LUNG NAM TL10 MAU 01",
+      "ParsedBarcodeCode": "SP027",
+      "FinalBarcodeCode": "SP027",
+      "Quantity": 1,
+      "Price": 280000,
+      "IsFullLabel": true,
+      "IsBarcodeLabel": false
+    },
+    {
+      "ProductCode": "SP028",
+      "ProductName": "   THẮT LƯNG TL25 Mẫu03   ",
+      "ProductNameWithAttr": "   THẮT LƯNG TL25 Mẫu03   ",
+      "ParsedBarcodeCode": "SP028",
+      "FinalBarcodeCode": "SP028",
+      "Quantity": 2,
+      "Price": 290000,
+      "IsFullLabel": true,
+      "IsBarcodeLabel": false
+    },
+    {
+      "ProductCode": "SP029",
+      "ProductName": "THẮT LƯNG NAM TL12 - MẪU 1 (CHIẾC)",
+      "ProductNameWithAttr": "THẮT LƯNG NAM TL12 - MẪU 1 (CHIẾC)",
+      "ParsedBarcodeCode": "SP029",
+      "FinalBarcodeCode": "SP029",
+      "Quantity": 3,
+      "Price": 300000,
+      "IsFullLabel": true,
+      "IsBarcodeLabel": false
+    },
+    {
+      "ProductCode": "SP030",
+      "ProductName": "THẮT LƯNG NAM TL12 - MẪU 4 (CHIẾC)",
+      "ProductNameWithAttr": "THẮT LƯNG NAM TL12 - MẪU 4 (CHIẾC)",
+      "ParsedBarcodeCode": "SP030",
+      "FinalBarcodeCode": "SP030",
+      "Quantity": 1,
+      "Price": 310000,
+      "IsFullLabel": true,
+      "IsBarcodeLabel": false
+    },
+    {
+      "ProductCode": "SP031",
+      "ProductName": "THẮT LƯNG NAM TL12 - MẪU 12 (CHIẾC)",
+      "ProductNameWithAttr": "THẮT LƯNG NAM TL12 - MẪU 12 (CHIẾC)",
+      "ParsedBarcodeCode": "SP031",
+      "FinalBarcodeCode": "SP031",
+      "Quantity": 2,
+      "Price": 320000,
+      "IsFullLabel": true,
+      "IsBarcodeLabel": false
+    },
+    {
+      "ProductCode": "SP032",
+      "ProductName": "THẮT LƯNG NAM TL12-Mẫu 3",
+      "ProductNameWithAttr": "THẮT LƯNG NAM TL12-Mẫu 3",
+      "ParsedBarcodeCode": "SP032",
+      "FinalBarcodeCode": "SP032",
+      "Quantity": 3,
+      "Price": 330000,
+      "IsFullLabel": true,
+      "IsBarcodeLabel": false
+    },
+    {
+      "ProductCode": "SP033",
+      "ProductName": "THẮT LƯNG NAM TL12 -Mẫu05",
+      "ProductNameWithAttr": "THẮT LƯNG NAM TL12 -Mẫu05",
+      "ParsedBarcodeCode": "SP033",
+      "FinalBarcodeCode": "SP033",
+      "Quantity": 1,
+      "Price": 340000,
+      "IsFullLabel": true,
+      "IsBarcodeLabel": false
+    },
+    {
+      "ProductCode": "SP034",
+      "ProductName": "THẮT LƯNG TL10 Mẫu01 TL12 - MẪU 2",
+      "ProductNameWithAttr": "THẮT LƯNG TL10 Mẫu01 TL12 - MẪU 2",
+      "ParsedBarcodeCode": "SP034",
+      "FinalBarcodeCode": "SP034",
+      "Quantity": 2,
+      "Price": 350000,
+      "IsFullLabel": true,
+      "IsBarcodeLabel": false
+    },
+    {
+      "ProductCode": "SP035",
+      "ProductName": "THẮT LƯNG PUTL01 TL10 Mẫu02",
+      "ProductNameWithAttr": "THẮT LƯNG PUTL01 TL10 Mẫu02",
+      "ParsedBarcodeCode": "SP035",
+      "FinalBarcodeCode": "SP035",
+      "Quantity": 3,
+      "Price": 360000,
+      "IsFullLabel": true,
+      "IsBarcodeLabel": false
+    },
+    {
+      "ProductCode": "SP036",
+      "ProductName": "THẮT LƯNG NAM model 6282 TL10 Mẫu05",
+      "ProductNameWithAttr": "THẮT LƯNG NAM model 6282 TL10 Mẫu05",
+      "ParsedBarcodeCode": "SP036",
+      "FinalBarcodeCode": "SP036",
+      "Quantity": 1,
+      "Price": 370000,
+      "IsFullLabel": true,
+      "IsBarcodeLabel": false
+    },
+    {
+      "ProductCode": "SP037",
+      "ProductName": "THẮT LƯNG PUTL01 - Da A",
+      "ProductNameWithAttr": "THẮT LƯNG PUTL01 - Da A",
+      "ParsedBarcodeCode": "SP037",
+      "FinalBarcodeCode": "SP037",
+      "Quantity": 2,
+      "Price": 380000,
+      "IsFullLabel": true,
+      "IsBarcodeLabel": false
+    },
+    {
+      "ProductCode": "SP038",
+      "ProductName": "THẮT LƯNG NAM PUTL25",
+      "ProductNameWithAttr": "THẮT LƯNG NAM PUTL25",
+      "ParsedBarcodeCode": "SP038",
+      "FinalBarcodeCode": "SP038",
+      "Quantity": 3,
+      "Price": 390000,
+      "IsFullLabel": true,
+      "IsBarcodeLabel": false
+    },
+    {
+      "ProductCode": "SP039",
+      "ProductName": "THẮT LƯNG NAM PUTL05 TL10",
+      "ProductNameWithAttr": "THẮT LƯNG NAM PUTL05 TL10",
+      "ParsedBarcodeCode": "SP039",
+      "FinalBarcodeCode": "SP039",
+      "Quantity": 1,
+      "Price": 400000,
+      "IsFullLabel": true,
+      "IsBarcodeLabel": false
+    },
+    {
+      "ProductCode": "SP040",
+      "ProductName": "THẮT LƯNG PUTL01 Mẫu02",
+      "ProductNameWithAttr": "THẮT LƯNG PUTL01 Mẫu02",
+      "ParsedBarcodeCode": "SP040",
+      "FinalBarcodeCode": "SP040",
+      "Quantity": 2,
+      "Price": 410000,
+      "IsFullLabel": true,
+      "IsBarcodeLabel": false
+    },
+    {
+      "ProductCode": "SP041",
+      "ProductName": "THẮT LƯNG NAM TL10 - Da A - XIÊN",
+      "ProductNameWithAttr": "THẮT LƯNG NAM TL10 - Da A - XIÊN",
+      "ParsedBarcodeCode": "SP041",
+      "FinalBarcodeCode": "SP041",
+      "Quantity": 3,
+      "Price": 420000,
+      "IsFullLabel": true,
+      "IsBarcodeLabel": false
+    },
+    {
+      "ProductCode": "SP042",
+      "ProductName": "THẮT LƯNG NAM TL25 - Da B",
+      "ProductNameWithAttr": "THẮT LƯNG NAM TL25 - Da B",
+      "ParsedBarcodeCode": "SP042",
+      "FinalBarcodeCode": "SP042",
+      "Quantity": 1,
+      "Price": 430000,
+      "IsFullLabel": true,
+      "IsBarcodeLabel": false
+    },
+    {
+      "ProductCode": "SP043",
+      "ProductName": "THẮT LƯNG NAM PCN-TL15 - VUÔNG",
+      "ProductNameWithAttr": "THẮT LƯNG NAM PCN-TL15 - VUÔNG",
+      "ParsedBarcodeCode": "SP043",
+      "FinalBarcodeCode": "SP043",
+      "Quantity": 2,
+      "Price": 440000,
+      "IsFullLabel": true,
+      "IsBarcodeLabel": false
+    },
+    {
+      "ProductCode": "SP044",
+      "ProductName": "THẮT LƯNG NAM TL12 - VUÔNG - Da A (CHIẾC)",
+      "ProductNameWithAttr": "THẮT LƯNG NAM TL12 - VUÔNG - Da A (CHIẾC)",
+      "ParsedBarcodeCode": "SP044",
+      "FinalBarcodeCode": "SP044",
+      "Quantity": 3,
+      "Price": 450000,
+      "IsFullLabel": true,
+      "IsBarcodeLabel": false
+    },
+    {
+      "ProductCode": "SP045",
+      "ProductName": "THẮT LƯNG NAM TL10 - Da A (TLC)",
+      "ProductNameWithAttr": "THẮT LƯNG NAM TL10 - Da A (TLC)",
+      "ParsedBarcodeCode": "SP045",
+      "FinalBarcodeCode": "SP045",
+      "Quantity": 1,
+      "Price": 460000,
+      "IsFullLabel": true,
+      "IsBarcodeLabel": false
+    },
+    {
+      "ProductCode": "SP046",
+      "ProductName": "THẮT LƯNG NAM LOẠI XIÊN",
+      "ProductNameWithAttr": "THẮT LƯNG NAM LOẠI XIÊN - Da A (Chiếc)",
+      "ParsedBarcodeCode": "SP046",
+      "FinalBarcodeCode": "SP046",
+      "Quantity": 2,
+      "Price": 470000,
+      "IsFullLabel": true,
+      "IsBarcodeLabel": false
+    },
+    {
+      "ProductCode": "SP047",
+      "ProductName": "  THẮT LƯNG DA BÒ (TLC)  ",
+      "ProductNameWithAttr": "  THẮT LƯNG DA BÒ (TLC)  ",
+      "ParsedBarcodeCode": "SP047",
+      "FinalBarcodeCode": "SP047",
+      "Quantity": 3,
+      "Price": 480000,
+      "IsFullLabel": true,
+      "IsBarcodeLabel": false
+    },
+    {
+      "ProductCode": "SP048",
+      "ProductName": "DÂY ĐỒNG HỒ TL20 - BLACK",
+      "ProductNameWithAttr": "DÂY ĐỒNG HỒ TL20 - BLACK",
+      "ParsedBarcodeCode": "SP048",
+      "FinalBarcodeCode": "SP048",
+      "Quantity": 1,
+      "Price": 490000,
+      "IsFullLabel": true,
+      "IsBarcodeLabel": false
+    },
+    {
+      "ProductCode": "SP049",
+      "ProductName": "MODEL 6282",
+      "ProductNameWithAttr": "MODEL 6282",
+      "ParsedBarcodeCode": "SP049",
+      "FinalBarcodeCode": "SP049",
+      "Quantity": 2,
+      "Price": 500000,
+      "IsFullLabel": true,
+      "IsBarcodeLabel": false
+    },
+    {
+      "ProductCode": "SP050",
+      "ProductName": "THẮT LƯNG NAM TL10 Mẫu01 - Da bò",
+      "ProductNameWithAttr": "THẮT LƯNG NAM TL10 Mẫu01 - Da bò",
+      "ParsedBarcodeCode": "SP050",
+      "FinalBarcodeCode": "SP050",
+      "Quantity": 3,
+      "Price": 510000,
+      "IsFullLabel": true,
+      "IsBarcodeLabel": false
+    },
+    {
+      "ProductCode": "SP051",
+      "ProductName": "THẮT LƯNG TL25 Mẫu03",
+      "ProductNameWithAttr": "THẮT LƯNG TL25 Mẫu03",
+      "ParsedBarcodeCode": "SP051",
+      "FinalBarcodeCode": "SP051",
+      "Quantity": 1,
+      "Price": 520000,
+      "IsFullLabel": true,
+      "IsBarcodeLabel": false
+    },
+    {
+      "ProductCode": "SP052",
+      "ProductName": "THẮT LƯNG NAM TL14 MẪU 1 - VUÔNG (TLC)",
+      "ProductNameWithAttr": "THẮT LƯNG NAM TL14 MẪU 1 - VUÔNG (TLC)",
+      "ParsedBarcodeCode": "SP052",
+      "FinalBarcodeCode": "SP052",
+      "Quantity": 2,
+      "Price": 530000,
+      "IsFullLabel": true,
+      "IsBarcodeLabel": false
+    },
+    {
+      "ProductCode": "SP053",
+      "ProductName": "THẮT LƯNG NAM TL14 MẪU 47 - VUÔNG (TLC)",
+      "ProductNameWithAttr": "THẮT LƯNG NAM TL14 MẪU 47 - VUÔNG (TLC)",
+      "ParsedBarcodeCode": "SP053",
+      "FinalBarcodeCode": "SP053",
+      "Quantity": 3,
+      "Price": 540000,
+      "IsFullLabel": true,
+      "IsBarcodeLabel": false
+    },
+    {
+      "ProductCode": "SP054",
+      "ProductName": "THẮT LƯNG NAM PCN-TL15 MẪU 9 - VUÔNG (TLC)",
+      "ProductNameWithAttr": "THẮT LƯNG NAM PCN-TL15 MẪU 9 - VUÔNG (TLC)",
+      "ParsedBarcodeCode": "SP054",
+      "FinalBarcodeCode": "SP054",
+      "Quantity": 1,
+      "Price": 550000,
+      "IsFullLabel": true,
+      "IsBarcodeLabel": false
+    },
+    {
+      "ProductCode": "SP055",
+      "ProductName": "THẮT LƯNG NỮ TL16 MẪU 1 - VUÔNG - Da A (TLC)",
+      "ProductNameWithAttr": "THẮT LƯNG NỮ TL16 MẪU 1 - VUÔNG - Da A (TLC)",
+      "ParsedBarcodeCode": "SP055",
+      "FinalBarcodeCode": "SP055",
+      "Quantity": 2,
+      "Price": 560000,
+      "IsFullLabel": true,
+      "IsBarcodeLabel": false
+    },
+    {
+      "ProductCode": "SP056",
+      "ProductName": "THẮT LƯNG NAM TL14 MẪU 35 - TLC (Chiếc)",
+      "ProductNameWithAttr": "THẮT LƯNG NAM TL14 MẪU 35 - TLC (Chiếc)",
+      "ParsedBarcodeCode": "SP056",
+      "FinalBarcodeCode": "SP056",
+      "Quantity": 3,
+      "Price": 570000,
+      "IsFullLabel": true,
+      "IsBarcodeLabel": false
+    },
+    {
+      "ProductCode": "SP057",
+      "ProductName": "thắt lưng nam tl10 mẫu01 - da bò",
+      "ProductNameWithAttr": "thắt lưng nam tl10 mẫu01 - da bò",
+      "ParsedBarcodeCode": "SP057",
+      "FinalBarcodeCode": "SP057",
+      "Quantity": 1,
+      "Price": 580000,
+      "IsFullLabel": true,
+      "IsBarcodeLabel": false
+    },
+    {
+      "ProductCode": "SP058",
+      "ProductName": "THAT LUNG NAM TL10 MAU 01",
+      "ProductNameWithAttr": "THAT LUNG NAM TL10 MAU 01",
+      "ParsedBarcodeCode": "SP058",
+      "FinalBarcodeCode": "SP058",
+      "Quantity": 2,
+      "Price": 590000,
+      "IsFullLabel": true,
+      "IsBarcodeLabel": false
+    },
+    {
+      "ProductCode": "SP059",
+      "ProductName": "   THẮT LƯNG TL25 Mẫu03   ",
+      "ProductNameWithAttr": "   THẮT LƯNG TL25 Mẫu03   ",
+      "ParsedBarcodeCode": "SP059",
+      "FinalBarcodeCode": "SP059",
+      "Quantity": 3,
+      "Price": 600000,
+      "IsFullLabel": true,
+      "IsBarcodeLabel": false
+    },
+    {
+      "ProductCode": "SP060",
+      "ProductName": "THẮT LƯNG NAM TL12 - MẪU 1 (CHIẾC)",
+      "ProductNameWithAttr": "THẮT LƯNG NAM TL12 - MẪU 1 (CHIẾC)",
+      "ParsedBarcodeCode": "SP060",
+      "FinalBarcodeCode": "SP060",
+      "Quantity": 1,
+      "Price": 610000,
+      "IsFullLabel": true,
+      "IsBarcodeLabel": false
+    },
+    {
+      "ProductCode": "SP061",
+      "ProductName": "THẮT LƯNG NAM TL12 - MẪU 4 (CHIẾC)",
+      "ProductNameWithAttr": "THẮT LƯNG NAM TL12 - MẪU 4 (CHIẾC)",
+      "ParsedBarcodeCode": "SP061",
+      "FinalBarcodeCode": "SP061",
+      "Quantity": 2,
+      "Price": 620000,
+      "IsFullLabel": true,
+      "IsBarcodeLabel": false
+    },
+    {
+      "ProductCode": "SP062",
+      "ProductName": "THẮT LƯNG NAM TL12 - MẪU 12 (CHIẾC)",
+      "ProductNameWithAttr": "THẮT LƯNG NAM TL12 - MẪU 12 (CHIẾC)",
+      "ParsedBarcodeCode": "SP062",
+      "FinalBarcodeCode": "SP062",
+      "Quantity": 3,
+      "Price": 630000,
+      "IsFullLabel": true,
+      "IsBarcodeLabel": false
+    },
+    {
+      "ProductCode": "SP063",
+      "ProductName": "THẮT LƯNG NAM TL12-Mẫu 3",
+      "ProductNameWithAttr": "THẮT LƯNG NAM TL12-Mẫu 3",
+      "ParsedBarcodeCode": "SP063",
+      "FinalBarcodeCode": "SP063",
+      "Quantity": 1,
+      "Price": 640000,
+      "IsFullLabel": true,
+      "IsBarcodeLabel": false
+    },
+    {
+      "ProductCode": "SP064",
+      "ProductName": "THẮT LƯNG NAM TL12 -Mẫu05",
+      "ProductNameWithAttr": "THẮT LƯNG NAM TL12 -Mẫu05",
+      "ParsedBarcodeCode": "SP064",
+      "FinalBarcodeCode": "SP064",
+      "Quantity": 2,
+      "Price": 650000,
+      "IsFullLabel": true,
+      "IsBarcodeLabel": false
+    },
+    {
+      "ProductCode": "SP065",
+      "ProductName": "THẮT LƯNG TL10 Mẫu01 TL12 - MẪU 2",
+      "ProductNameWithAttr": "THẮT LƯNG TL10 Mẫu01 TL12 - MẪU 2",
+      "ParsedBarcodeCode": "SP065",
+      "FinalBarcodeCode": "SP065",
+      "Quantity": 3,
+      "Price": 660000,
+      "IsFullLabel": true,
+      "IsBarcodeLabel": false
+    },
+    {
+      "ProductCode": "SP066",
+      "ProductName": "THẮT LƯNG PUTL01 TL10 Mẫu02",
+      "ProductNameWithAttr": "THẮT LƯNG PUTL01 TL10 Mẫu02",
+      "ParsedBarcodeCode": "SP066",
+      "FinalBarcodeCode": "SP066",
+      "Quantity": 1,
+      "Price": 670000,
+      "IsFullLabel": true,
+      "IsBarcodeLabel": false
+    },
+    {
+      "ProductCode": "SP067",
+      "ProductName": "THẮT LƯNG NAM model 6282 TL10 Mẫu05",
+      "ProductNameWithAttr": "THẮT LƯNG NAM model 6282 TL10 Mẫu05",
+      "ParsedBarcodeCode": "SP067",
+      "FinalBarcodeCode": "SP067",
+      "Quantity": 2,
+      "Price": 680000,
+      "IsFullLabel": true,
+      "IsBarcodeLabel": false
+    },
+    {
+      "ProductCode": "SP068",
+      "ProductName": "THẮT LƯNG PUTL01 - Da A",
+      "ProductNameWithAttr": "THẮT LƯNG PUTL01 - Da A",
+      "ParsedBarcodeCode": "SP068",
+      "FinalBarcodeCode": "SP068",
+      "Quantity": 3,
+      "Price": 690000,
+      "IsFullLabel": true,
+      "IsBarcodeLabel": false
+    },
+    {
+      "ProductCode": "SP069",
+      "ProductName": "THẮT LƯNG NAM PUTL25",
+      "ProductNameWithAttr": "THẮT LƯNG NAM PUTL25",
+      "ParsedBarcodeCode": "SP069",
+      "FinalBarcodeCode": "SP069",
+      "Quantity": 1,
+      "Price": 700000,
+      "IsFullLabel": true,
+      "IsBarcodeLabel": false
+    },
+    {
+      "ProductCode": "SP070",
+      "ProductName": "THẮT LƯNG NAM PUTL05 TL10",
+      "ProductNameWithAttr": "THẮT LƯNG NAM PUTL05 TL10",
+      "ParsedBarcodeCode": "SP070",
+      "FinalBarcodeCode": "SP070",
+      "Quantity": 2,
+      "Price": 710000,
+      "IsFullLabel": true,
+      "IsBarcodeLabel": false
+    },
+    {
+      "ProductCode": "SP071",
+      "ProductName": "THẮT LƯNG PUTL01 Mẫu02",
+      "ProductNameWithAttr": "THẮT LƯNG PUTL01 Mẫu02",
+      "ParsedBarcodeCode": "SP071",
+      "FinalBarcodeCode": "SP071",
+      "Quantity": 3,
+      "Price": 720000,
+      "IsFullLabel": true,
+      "IsBarcodeLabel": false
+    },
+    {
+      "ProductCode": "SP072",
+      "ProductName": "THẮT LƯNG NAM TL10 - Da A - XIÊN",
+      "ProductNameWithAttr": "THẮT LƯNG NAM TL10 - Da A - XIÊN",
+      "ParsedBarcodeCode": "SP072",
+      "FinalBarcodeCode": "SP072",
+      "Quantity": 1,
+      "Price": 730000,
+      "IsFullLabel": true,
+      "IsBarcodeLabel": false
+    },
+    {
+      "ProductCode": "SP073",
+      "ProductName": "THẮT LƯNG NAM TL25 - Da B",
+      "ProductNameWithAttr": "THẮT LƯNG NAM TL25 - Da B",
+      "ParsedBarcodeCode": "SP073",
+      "FinalBarcodeCode": "SP073",
+      "Quantity": 2,
+      "Price": 740000,
+      "IsFullLabel": true,
+      "IsBarcodeLabel": false
+    },
+    {
+      "ProductCode": "SP074",
+      "ProductName": "THẮT LƯNG NAM PCN-TL15 - VUÔNG",
+      "ProductNameWithAttr": "THẮT LƯNG NAM PCN-TL15 - VUÔNG",
+      "ParsedBarcodeCode": "SP074",
+      "FinalBarcodeCode": "SP074",
+      "Quantity": 3,
+      "Price": 750000,
+      "IsFullLabel": true,
+      "IsBarcodeLabel": false
+    },
+    {
+      "ProductCode": "SP075",
+      "ProductName": "THẮT LƯNG NAM TL12 - VUÔNG - Da A (CHIẾC)",
+      "ProductNameWithAttr": "THẮT LƯNG NAM TL12 - VUÔNG - Da A (CHIẾC)",
+      "ParsedBarcodeCode": "SP075",
+      "FinalBarcodeCode": "SP075",
+      "Quantity": 1,
+      "Price": 760000,
+      "IsFullLabel": true,
+      "IsBarcodeLabel": false
+    },
+    {
+      "ProductCode": "SP076",
+      "ProductName": "THẮT LƯNG NAM TL10 - Da A (TLC)",
+      "ProductNameWithAttr": "THẮT LƯNG NAM TL10 - Da A (TLC)",
+      "ParsedBarcodeCode": "SP076",
+      "FinalBarcodeCode": "SP076",
+      "Quantity": 2,
+      "Price": 770000,
+      "IsFullLabel": true,
+      "IsBarcodeLabel": false
+    },
+    {
+      "ProductCode": "SP077",
+      "ProductName": "THẮT LƯNG NAM LOẠI XIÊN",
+      "ProductNameWithAttr": "THẮT LƯNG NAM LOẠI XIÊN - Da A (Chiếc)",
+      "ParsedBarcodeCode": "SP077",
+      "FinalBarcodeCode": "SP077",
+      "Quantity": 3,
+      "Price": 780000,
+      "IsFullLabel": true,
+      "IsBarcodeLabel": false
+    },
+    {
+      "ProductCode": "SP078",
+      "ProductName": "  THẮT LƯNG DA BÒ (TLC)  ",
+      "ProductNameWithAttr": "  THẮT LƯNG DA BÒ (TLC)  ",
+      "ParsedBarcodeCode": "SP078",
+      "FinalBarcodeCode": "SP078",
+      "Quantity": 1,
+      "Price": 790000,
+      "IsFullLabel": true,
+      "IsBarcodeLabel": false
+    },
+    {
+      "ProductCode": "SP079",
+      "ProductName": "DÂY ĐỒNG HỒ TL20 - BLACK",
+      "ProductNameWithAttr": "DÂY ĐỒNG HỒ TL20 - BLACK",
+      "ParsedBarcodeCode": "SP079",
+      "FinalBarcodeCode": "SP079",
+      "Quantity": 2,
+      "Price": 800000,
+      "IsFullLabel": true,
+      "IsBarcodeLabel": false
+    },
+    {
+      "ProductCode": "SP080",
+      "ProductName": "MODEL 6282",
+      "ProductNameWithAttr": "MODEL 6282",
+      "ParsedBarcodeCode": "SP080",
+      "FinalBarcodeCode": "SP080",
+      "Quantity": 3,
+      "Price": 810000,
+      "IsFullLabel": true,
+      "IsBarcodeLabel": false
+    }
+  ],
+  "ParseCheck": [
+    {
+      "HasFlag": false,
+      "Flags": "",
+      "Row": {
+        "ProductCode": "SP000",
+        "ProductName": "MODEL 6282",
+        "ProductNameWithAttr": "MODEL 6282",
+        "ParsedCode": "SP000",
+        "FinalCode": "SP000",
+        "Flags": "",
+        "HasFlag": false
+      }
+    },
+    {
+      "HasFlag": false,
+      "Flags": "",
+      "Row": {
+        "ProductCode": "SP001",
+        "ProductName": "MODEL P850-01",
+        "ProductNameWithAttr": "MODEL P850-01",
+        "ParsedCode": "SP001",
+        "FinalCode": "SP001",
+        "Flags": "",
+        "HasFlag": false
+      }
+    },
+    {
+      "HasFlag": false,
+      "Flags": "",
+      "Row": {
+        "ProductCode": "SP002",
+        "ProductName": "model 3162p-01 (MK293 BLACK BROWN)",
+        "ProductNameWithAttr": "model 3162p-01 (MK293 BLACK BROWN)",
+        "ParsedCode": "SP002",
+        "FinalCode": "SP002",
+        "Flags": "",
+        "HasFlag": false
+      }
+    },
+    {
+      "HasFlag": false,
+      "Flags": "",
+      "Row": {
+        "ProductCode": "SP003",
+        "ProductName": "2113-MK108",
+        "ProductNameWithAttr": "2113-MK108",
+        "ParsedCode": "SP003",
+        "FinalCode": "SP003",
+        "Flags": "",
+        "HasFlag": false
+      }
+    },
+    {
+      "HasFlag": false,
+      "Flags": "",
+      "Row": {
+        "ProductCode": "SP004",
+        "ProductName": "RD1007-MK228",
+        "ProductNameWithAttr": "RD1007-MK228",
+        "ParsedCode": "SP004",
+        "FinalCode": "SP004",
+        "Flags": "",
+        "HasFlag": false
+      }
+    },
+    {
+      "HasFlag": false,
+      "Flags": "",
+      "Row": {
+        "ProductCode": "SP005",
+        "ProductName": "6233/66503-MK221",
+        "ProductNameWithAttr": "6233/66503-MK221",
+        "ParsedCode": "SP005",
+        "FinalCode": "SP005",
+        "Flags": "",
+        "HasFlag": false
+      }
+    },
+    {
+      "HasFlag": false,
+      "Flags": "",
+      "Row": {
+        "ProductCode": "SP006",
+        "ProductName": "6250-2-MK112",
+        "ProductNameWithAttr": "6250-2-MK112",
+        "ParsedCode": "SP006",
+        "FinalCode": "SP006",
+        "Flags": "",
+        "HasFlag": false
+      }
+    },
+    {
+      "HasFlag": false,
+      "Flags": "",
+      "Row": {
+        "ProductCode": "SP007",
+        "ProductName": "MK109-P8315",
+        "ProductNameWithAttr": "MK109-P8315",
+        "ParsedCode": "SP007",
+        "FinalCode": "SP007",
+        "Flags": "",
+        "HasFlag": false
+      }
+    },
+    {
+      "HasFlag": false,
+      "Flags": "",
+      "Row": {
+        "ProductCode": "SP008",
+        "ProductName": "MK061-AB102",
+        "ProductNameWithAttr": "MK061-AB102",
+        "ParsedCode": "SP008",
+        "FinalCode": "SP008",
+        "Flags": "",
+        "HasFlag": false
+      }
+    },
+    {
+      "HasFlag": false,
+      "Flags": "",
+      "Row": {
+        "ProductCode": "SP009",
+        "ProductName": "MK081",
+        "ProductNameWithAttr": "MK081",
+        "ParsedCode": "SP009",
+        "FinalCode": "SP009",
+        "Flags": "",
+        "HasFlag": false
+      }
+    },
+    {
+      "HasFlag": false,
+      "Flags": "",
+      "Row": {
+        "ProductCode": "SP010",
+        "ProductName": "K020",
+        "ProductNameWithAttr": "K020",
+        "ParsedCode": "SP010",
+        "FinalCode": "SP010",
+        "Flags": "",
+        "HasFlag": false
+      }
+    },
+    {
+      "HasFlag": false,
+      "Flags": "",
+      "Row": {
+        "ProductCode": "SP011",
+        "ProductName": "PCN15",
+        "ProductNameWithAttr": "PCN15",
+        "ParsedCode": "SP011",
+        "FinalCode": "SP011",
+        "Flags": "",
+        "HasFlag": false
+      }
+    },
+    {
+      "HasFlag": false,
+      "Flags": "",
+      "Row": {
+        "ProductCode": "SP012",
+        "ProductName": "XY35096",
+        "ProductNameWithAttr": "XY35096",
+        "ParsedCode": "SP012",
+        "FinalCode": "SP012",
+        "Flags": "",
+        "HasFlag": false
+      }
+    },
+    {
+      "HasFlag": false,
+      "Flags": "",
+      "Row": {
+        "ProductCode": "SP013",
+        "ProductName": "2113",
+        "ProductNameWithAttr": "2113",
+        "ParsedCode": "SP013",
+        "FinalCode": "SP013",
+        "Flags": "",
+        "HasFlag": false
+      }
+    },
+    {
+      "HasFlag": false,
+      "Flags": "",
+      "Row": {
+        "ProductCode": "SP014",
+        "ProductName": "MÃ P8315",
+        "ProductNameWithAttr": "MÃ P8315",
+        "ParsedCode": "SP014",
+        "FinalCode": "SP014",
+        "Flags": "",
+        "HasFlag": false
+      }
+    },
+    {
+      "HasFlag": false,
+      "Flags": "",
+      "Row": {
+        "ProductCode": "SP015",
+        "ProductName": "CODE AB102",
+        "ProductNameWithAttr": "CODE AB102",
+        "ParsedCode": "SP015",
+        "FinalCode": "SP015",
+        "Flags": "",
+        "HasFlag": false
+      }
+    },
+    {
+      "HasFlag": false,
+      "Flags": "",
+      "Row": {
+        "ProductCode": "SP016",
+        "ProductName": "KÍNH PUCINI D2823-K026 - WHITE (Chiếc)",
+        "ProductNameWithAttr": "KÍNH PUCINI D2823-K026 - WHITE (Chiếc)",
+        "ParsedCode": "SP016",
+        "FinalCode": "SP016",
+        "Flags": "",
+        "HasFlag": false
+      }
+    },
+    {
+      "HasFlag": false,
+      "Flags": "",
+      "Row": {
+        "ProductCode": "SP017",
+        "ProductName": "KÍNH PUCINI MK101 - H008 X H019 - BLACK - PCN2 (Chiếc)",
+        "ProductNameWithAttr": "KÍNH PUCINI MK101 - H008 X H019 - BLACK - PCN2 (Chiếc)",
+        "ParsedCode": "SP017",
+        "FinalCode": "SP017",
+        "Flags": "",
+        "HasFlag": false
+      }
+    },
+    {
+      "HasFlag": false,
+      "Flags": "",
+      "Row": {
+        "ProductCode": "SP018",
+        "ProductName": "Kính râm, gọng bằng nhựa + sắt, mắt kính bằng mica, không phải kính thuốc, kt(16*16*7)cm(+/-10%), model 6215P, nhãn hiệu PUCINI, mới 100% - ( MK262 GREY )",
+        "ProductNameWithAttr": "Kính râm, gọng bằng nhựa + sắt, mắt kính bằng mica, không phải kính thuốc, kt(16*16*7)cm(+/-10%), model 6215P, nhãn hiệu PUCINI, mới 100% - ( MK262 GREY )",
+        "ParsedCode": "SP018",
+        "FinalCode": "SP018",
+        "Flags": "",
+        "HasFlag": false
+      }
+    },
+    {
+      "HasFlag": false,
+      "Flags": "",
+      "Row": {
+        "ProductCode": "SP019",
+        "ProductName": "THẮT LƯNG NAM TL10 Mẫu01 - Da bò",
+        "ProductNameWithAttr": "THẮT LƯNG NAM TL10 Mẫu01 - Da bò",
+        "ParsedCode": "SP019",
+        "FinalCode": "SP019",
+        "Flags": "",
+        "HasFlag": false
+      }
+    },
+    {
+      "HasFlag": false,
+      "Flags": "",
+      "Row": {
+        "ProductCode": "SP020",
+        "ProductName": "THẮT LƯNG TL25 Mẫu03",
+        "ProductNameWithAttr": "THẮT LƯNG TL25 Mẫu03",
+        "ParsedCode": "SP020",
+        "FinalCode": "SP020",
+        "Flags": "",
+        "HasFlag": false
+      }
+    },
+    {
+      "HasFlag": false,
+      "Flags": "",
+      "Row": {
+        "ProductCode": "SP021",
+        "ProductName": "THẮT LƯNG NAM TL14 MẪU 1 - VUÔNG (TLC)",
+        "ProductNameWithAttr": "THẮT LƯNG NAM TL14 MẪU 1 - VUÔNG (TLC)",
+        "ParsedCode": "SP021",
+        "FinalCode": "SP021",
+        "Flags": "",
+        "HasFlag": false
+      }
+    },
+    {
+      "HasFlag": false,
+      "Flags": "",
+      "Row": {
+        "ProductCode": "SP022",
+        "ProductName": "THẮT LƯNG NAM TL14 MẪU 47 - VUÔNG (TLC)",
+        "ProductNameWithAttr": "THẮT LƯNG NAM TL14 MẪU 47 - VUÔNG (TLC)",
+        "ParsedCode": "SP022",
+        "FinalCode": "SP022",
+        "Flags": "",
+        "HasFlag": false
+      }
+    },
+    {
+      "HasFlag": false,
+      "Flags": "",
+      "Row": {
+        "ProductCode": "SP023",
+        "ProductName": "THẮT LƯNG NAM PCN-TL15 MẪU 9 - VUÔNG (TLC)",
+        "ProductNameWithAttr": "THẮT LƯNG NAM PCN-TL15 MẪU 9 - VUÔNG (TLC)",
+        "ParsedCode": "SP023",
+        "FinalCode": "SP023",
+        "Flags": "",
+        "HasFlag": false
+      }
+    },
+    {
+      "HasFlag": false,
+      "Flags": "",
+      "Row": {
+        "ProductCode": "SP024",
+        "ProductName": "THẮT LƯNG NỮ TL16 MẪU 1 - VUÔNG - Da A (TLC)",
+        "ProductNameWithAttr": "THẮT LƯNG NỮ TL16 MẪU 1 - VUÔNG - Da A (TLC)",
+        "ParsedCode": "SP024",
+        "FinalCode": "SP024",
+        "Flags": "",
+        "HasFlag": false
+      }
+    },
+    {
+      "HasFlag": false,
+      "Flags": "",
+      "Row": {
+        "ProductCode": "SP025",
+        "ProductName": "THẮT LƯNG NAM TL14 MẪU 35 - TLC (Chiếc)",
+        "ProductNameWithAttr": "THẮT LƯNG NAM TL14 MẪU 35 - TLC (Chiếc)",
+        "ParsedCode": "SP025",
+        "FinalCode": "SP025",
+        "Flags": "",
+        "HasFlag": false
+      }
+    },
+    {
+      "HasFlag": false,
+      "Flags": "",
+      "Row": {
+        "ProductCode": "SP026",
+        "ProductName": "thắt lưng nam tl10 mẫu01 - da bò",
+        "ProductNameWithAttr": "thắt lưng nam tl10 mẫu01 - da bò",
+        "ParsedCode": "SP026",
+        "FinalCode": "SP026",
+        "Flags": "",
+        "HasFlag": false
+      }
+    },
+    {
+      "HasFlag": false,
+      "Flags": "",
+      "Row": {
+        "ProductCode": "SP027",
+        "ProductName": "THAT LUNG NAM TL10 MAU 01",
+        "ProductNameWithAttr": "THAT LUNG NAM TL10 MAU 01",
+        "ParsedCode": "SP027",
+        "FinalCode": "SP027",
+        "Flags": "",
+        "HasFlag": false
+      }
+    },
+    {
+      "HasFlag": false,
+      "Flags": "",
+      "Row": {
+        "ProductCode": "SP028",
+        "ProductName": "   THẮT LƯNG TL25 Mẫu03   ",
+        "ProductNameWithAttr": "   THẮT LƯNG TL25 Mẫu03   ",
+        "ParsedCode": "SP028",
+        "FinalCode": "SP028",
+        "Flags": "",
+        "HasFlag": false
+      }
+    },
+    {
+      "HasFlag": false,
+      "Flags": "",
+      "Row": {
+        "ProductCode": "SP029",
+        "ProductName": "THẮT LƯNG NAM TL12 - MẪU 1 (CHIẾC)",
+        "ProductNameWithAttr": "THẮT LƯNG NAM TL12 - MẪU 1 (CHIẾC)",
+        "ParsedCode": "SP029",
+        "FinalCode": "SP029",
+        "Flags": "",
+        "HasFlag": false
+      }
+    },
+    {
+      "HasFlag": false,
+      "Flags": "",
+      "Row": {
+        "ProductCode": "SP030",
+        "ProductName": "THẮT LƯNG NAM TL12 - MẪU 4 (CHIẾC)",
+        "ProductNameWithAttr": "THẮT LƯNG NAM TL12 - MẪU 4 (CHIẾC)",
+        "ParsedCode": "SP030",
+        "FinalCode": "SP030",
+        "Flags": "",
+        "HasFlag": false
+      }
+    },
+    {
+      "HasFlag": false,
+      "Flags": "",
+      "Row": {
+        "ProductCode": "SP031",
+        "ProductName": "THẮT LƯNG NAM TL12 - MẪU 12 (CHIẾC)",
+        "ProductNameWithAttr": "THẮT LƯNG NAM TL12 - MẪU 12 (CHIẾC)",
+        "ParsedCode": "SP031",
+        "FinalCode": "SP031",
+        "Flags": "",
+        "HasFlag": false
+      }
+    },
+    {
+      "HasFlag": false,
+      "Flags": "",
+      "Row": {
+        "ProductCode": "SP032",
+        "ProductName": "THẮT LƯNG NAM TL12-Mẫu 3",
+        "ProductNameWithAttr": "THẮT LƯNG NAM TL12-Mẫu 3",
+        "ParsedCode": "SP032",
+        "FinalCode": "SP032",
+        "Flags": "",
+        "HasFlag": false
+      }
+    },
+    {
+      "HasFlag": false,
+      "Flags": "",
+      "Row": {
+        "ProductCode": "SP033",
+        "ProductName": "THẮT LƯNG NAM TL12 -Mẫu05",
+        "ProductNameWithAttr": "THẮT LƯNG NAM TL12 -Mẫu05",
+        "ParsedCode": "SP033",
+        "FinalCode": "SP033",
+        "Flags": "",
+        "HasFlag": false
+      }
+    },
+    {
+      "HasFlag": false,
+      "Flags": "",
+      "Row": {
+        "ProductCode": "SP034",
+        "ProductName": "THẮT LƯNG TL10 Mẫu01 TL12 - MẪU 2",
+        "ProductNameWithAttr": "THẮT LƯNG TL10 Mẫu01 TL12 - MẪU 2",
+        "ParsedCode": "SP034",
+        "FinalCode": "SP034",
+        "Flags": "",
+        "HasFlag": false
+      }
+    },
+    {
+      "HasFlag": false,
+      "Flags": "",
+      "Row": {
+        "ProductCode": "SP035",
+        "ProductName": "THẮT LƯNG PUTL01 TL10 Mẫu02",
+        "ProductNameWithAttr": "THẮT LƯNG PUTL01 TL10 Mẫu02",
+        "ParsedCode": "SP035",
+        "FinalCode": "SP035",
+        "Flags": "",
+        "HasFlag": false
+      }
+    },
+    {
+      "HasFlag": false,
+      "Flags": "",
+      "Row": {
+        "ProductCode": "SP036",
+        "ProductName": "THẮT LƯNG NAM model 6282 TL10 Mẫu05",
+        "ProductNameWithAttr": "THẮT LƯNG NAM model 6282 TL10 Mẫu05",
+        "ParsedCode": "SP036",
+        "FinalCode": "SP036",
+        "Flags": "",
+        "HasFlag": false
+      }
+    },
+    {
+      "HasFlag": false,
+      "Flags": "",
+      "Row": {
+        "ProductCode": "SP037",
+        "ProductName": "THẮT LƯNG PUTL01 - Da A",
+        "ProductNameWithAttr": "THẮT LƯNG PUTL01 - Da A",
+        "ParsedCode": "SP037",
+        "FinalCode": "SP037",
+        "Flags": "",
+        "HasFlag": false
+      }
+    },
+    {
+      "HasFlag": false,
+      "Flags": "",
+      "Row": {
+        "ProductCode": "SP038",
+        "ProductName": "THẮT LƯNG NAM PUTL25",
+        "ProductNameWithAttr": "THẮT LƯNG NAM PUTL25",
+        "ParsedCode": "SP038",
+        "FinalCode": "SP038",
+        "Flags": "",
+        "HasFlag": false
+      }
+    },
+    {
+      "HasFlag": false,
+      "Flags": "",
+      "Row": {
+        "ProductCode": "SP039",
+        "ProductName": "THẮT LƯNG NAM PUTL05 TL10",
+        "ProductNameWithAttr": "THẮT LƯNG NAM PUTL05 TL10",
+        "ParsedCode": "SP039",
+        "FinalCode": "SP039",
+        "Flags": "",
+        "HasFlag": false
+      }
+    },
+    {
+      "HasFlag": false,
+      "Flags": "",
+      "Row": {
+        "ProductCode": "SP040",
+        "ProductName": "THẮT LƯNG PUTL01 Mẫu02",
+        "ProductNameWithAttr": "THẮT LƯNG PUTL01 Mẫu02",
+        "ParsedCode": "SP040",
+        "FinalCode": "SP040",
+        "Flags": "",
+        "HasFlag": false
+      }
+    },
+    {
+      "HasFlag": false,
+      "Flags": "",
+      "Row": {
+        "ProductCode": "SP041",
+        "ProductName": "THẮT LƯNG NAM TL10 - Da A - XIÊN",
+        "ProductNameWithAttr": "THẮT LƯNG NAM TL10 - Da A - XIÊN",
+        "ParsedCode": "SP041",
+        "FinalCode": "SP041",
+        "Flags": "",
+        "HasFlag": false
+      }
+    },
+    {
+      "HasFlag": false,
+      "Flags": "",
+      "Row": {
+        "ProductCode": "SP042",
+        "ProductName": "THẮT LƯNG NAM TL25 - Da B",
+        "ProductNameWithAttr": "THẮT LƯNG NAM TL25 - Da B",
+        "ParsedCode": "SP042",
+        "FinalCode": "SP042",
+        "Flags": "",
+        "HasFlag": false
+      }
+    },
+    {
+      "HasFlag": false,
+      "Flags": "",
+      "Row": {
+        "ProductCode": "SP043",
+        "ProductName": "THẮT LƯNG NAM PCN-TL15 - VUÔNG",
+        "ProductNameWithAttr": "THẮT LƯNG NAM PCN-TL15 - VUÔNG",
+        "ParsedCode": "SP043",
+        "FinalCode": "SP043",
+        "Flags": "",
+        "HasFlag": false
+      }
+    },
+    {
+      "HasFlag": false,
+      "Flags": "",
+      "Row": {
+        "ProductCode": "SP044",
+        "ProductName": "THẮT LƯNG NAM TL12 - VUÔNG - Da A (CHIẾC)",
+        "ProductNameWithAttr": "THẮT LƯNG NAM TL12 - VUÔNG - Da A (CHIẾC)",
+        "ParsedCode": "SP044",
+        "FinalCode": "SP044",
+        "Flags": "",
+        "HasFlag": false
+      }
+    },
+    {
+      "HasFlag": false,
+      "Flags": "",
+      "Row": {
+        "ProductCode": "SP045",
+        "ProductName": "THẮT LƯNG NAM TL10 - Da A (TLC)",
+        "ProductNameWithAttr": "THẮT LƯNG NAM TL10 - Da A (TLC)",
+        "ParsedCode": "SP045",
+        "FinalCode": "SP045",
+        "Flags": "",
+        "HasFlag": false
+      }
+    },
+    {
+      "HasFlag": false,
+      "Flags": "",
+      "Row": {
+        "ProductCode": "SP046",
+        "ProductName": "THẮT LƯNG NAM LOẠI XIÊN",
+        "ProductNameWithAttr": "THẮT LƯNG NAM LOẠI XIÊN - Da A (Chiếc)",
+        "ParsedCode": "SP046",
+        "FinalCode": "SP046",
+        "Flags": "",
+        "HasFlag": false
+      }
+    },
+    {
+      "HasFlag": false,
+      "Flags": "",
+      "Row": {
+        "ProductCode": "SP047",
+        "ProductName": "  THẮT LƯNG DA BÒ (TLC)  ",
+        "ProductNameWithAttr": "  THẮT LƯNG DA BÒ (TLC)  ",
+        "ParsedCode": "SP047",
+        "FinalCode": "SP047",
+        "Flags": "",
+        "HasFlag": false
+      }
+    },
+    {
+      "HasFlag": false,
+      "Flags": "",
+      "Row": {
+        "ProductCode": "SP048",
+        "ProductName": "DÂY ĐỒNG HỒ TL20 - BLACK",
+        "ProductNameWithAttr": "DÂY ĐỒNG HỒ TL20 - BLACK",
+        "ParsedCode": "SP048",
+        "FinalCode": "SP048",
+        "Flags": "",
+        "HasFlag": false
+      }
+    },
+    {
+      "HasFlag": false,
+      "Flags": "",
+      "Row": {
+        "ProductCode": "SP049",
+        "ProductName": "MODEL 6282",
+        "ProductNameWithAttr": "MODEL 6282",
+        "ParsedCode": "SP049",
+        "FinalCode": "SP049",
+        "Flags": "",
+        "HasFlag": false
+      }
+    },
+    {
+      "HasFlag": false,
+      "Flags": "",
+      "Row": {
+        "ProductCode": "SP050",
+        "ProductName": "THẮT LƯNG NAM TL10 Mẫu01 - Da bò",
+        "ProductNameWithAttr": "THẮT LƯNG NAM TL10 Mẫu01 - Da bò",
+        "ParsedCode": "SP050",
+        "FinalCode": "SP050",
+        "Flags": "",
+        "HasFlag": false
+      }
+    },
+    {
+      "HasFlag": false,
+      "Flags": "",
+      "Row": {
+        "ProductCode": "SP051",
+        "ProductName": "THẮT LƯNG TL25 Mẫu03",
+        "ProductNameWithAttr": "THẮT LƯNG TL25 Mẫu03",
+        "ParsedCode": "SP051",
+        "FinalCode": "SP051",
+        "Flags": "",
+        "HasFlag": false
+      }
+    },
+    {
+      "HasFlag": false,
+      "Flags": "",
+      "Row": {
+        "ProductCode": "SP052",
+        "ProductName": "THẮT LƯNG NAM TL14 MẪU 1 - VUÔNG (TLC)",
+        "ProductNameWithAttr": "THẮT LƯNG NAM TL14 MẪU 1 - VUÔNG (TLC)",
+        "ParsedCode": "SP052",
+        "FinalCode": "SP052",
+        "Flags": "",
+        "HasFlag": false
+      }
+    },
+    {
+      "HasFlag": false,
+      "Flags": "",
+      "Row": {
+        "ProductCode": "SP053",
+        "ProductName": "THẮT LƯNG NAM TL14 MẪU 47 - VUÔNG (TLC)",
+        "ProductNameWithAttr": "THẮT LƯNG NAM TL14 MẪU 47 - VUÔNG (TLC)",
+        "ParsedCode": "SP053",
+        "FinalCode": "SP053",
+        "Flags": "",
+        "HasFlag": false
+      }
+    },
+    {
+      "HasFlag": false,
+      "Flags": "",
+      "Row": {
+        "ProductCode": "SP054",
+        "ProductName": "THẮT LƯNG NAM PCN-TL15 MẪU 9 - VUÔNG (TLC)",
+        "ProductNameWithAttr": "THẮT LƯNG NAM PCN-TL15 MẪU 9 - VUÔNG (TLC)",
+        "ParsedCode": "SP054",
+        "FinalCode": "SP054",
+        "Flags": "",
+        "HasFlag": false
+      }
+    },
+    {
+      "HasFlag": false,
+      "Flags": "",
+      "Row": {
+        "ProductCode": "SP055",
+        "ProductName": "THẮT LƯNG NỮ TL16 MẪU 1 - VUÔNG - Da A (TLC)",
+        "ProductNameWithAttr": "THẮT LƯNG NỮ TL16 MẪU 1 - VUÔNG - Da A (TLC)",
+        "ParsedCode": "SP055",
+        "FinalCode": "SP055",
+        "Flags": "",
+        "HasFlag": false
+      }
+    },
+    {
+      "HasFlag": false,
+      "Flags": "",
+      "Row": {
+        "ProductCode": "SP056",
+        "ProductName": "THẮT LƯNG NAM TL14 MẪU 35 - TLC (Chiếc)",
+        "ProductNameWithAttr": "THẮT LƯNG NAM TL14 MẪU 35 - TLC (Chiếc)",
+        "ParsedCode": "SP056",
+        "FinalCode": "SP056",
+        "Flags": "",
+        "HasFlag": false
+      }
+    },
+    {
+      "HasFlag": false,
+      "Flags": "",
+      "Row": {
+        "ProductCode": "SP057",
+        "ProductName": "thắt lưng nam tl10 mẫu01 - da bò",
+        "ProductNameWithAttr": "thắt lưng nam tl10 mẫu01 - da bò",
+        "ParsedCode": "SP057",
+        "FinalCode": "SP057",
+        "Flags": "",
+        "HasFlag": false
+      }
+    },
+    {
+      "HasFlag": false,
+      "Flags": "",
+      "Row": {
+        "ProductCode": "SP058",
+        "ProductName": "THAT LUNG NAM TL10 MAU 01",
+        "ProductNameWithAttr": "THAT LUNG NAM TL10 MAU 01",
+        "ParsedCode": "SP058",
+        "FinalCode": "SP058",
+        "Flags": "",
+        "HasFlag": false
+      }
+    },
+    {
+      "HasFlag": false,
+      "Flags": "",
+      "Row": {
+        "ProductCode": "SP059",
+        "ProductName": "   THẮT LƯNG TL25 Mẫu03   ",
+        "ProductNameWithAttr": "   THẮT LƯNG TL25 Mẫu03   ",
+        "ParsedCode": "SP059",
+        "FinalCode": "SP059",
+        "Flags": "",
+        "HasFlag": false
+      }
+    },
+    {
+      "HasFlag": false,
+      "Flags": "",
+      "Row": {
+        "ProductCode": "SP060",
+        "ProductName": "THẮT LƯNG NAM TL12 - MẪU 1 (CHIẾC)",
+        "ProductNameWithAttr": "THẮT LƯNG NAM TL12 - MẪU 1 (CHIẾC)",
+        "ParsedCode": "SP060",
+        "FinalCode": "SP060",
+        "Flags": "",
+        "HasFlag": false
+      }
+    },
+    {
+      "HasFlag": false,
+      "Flags": "",
+      "Row": {
+        "ProductCode": "SP061",
+        "ProductName": "THẮT LƯNG NAM TL12 - MẪU 4 (CHIẾC)",
+        "ProductNameWithAttr": "THẮT LƯNG NAM TL12 - MẪU 4 (CHIẾC)",
+        "ParsedCode": "SP061",
+        "FinalCode": "SP061",
+        "Flags": "",
+        "HasFlag": false
+      }
+    },
+    {
+      "HasFlag": false,
+      "Flags": "",
+      "Row": {
+        "ProductCode": "SP062",
+        "ProductName": "THẮT LƯNG NAM TL12 - MẪU 12 (CHIẾC)",
+        "ProductNameWithAttr": "THẮT LƯNG NAM TL12 - MẪU 12 (CHIẾC)",
+        "ParsedCode": "SP062",
+        "FinalCode": "SP062",
+        "Flags": "",
+        "HasFlag": false
+      }
+    },
+    {
+      "HasFlag": false,
+      "Flags": "",
+      "Row": {
+        "ProductCode": "SP063",
+        "ProductName": "THẮT LƯNG NAM TL12-Mẫu 3",
+        "ProductNameWithAttr": "THẮT LƯNG NAM TL12-Mẫu 3",
+        "ParsedCode": "SP063",
+        "FinalCode": "SP063",
+        "Flags": "",
+        "HasFlag": false
+      }
+    },
+    {
+      "HasFlag": false,
+      "Flags": "",
+      "Row": {
+        "ProductCode": "SP064",
+        "ProductName": "THẮT LƯNG NAM TL12 -Mẫu05",
+        "ProductNameWithAttr": "THẮT LƯNG NAM TL12 -Mẫu05",
+        "ParsedCode": "SP064",
+        "FinalCode": "SP064",
+        "Flags": "",
+        "HasFlag": false
+      }
+    },
+    {
+      "HasFlag": false,
+      "Flags": "",
+      "Row": {
+        "ProductCode": "SP065",
+        "ProductName": "THẮT LƯNG TL10 Mẫu01 TL12 - MẪU 2",
+        "ProductNameWithAttr": "THẮT LƯNG TL10 Mẫu01 TL12 - MẪU 2",
+        "ParsedCode": "SP065",
+        "FinalCode": "SP065",
+        "Flags": "",
+        "HasFlag": false
+      }
+    },
+    {
+      "HasFlag": false,
+      "Flags": "",
+      "Row": {
+        "ProductCode": "SP066",
+        "ProductName": "THẮT LƯNG PUTL01 TL10 Mẫu02",
+        "ProductNameWithAttr": "THẮT LƯNG PUTL01 TL10 Mẫu02",
+        "ParsedCode": "SP066",
+        "FinalCode": "SP066",
+        "Flags": "",
+        "HasFlag": false
+      }
+    },
+    {
+      "HasFlag": false,
+      "Flags": "",
+      "Row": {
+        "ProductCode": "SP067",
+        "ProductName": "THẮT LƯNG NAM model 6282 TL10 Mẫu05",
+        "ProductNameWithAttr": "THẮT LƯNG NAM model 6282 TL10 Mẫu05",
+        "ParsedCode": "SP067",
+        "FinalCode": "SP067",
+        "Flags": "",
+        "HasFlag": false
+      }
+    },
+    {
+      "HasFlag": false,
+      "Flags": "",
+      "Row": {
+        "ProductCode": "SP068",
+        "ProductName": "THẮT LƯNG PUTL01 - Da A",
+        "ProductNameWithAttr": "THẮT LƯNG PUTL01 - Da A",
+        "ParsedCode": "SP068",
+        "FinalCode": "SP068",
+        "Flags": "",
+        "HasFlag": false
+      }
+    },
+    {
+      "HasFlag": false,
+      "Flags": "",
+      "Row": {
+        "ProductCode": "SP069",
+        "ProductName": "THẮT LƯNG NAM PUTL25",
+        "ProductNameWithAttr": "THẮT LƯNG NAM PUTL25",
+        "ParsedCode": "SP069",
+        "FinalCode": "SP069",
+        "Flags": "",
+        "HasFlag": false
+      }
+    },
+    {
+      "HasFlag": false,
+      "Flags": "",
+      "Row": {
+        "ProductCode": "SP070",
+        "ProductName": "THẮT LƯNG NAM PUTL05 TL10",
+        "ProductNameWithAttr": "THẮT LƯNG NAM PUTL05 TL10",
+        "ParsedCode": "SP070",
+        "FinalCode": "SP070",
+        "Flags": "",
+        "HasFlag": false
+      }
+    },
+    {
+      "HasFlag": false,
+      "Flags": "",
+      "Row": {
+        "ProductCode": "SP071",
+        "ProductName": "THẮT LƯNG PUTL01 Mẫu02",
+        "ProductNameWithAttr": "THẮT LƯNG PUTL01 Mẫu02",
+        "ParsedCode": "SP071",
+        "FinalCode": "SP071",
+        "Flags": "",
+        "HasFlag": false
+      }
+    },
+    {
+      "HasFlag": false,
+      "Flags": "",
+      "Row": {
+        "ProductCode": "SP072",
+        "ProductName": "THẮT LƯNG NAM TL10 - Da A - XIÊN",
+        "ProductNameWithAttr": "THẮT LƯNG NAM TL10 - Da A - XIÊN",
+        "ParsedCode": "SP072",
+        "FinalCode": "SP072",
+        "Flags": "",
+        "HasFlag": false
+      }
+    },
+    {
+      "HasFlag": false,
+      "Flags": "",
+      "Row": {
+        "ProductCode": "SP073",
+        "ProductName": "THẮT LƯNG NAM TL25 - Da B",
+        "ProductNameWithAttr": "THẮT LƯNG NAM TL25 - Da B",
+        "ParsedCode": "SP073",
+        "FinalCode": "SP073",
+        "Flags": "",
+        "HasFlag": false
+      }
+    },
+    {
+      "HasFlag": false,
+      "Flags": "",
+      "Row": {
+        "ProductCode": "SP074",
+        "ProductName": "THẮT LƯNG NAM PCN-TL15 - VUÔNG",
+        "ProductNameWithAttr": "THẮT LƯNG NAM PCN-TL15 - VUÔNG",
+        "ParsedCode": "SP074",
+        "FinalCode": "SP074",
+        "Flags": "",
+        "HasFlag": false
+      }
+    },
+    {
+      "HasFlag": false,
+      "Flags": "",
+      "Row": {
+        "ProductCode": "SP075",
+        "ProductName": "THẮT LƯNG NAM TL12 - VUÔNG - Da A (CHIẾC)",
+        "ProductNameWithAttr": "THẮT LƯNG NAM TL12 - VUÔNG - Da A (CHIẾC)",
+        "ParsedCode": "SP075",
+        "FinalCode": "SP075",
+        "Flags": "",
+        "HasFlag": false
+      }
+    },
+    {
+      "HasFlag": false,
+      "Flags": "",
+      "Row": {
+        "ProductCode": "SP076",
+        "ProductName": "THẮT LƯNG NAM TL10 - Da A (TLC)",
+        "ProductNameWithAttr": "THẮT LƯNG NAM TL10 - Da A (TLC)",
+        "ParsedCode": "SP076",
+        "FinalCode": "SP076",
+        "Flags": "",
+        "HasFlag": false
+      }
+    },
+    {
+      "HasFlag": false,
+      "Flags": "",
+      "Row": {
+        "ProductCode": "SP077",
+        "ProductName": "THẮT LƯNG NAM LOẠI XIÊN",
+        "ProductNameWithAttr": "THẮT LƯNG NAM LOẠI XIÊN - Da A (Chiếc)",
+        "ParsedCode": "SP077",
+        "FinalCode": "SP077",
+        "Flags": "",
+        "HasFlag": false
+      }
+    },
+    {
+      "HasFlag": false,
+      "Flags": "",
+      "Row": {
+        "ProductCode": "SP078",
+        "ProductName": "  THẮT LƯNG DA BÒ (TLC)  ",
+        "ProductNameWithAttr": "  THẮT LƯNG DA BÒ (TLC)  ",
+        "ParsedCode": "SP078",
+        "FinalCode": "SP078",
+        "Flags": "",
+        "HasFlag": false
+      }
+    },
+    {
+      "HasFlag": false,
+      "Flags": "",
+      "Row": {
+        "ProductCode": "SP079",
+        "ProductName": "DÂY ĐỒNG HỒ TL20 - BLACK",
+        "ProductNameWithAttr": "DÂY ĐỒNG HỒ TL20 - BLACK",
+        "ParsedCode": "SP079",
+        "FinalCode": "SP079",
+        "Flags": "",
+        "HasFlag": false
+      }
+    },
+    {
+      "HasFlag": false,
+      "Flags": "",
+      "Row": {
+        "ProductCode": "SP080",
+        "ProductName": "MODEL 6282",
+        "ProductNameWithAttr": "MODEL 6282",
+        "ParsedCode": "SP080",
+        "FinalCode": "SP080",
+        "Flags": "",
+        "HasFlag": false
+      }
+    }
+  ]
+}

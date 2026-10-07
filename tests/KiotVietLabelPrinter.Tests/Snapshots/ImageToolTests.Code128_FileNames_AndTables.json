@@ -1,0 +1,104 @@
+{
+  "FileNames": [
+    "ABC-123",
+    "a_b_c_d_e_f_g_h_i_j",
+    "  x",
+    "TL12-MẪU 4"
+  ],
+  "Csv": [
+    [
+      "Tên hàng",
+      "Mã hàng"
+    ],
+    [
+      "Kính mát",
+      "SP001"
+    ],
+    [
+      "Gọng, nhựa",
+      "00123"
+    ],
+    [
+      "",
+      ""
+    ],
+    [
+      "Thắt lưng;x",
+      "TL10"
+    ],
+    [
+      ""
+    ]
+  ],
+  "Items": [
+    {
+      "Name": "Kính mát",
+      "Code": "SP001"
+    },
+    {
+      "Name": "Gọng, nhựa",
+      "Code": "00123"
+    },
+    {
+      "Name": "Thắt lưng;x",
+      "Code": "TL10"
+    }
+  ],
+  "NoHeader": [
+    {
+      "Name": "A1",
+      "Code": "Tên A"
+    },
+    {
+      "Name": "B2",
+      "Code": "Tên B"
+    }
+  ],
+  "Headers": [
+    {
+      "h": "Tên hàng",
+      "Name": true,
+      "Code": false
+    },
+    {
+      "h": "ten hang",
+      "Name": true,
+      "Code": false
+    },
+    {
+      "h": "Mã hàng",
+      "Name": false,
+      "Code": true
+    },
+    {
+      "h": "MA HANG",
+      "Name": false,
+      "Code": true
+    },
+    {
+      "h": "Mã vạch",
+      "Name": false,
+      "Code": true
+    },
+    {
+      "h": "Barcode",
+      "Name": false,
+      "Code": true
+    },
+    {
+      "h": "Name",
+      "Name": true,
+      "Code": false
+    },
+    {
+      "h": "Code",
+      "Name": false,
+      "Code": true
+    },
+    {
+      "h": "Khác",
+      "Name": false,
+      "Code": false
+    }
+  ]
+}

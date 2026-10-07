@@ -1,0 +1,47 @@
+[
+  {
+    "Code": "ABC-123",
+    "Width": 542,
+    "Height": 298,
+    "ModulePx": 4,
+    "BarsWidthPx": 448,
+    "Dpi": 300,
+    "Pixels": "3B7FC0113598F984"
+  },
+  {
+    "Code": "12345678",
+    "Width": 410,
+    "Height": 244,
+    "ModulePx": 4,
+    "BarsWidthPx": 316,
+    "Dpi": 300,
+    "Pixels": "DB806ED74DC66989"
+  },
+  {
+    "Code": "1234567890123",
+    "Width": 463,
+    "Height": 196,
+    "ModulePx": 3,
+    "BarsWidthPx": 369,
+    "Dpi": 300,
+    "Pixels": "7D02DA9BF951E15B"
+  },
+  {
+    "Code": "SP001",
+    "Width": 472,
+    "Height": 295,
+    "ModulePx": 4,
+    "BarsWidthPx": 360,
+    "Dpi": 300,
+    "Pixels": "9FC30C22EC51ED6F"
+  },
+  {
+    "Code": "tl10mau01",
+    "Width": 198,
+    "Height": 202,
+    "ModulePx": 1,
+    "BarsWidthPx": 134,
+    "Dpi": 203,
+    "Pixels": "FB30FF3C048ED4CD"
+  }
+]

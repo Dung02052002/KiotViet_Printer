@@ -1,0 +1,27 @@
+[
+  {
+    "Requested": "FULL",
+    "HandlerType": "FULL",
+    "Type": "FullLabelHandler"
+  },
+  {
+    "Requested": "BARCODE",
+    "HandlerType": "BARCODE",
+    "Type": "BarcodeLabelHandler"
+  },
+  {
+    "Requested": "GENERIC",
+    "HandlerType": "GENERIC",
+    "Type": "GenericLabelHandler"
+  },
+  {
+    "Requested": "GLASSES",
+    "HandlerType": "GLASSES",
+    "Type": "GlassesLabelHandler"
+  },
+  {
+    "Requested": "barcode",
+    "HandlerType": "BARCODE",
+    "Type": "BarcodeLabelHandler"
+  }
+]

@@ -1,0 +1,54 @@
+[
+  {
+    "Input": null,
+    "Error": "Vui lòng nhập mã hàng."
+  },
+  {
+    "Input": "",
+    "Error": "Vui lòng nhập mã hàng."
+  },
+  {
+    "Input": "   ",
+    "Error": "Vui lòng nhập mã hàng."
+  },
+  {
+    "Input": " AB",
+    "Error": "Mã hàng có khoảng trắng ở đầu hoặc cuối. Hãy xoá khoảng trắng rồi thử lại."
+  },
+  {
+    "Input": "AB ",
+    "Error": "Mã hàng có khoảng trắng ở đầu hoặc cuối. Hãy xoá khoảng trắng rồi thử lại."
+  },
+  {
+    "Input": "ABC-123",
+    "Error": null
+  },
+  {
+    "Input": "12345678",
+    "Error": null
+  },
+  {
+    "Input": "Mã có dấu",
+    "Error": "Ký tự 'ã' ở vị trí 2 không mã hoá được bằng Code 128.\nChỉ dùng chữ không dấu, số và ký hiệu thông thường."
+  },
+  {
+    "Input": "a\tb",
+    "Error": "Ký tự mã 9 ở vị trí 2 không mã hoá được bằng Code 128.\nChỉ dùng chữ không dấu, số và ký hiệu thông thường."
+  },
+  {
+    "Input": "99999999999999999999999999999999999999999999999999999999999999999999999999999999",
+    "Error": null
+  },
+  {
+    "Input": "999999999999999999999999999999999999999999999999999999999999999999999999999999999",
+    "Error": "Mã hàng dài 81 ký tự, tối đa 80 ký tự để mã vạch còn quét được."
+  },
+  {
+    "Input": "TL12-MẪU 4",
+    "Error": "Ký tự 'Ẫ' ở vị trí 7 không mã hoá được bằng Code 128.\nChỉ dùng chữ không dấu, số và ký hiệu thông thường."
+  },
+  {
+    "Input": "abc/DEF.ghi_01",
+    "Error": null
+  }
+]

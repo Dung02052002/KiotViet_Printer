@@ -1,0 +1,252 @@
+[
+  {
+    "Name": "MODEL",
+    "Expected": "6282",
+    "Actual": "6282"
+  },
+  {
+    "Name": "MODEL-2",
+    "Expected": "P850-01",
+    "Actual": "P850-01"
+  },
+  {
+    "Name": "MODEL-3",
+    "Expected": "3162P-01",
+    "Actual": "3162P-01"
+  },
+  {
+    "Name": "LEFT MK",
+    "Expected": "2113",
+    "Actual": "2113"
+  },
+  {
+    "Name": "LEFT MK 2",
+    "Expected": "RD1007",
+    "Actual": "RD1007"
+  },
+  {
+    "Name": "LEFT MK 3",
+    "Expected": "6233/66503",
+    "Actual": "6233/66503"
+  },
+  {
+    "Name": "LEFT MK 4",
+    "Expected": "6250-2",
+    "Actual": "6250-2"
+  },
+  {
+    "Name": "RIGHT MK",
+    "Expected": "P8315",
+    "Actual": "P8315"
+  },
+  {
+    "Name": "RIGHT MK 2",
+    "Expected": "AB102",
+    "Actual": "AB102"
+  },
+  {
+    "Name": "MK ONLY",
+    "Expected": "MK081",
+    "Actual": "MK081"
+  },
+  {
+    "Name": "K ONLY",
+    "Expected": "K020",
+    "Actual": "K020"
+  },
+  {
+    "Name": "PCN",
+    "Expected": "PCN15",
+    "Actual": "PCN15"
+  },
+  {
+    "Name": "CODE",
+    "Expected": "XY35096",
+    "Actual": "XY35096"
+  },
+  {
+    "Name": "NUMBER",
+    "Expected": "2113",
+    "Actual": "2113"
+  },
+  {
+    "Name": "MÃ",
+    "Expected": "P8315",
+    "Actual": "P8315"
+  },
+  {
+    "Name": "CODE KEYWORD",
+    "Expected": "AB102",
+    "Actual": "AB102"
+  },
+  {
+    "Name": "GLASSES NAME D-CODE",
+    "Expected": "D2823",
+    "Actual": "D2823"
+  },
+  {
+    "Name": "MK WITH CODE PAIR",
+    "Expected": "H008xH019",
+    "Actual": "H008xH019"
+  },
+  {
+    "Name": "MODEL WITH TRAILING MK",
+    "Expected": "6215P",
+    "Actual": "6215P"
+  },
+  {
+    "Name": "BELT 1. TL-MAU dính số",
+    "Expected": "TL10 Mẫu01",
+    "Actual": "TL10 Mẫu01"
+  },
+  {
+    "Name": "BELT 1. TL-MAU không NAM",
+    "Expected": "TL25 Mẫu03",
+    "Actual": "TL25 Mẫu03"
+  },
+  {
+    "Name": "BELT 1. TL-MAU cách số",
+    "Expected": "TL14 MẪU 1",
+    "Actual": "TL14 MẪU 1"
+  },
+  {
+    "Name": "BELT 1. TL-MAU 2 chữ số",
+    "Expected": "TL14 MẪU 47",
+    "Actual": "TL14 MẪU 47"
+  },
+  {
+    "Name": "BELT 1. TL-MAU tiền tố PCN-",
+    "Expected": "TL15 MẪU 9",
+    "Actual": "TL15 MẪU 9"
+  },
+  {
+    "Name": "BELT 1. TL-MAU thắt lưng nữ",
+    "Expected": "TL16 MẪU 1",
+    "Actual": "TL16 MẪU 1"
+  },
+  {
+    "Name": "BELT 1. TL-MAU có TLC phía sau",
+    "Expected": "TL14 MẪU 35",
+    "Actual": "TL14 MẪU 35"
+  },
+  {
+    "Name": "BELT 1. TL-MAU chữ thường",
+    "Expected": "tl10 mẫu01",
+    "Actual": "tl10 mẫu01"
+  },
+  {
+    "Name": "BELT 1. TL-MAU không dấu",
+    "Expected": "TL10 MAU 01",
+    "Actual": "TL10 MAU 01"
+  },
+  {
+    "Name": "BELT 1. TL-MAU khoảng trắng đầu/cuối",
+    "Expected": "TL25 Mẫu03",
+    "Actual": "TL25 Mẫu03"
+  },
+  {
+    "Name": "BELT 1. TL - MẪU (gạch ngang), MẪU 1",
+    "Expected": "TL12-MẪU 1",
+    "Actual": "TL12-MẪU 1"
+  },
+  {
+    "Name": "BELT 1. TL - MẪU (gạch ngang), MẪU 4 khác MẪU 1",
+    "Expected": "TL12-MẪU 4",
+    "Actual": "TL12-MẪU 4"
+  },
+  {
+    "Name": "BELT 1. TL - MẪU (gạch ngang), 2 chữ số",
+    "Expected": "TL12-MẪU 12",
+    "Actual": "TL12-MẪU 12"
+  },
+  {
+    "Name": "BELT 1. TL-Mẫu dính gạch, chữ thường",
+    "Expected": "TL12-Mẫu 3",
+    "Actual": "TL12-Mẫu 3"
+  },
+  {
+    "Name": "BELT 1. TL -Mẫu dính số",
+    "Expected": "TL12-Mẫu05",
+    "Actual": "TL12-Mẫu05"
+  },
+  {
+    "Name": "BELT 1. Có cả TLxx Mẫuxx và TLxx - Mẫuxx thì lấy dạng khoảng trắng",
+    "Expected": "TL10 Mẫu01",
+    "Actual": "TL10 Mẫu01"
+  },
+  {
+    "Name": "BELT 1. TL-MAU thắng PUTL",
+    "Expected": "TL10 Mẫu02",
+    "Actual": "TL10 Mẫu02"
+  },
+  {
+    "Name": "BELT 1. TL-MAU có model/mã khác",
+    "Expected": "TL10 Mẫu05",
+    "Actual": "TL10 Mẫu05"
+  },
+  {
+    "Name": "BELT 2. PUTL có mô tả",
+    "Expected": "PUTL01",
+    "Actual": "PUTL01"
+  },
+  {
+    "Name": "BELT 2. PUTL thắt lưng nam",
+    "Expected": "PUTL25",
+    "Actual": "PUTL25"
+  },
+  {
+    "Name": "BELT 2. PUTL thắng TLxx",
+    "Expected": "PUTL05",
+    "Actual": "PUTL05"
+  },
+  {
+    "Name": "BELT 2. PUTL không bị hiểu là TL Mẫu",
+    "Expected": "PUTL01",
+    "Actual": "PUTL01"
+  },
+  {
+    "Name": "BELT 3. TL có XIÊN",
+    "Expected": "TL10",
+    "Actual": "TL10"
+  },
+  {
+    "Name": "BELT 3. TL có Da B",
+    "Expected": "TL25",
+    "Actual": "TL25"
+  },
+  {
+    "Name": "BELT 3. TL tiền tố PCN-",
+    "Expected": "TL15",
+    "Actual": "TL15"
+  },
+  {
+    "Name": "BELT 3. TL - VUÔNG (gạch ngang nhưng không phải MẪU)",
+    "Expected": "TL12",
+    "Actual": "TL12"
+  },
+  {
+    "Name": "BELT 3. TL có TLC phía sau",
+    "Expected": "TL10",
+    "Actual": "TL10"
+  },
+  {
+    "Name": "BELT 4. Không mã, lấy toàn bộ Tên hàng (cột E)",
+    "Expected": "THẮT LƯNG NAM LOẠI XIÊN",
+    "Actual": "THẮT LƯNG NAM LOẠI XIÊN"
+  },
+  {
+    "Name": "BELT 4. Không mã, cột E trống thì lấy cả tên đang có",
+    "Expected": "THẮT LƯNG DA BÒ (TLC)",
+    "Actual": "THẮT LƯNG DA BÒ (TLC)"
+  },
+  {
+    "Name": "BELT 5. Không phải thắt lưng, dây đồng hồ TLxx",
+    "Expected": "TL20",
+    "Actual": "TL20"
+  },
+  {
+    "Name": "BELT 5. Không phải thắt lưng, kính model",
+    "Expected": "6282",
+    "Actual": "6282"
+  }
+]

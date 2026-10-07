@@ -19,3 +19,5 @@ debug_xml/
 # ONNX Runtime profiling traces (dùng để xác minh execution provider — xem
 # OnnxModelSession.VerifyActiveProvider); ghi ra thư mục tạm nhưng phòng khi rơi vãi.
 onnxruntime_profile__*.json
+# Snapshot test: bản kết quả lệch do test ghi ra để so sánh
+*.received.json

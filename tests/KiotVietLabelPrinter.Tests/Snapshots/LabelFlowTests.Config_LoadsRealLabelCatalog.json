@@ -1,0 +1,44 @@
+{
+  "Labels": [
+    {
+      "Code": "FULL",
+      "Name": "Tem đầy đủ",
+      "HandlerType": "FULL",
+      "IsEnabled": true,
+      "RequiresEmployeeCode": false,
+      "UseBarcodeParser": false,
+      "AppendEmployeeCode": false,
+      "TargetNameColumnIndex": 5
+    },
+    {
+      "Code": "BARCODE",
+      "Name": "Tem mã vạch",
+      "HandlerType": "BARCODE",
+      "IsEnabled": true,
+      "RequiresEmployeeCode": true,
+      "UseBarcodeParser": true,
+      "AppendEmployeeCode": true,
+      "TargetNameColumnIndex": 5
+    },
+    {
+      "Code": "TEM_KINH",
+      "Name": "Tem kính",
+      "HandlerType": "GLASSES",
+      "IsEnabled": true,
+      "RequiresEmployeeCode": false,
+      "UseBarcodeParser": false,
+      "AppendEmployeeCode": false,
+      "TargetNameColumnIndex": 5
+    }
+  ],
+  "Enabled": [
+    "FULL",
+    "TEM_KINH",
+    "BARCODE"
+  ],
+  "Tools": [
+    "BG_REMOVE",
+    "IMAGE_COMPRESS",
+    "BARCODE_GENERATE"
+  ]
+}

@@ -1,0 +1,74 @@
+[
+  [
+    "String:Cửa hàng",
+    "String:Nhóm hàng",
+    "String:Mã hàng",
+    "String:Mã vạch",
+    "String:Tên hàng",
+    "String:Tên hàng (thuộc tính)",
+    "String:ĐVT",
+    "String:Số lượng",
+    "String:Giá bán",
+    "String:Mô tả"
+  ],
+  [
+    "String:CH1",
+    "String:Kính",
+    "String:SP001",
+    "String:8930001",
+    "String:Kính mát nam",
+    "String:Kính mát nam MK1234 C1 - Đen",
+    "String:Chiếc",
+    "Numeric:2",
+    "Numeric:150000",
+    "String:mô tả 1"
+  ],
+  [
+    "String:CH1",
+    "String:Kính",
+    "String:00123",
+    "String:0012300",
+    "String:Gọng kính",
+    "String:Gọng kính model 6282 C3",
+    "String:Chiếc",
+    "Numeric:3",
+    "String:250000",
+    "String:"
+  ],
+  [
+    "String:CH1",
+    "String:TL",
+    "String:TL001",
+    "String:",
+    "String:THẮT LƯNG NAM TL10 Mẫu01 - Da bò",
+    "String:THẮT LƯNG NAM TL10 Mẫu01 - Da bò",
+    "String:Chiếc",
+    "Numeric:1",
+    "Numeric:99000",
+    "String:"
+  ],
+  [
+    "String:CH1",
+    "String:TL",
+    "String:TL002",
+    "String:",
+    "String:THẮT LƯNG PUTL01 - Da A",
+    "String:THẮT LƯNG PUTL01 - Da A",
+    "String:Chiếc",
+    "Numeric:1",
+    "Numeric:0",
+    "String:dòng công thức"
+  ],
+  [
+    "String:CH1",
+    "String:Khác",
+    "String:SP999",
+    "String:",
+    "String:Sản phẩm không dấu",
+    "String:San pham 12.5 ABC",
+    "String:Cái",
+    "Numeric:1",
+    "String:1.234.000",
+    "String:"
+  ]
+]

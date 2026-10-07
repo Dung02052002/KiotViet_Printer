@@ -1,0 +1,32 @@
+[
+  {
+    "Mode": "PerProduct",
+    "Code": "SP1",
+    "ok": true,
+    "price": 5
+  },
+  {
+    "Mode": "PerProduct",
+    "Code": "SP2",
+    "ok": false,
+    "price": 0
+  },
+  {
+    "Mode": "PerProduct",
+    "Code": "",
+    "ok": false,
+    "price": 0
+  },
+  {
+    "Mode": "Uniform",
+    "Code": "X",
+    "ok": true,
+    "price": 9
+  },
+  {
+    "Mode": "Keep",
+    "Code": "SP1",
+    "ok": false,
+    "price": 0
+  }
+]

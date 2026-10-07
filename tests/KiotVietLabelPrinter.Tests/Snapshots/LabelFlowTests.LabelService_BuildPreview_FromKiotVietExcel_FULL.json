@@ -1,0 +1,57 @@
+[
+  {
+    "ProductCode": "SP001",
+    "ProductName": "Kính mát nam",
+    "ProductNameWithAttr": "Kính mát nam MK1234 C1 - Đen",
+    "ParsedBarcodeCode": "SP001",
+    "FinalBarcodeCode": "SP001",
+    "Quantity": 2,
+    "Price": 150000,
+    "IsFullLabel": true,
+    "IsBarcodeLabel": false
+  },
+  {
+    "ProductCode": "00123",
+    "ProductName": "Gọng kính",
+    "ProductNameWithAttr": "Gọng kính model 6282 C3",
+    "ParsedBarcodeCode": "00123",
+    "FinalBarcodeCode": "00123",
+    "Quantity": 3,
+    "Price": 250000,
+    "IsFullLabel": true,
+    "IsBarcodeLabel": false
+  },
+  {
+    "ProductCode": "TL001",
+    "ProductName": "THẮT LƯNG NAM TL10 Mẫu01 - Da bò",
+    "ProductNameWithAttr": "THẮT LƯNG NAM TL10 Mẫu01 - Da bò",
+    "ParsedBarcodeCode": "TL001",
+    "FinalBarcodeCode": "TL001",
+    "Quantity": 1,
+    "Price": 99000,
+    "IsFullLabel": true,
+    "IsBarcodeLabel": false
+  },
+  {
+    "ProductCode": "TL002",
+    "ProductName": "THẮT LƯNG PUTL01 - Da A",
+    "ProductNameWithAttr": "THẮT LƯNG PUTL01 - Da A",
+    "ParsedBarcodeCode": "TL002",
+    "FinalBarcodeCode": "TL002",
+    "Quantity": 1,
+    "Price": 0,
+    "IsFullLabel": true,
+    "IsBarcodeLabel": false
+  },
+  {
+    "ProductCode": "SP999",
+    "ProductName": "Sản phẩm không dấu",
+    "ProductNameWithAttr": "San pham 12.5 ABC",
+    "ParsedBarcodeCode": "SP999",
+    "FinalBarcodeCode": "SP999",
+    "Quantity": 1,
+    "Price": 1234000,
+    "IsFullLabel": true,
+    "IsBarcodeLabel": false
+  }
+]

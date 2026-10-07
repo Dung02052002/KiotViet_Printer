@@ -1,0 +1,650 @@
+[
+  {
+    "Name": "MODEL",
+    "ok": false,
+    "code": "",
+    "log": "",
+    "ok1": false,
+    "code1": ""
+  },
+  {
+    "Name": "MODEL-2",
+    "ok": false,
+    "code": "",
+    "log": "",
+    "ok1": false,
+    "code1": ""
+  },
+  {
+    "Name": "MODEL-3",
+    "ok": false,
+    "code": "",
+    "log": "",
+    "ok1": false,
+    "code1": ""
+  },
+  {
+    "Name": "LEFT MK",
+    "ok": false,
+    "code": "",
+    "log": "",
+    "ok1": false,
+    "code1": ""
+  },
+  {
+    "Name": "LEFT MK 2",
+    "ok": false,
+    "code": "",
+    "log": "",
+    "ok1": false,
+    "code1": ""
+  },
+  {
+    "Name": "LEFT MK 3",
+    "ok": false,
+    "code": "",
+    "log": "",
+    "ok1": false,
+    "code1": ""
+  },
+  {
+    "Name": "LEFT MK 4",
+    "ok": false,
+    "code": "",
+    "log": "",
+    "ok1": false,
+    "code1": ""
+  },
+  {
+    "Name": "RIGHT MK",
+    "ok": false,
+    "code": "",
+    "log": "",
+    "ok1": false,
+    "code1": ""
+  },
+  {
+    "Name": "RIGHT MK 2",
+    "ok": false,
+    "code": "",
+    "log": "",
+    "ok1": false,
+    "code1": ""
+  },
+  {
+    "Name": "MK ONLY",
+    "ok": false,
+    "code": "",
+    "log": "",
+    "ok1": false,
+    "code1": ""
+  },
+  {
+    "Name": "K ONLY",
+    "ok": false,
+    "code": "",
+    "log": "",
+    "ok1": false,
+    "code1": ""
+  },
+  {
+    "Name": "PCN",
+    "ok": false,
+    "code": "",
+    "log": "",
+    "ok1": false,
+    "code1": ""
+  },
+  {
+    "Name": "CODE",
+    "ok": false,
+    "code": "",
+    "log": "",
+    "ok1": false,
+    "code1": ""
+  },
+  {
+    "Name": "NUMBER",
+    "ok": false,
+    "code": "",
+    "log": "",
+    "ok1": false,
+    "code1": ""
+  },
+  {
+    "Name": "MÃ",
+    "ok": false,
+    "code": "",
+    "log": "",
+    "ok1": false,
+    "code1": ""
+  },
+  {
+    "Name": "CODE KEYWORD",
+    "ok": false,
+    "code": "",
+    "log": "",
+    "ok1": false,
+    "code1": ""
+  },
+  {
+    "Name": "GLASSES NAME D-CODE",
+    "ok": false,
+    "code": "",
+    "log": "",
+    "ok1": false,
+    "code1": ""
+  },
+  {
+    "Name": "MK WITH CODE PAIR",
+    "ok": false,
+    "code": "",
+    "log": "",
+    "ok1": false,
+    "code1": ""
+  },
+  {
+    "Name": "MODEL WITH TRAILING MK",
+    "ok": false,
+    "code": "",
+    "log": "",
+    "ok1": false,
+    "code1": ""
+  },
+  {
+    "Name": "BELT 1. TL-MAU dính số",
+    "ok": true,
+    "code": "TL10 Mẫu01",
+    "log": "BELT TLxx MẪUxx -> TL10 Mẫu01",
+    "ok1": true,
+    "code1": "TL10 Mẫu01"
+  },
+  {
+    "Name": "BELT 1. TL-MAU không NAM",
+    "ok": true,
+    "code": "TL25 Mẫu03",
+    "log": "BELT TLxx MẪUxx -> TL25 Mẫu03",
+    "ok1": true,
+    "code1": "TL25 Mẫu03"
+  },
+  {
+    "Name": "BELT 1. TL-MAU cách số",
+    "ok": true,
+    "code": "TL14 MẪU 1",
+    "log": "BELT TLxx MẪUxx -> TL14 MẪU 1",
+    "ok1": true,
+    "code1": "TL14 MẪU 1"
+  },
+  {
+    "Name": "BELT 1. TL-MAU 2 chữ số",
+    "ok": true,
+    "code": "TL14 MẪU 47",
+    "log": "BELT TLxx MẪUxx -> TL14 MẪU 47",
+    "ok1": true,
+    "code1": "TL14 MẪU 47"
+  },
+  {
+    "Name": "BELT 1. TL-MAU tiền tố PCN-",
+    "ok": true,
+    "code": "TL15 MẪU 9",
+    "log": "BELT TLxx MẪUxx -> TL15 MẪU 9",
+    "ok1": true,
+    "code1": "TL15 MẪU 9"
+  },
+  {
+    "Name": "BELT 1. TL-MAU thắt lưng nữ",
+    "ok": true,
+    "code": "TL16 MẪU 1",
+    "log": "BELT TLxx MẪUxx -> TL16 MẪU 1",
+    "ok1": true,
+    "code1": "TL16 MẪU 1"
+  },
+  {
+    "Name": "BELT 1. TL-MAU có TLC phía sau",
+    "ok": true,
+    "code": "TL14 MẪU 35",
+    "log": "BELT TLxx MẪUxx -> TL14 MẪU 35",
+    "ok1": true,
+    "code1": "TL14 MẪU 35"
+  },
+  {
+    "Name": "BELT 1. TL-MAU chữ thường",
+    "ok": true,
+    "code": "tl10 mẫu01",
+    "log": "BELT TLxx MẪUxx -> tl10 mẫu01",
+    "ok1": true,
+    "code1": "tl10 mẫu01"
+  },
+  {
+    "Name": "BELT 1. TL-MAU không dấu",
+    "ok": true,
+    "code": "TL10 MAU 01",
+    "log": "BELT TLxx MẪUxx -> TL10 MAU 01",
+    "ok1": true,
+    "code1": "TL10 MAU 01"
+  },
+  {
+    "Name": "BELT 1. TL-MAU khoảng trắng đầu/cuối",
+    "ok": true,
+    "code": "TL25 Mẫu03",
+    "log": "BELT TLxx MẪUxx -> TL25 Mẫu03",
+    "ok1": true,
+    "code1": "TL25 Mẫu03"
+  },
+  {
+    "Name": "BELT 1. TL - MẪU (gạch ngang), MẪU 1",
+    "ok": true,
+    "code": "TL12-MẪU 1",
+    "log": "BELT TLxx - MẪUxx -> TL12-MẪU 1",
+    "ok1": true,
+    "code1": "TL12-MẪU 1"
+  },
+  {
+    "Name": "BELT 1. TL - MẪU (gạch ngang), MẪU 4 khác MẪU 1",
+    "ok": true,
+    "code": "TL12-MẪU 4",
+    "log": "BELT TLxx - MẪUxx -> TL12-MẪU 4",
+    "ok1": true,
+    "code1": "TL12-MẪU 4"
+  },
+  {
+    "Name": "BELT 1. TL - MẪU (gạch ngang), 2 chữ số",
+    "ok": true,
+    "code": "TL12-MẪU 12",
+    "log": "BELT TLxx - MẪUxx -> TL12-MẪU 12",
+    "ok1": true,
+    "code1": "TL12-MẪU 12"
+  },
+  {
+    "Name": "BELT 1. TL-Mẫu dính gạch, chữ thường",
+    "ok": true,
+    "code": "TL12-Mẫu 3",
+    "log": "BELT TLxx - MẪUxx -> TL12-Mẫu 3",
+    "ok1": true,
+    "code1": "TL12-Mẫu 3"
+  },
+  {
+    "Name": "BELT 1. TL -Mẫu dính số",
+    "ok": true,
+    "code": "TL12-Mẫu05",
+    "log": "BELT TLxx - MẪUxx -> TL12-Mẫu05",
+    "ok1": true,
+    "code1": "TL12-Mẫu05"
+  },
+  {
+    "Name": "BELT 1. Có cả TLxx Mẫuxx và TLxx - Mẫuxx thì lấy dạng khoảng trắng",
+    "ok": true,
+    "code": "TL10 Mẫu01",
+    "log": "BELT TLxx MẪUxx -> TL10 Mẫu01",
+    "ok1": true,
+    "code1": "TL10 Mẫu01"
+  },
+  {
+    "Name": "BELT 1. TL-MAU thắng PUTL",
+    "ok": true,
+    "code": "TL10 Mẫu02",
+    "log": "BELT TLxx MẪUxx -> TL10 Mẫu02",
+    "ok1": true,
+    "code1": "TL10 Mẫu02"
+  },
+  {
+    "Name": "BELT 1. TL-MAU có model/mã khác",
+    "ok": true,
+    "code": "TL10 Mẫu05",
+    "log": "BELT TLxx MẪUxx -> TL10 Mẫu05",
+    "ok1": true,
+    "code1": "TL10 Mẫu05"
+  },
+  {
+    "Name": "BELT 2. PUTL có mô tả",
+    "ok": true,
+    "code": "PUTL01",
+    "log": "BELT PUTLxx -> PUTL01",
+    "ok1": true,
+    "code1": "PUTL01"
+  },
+  {
+    "Name": "BELT 2. PUTL thắt lưng nam",
+    "ok": true,
+    "code": "PUTL25",
+    "log": "BELT PUTLxx -> PUTL25",
+    "ok1": true,
+    "code1": "PUTL25"
+  },
+  {
+    "Name": "BELT 2. PUTL thắng TLxx",
+    "ok": true,
+    "code": "PUTL05",
+    "log": "BELT PUTLxx -> PUTL05",
+    "ok1": true,
+    "code1": "PUTL05"
+  },
+  {
+    "Name": "BELT 2. PUTL không bị hiểu là TL Mẫu",
+    "ok": true,
+    "code": "PUTL01",
+    "log": "BELT PUTLxx -> PUTL01",
+    "ok1": true,
+    "code1": "PUTL01"
+  },
+  {
+    "Name": "BELT 3. TL có XIÊN",
+    "ok": true,
+    "code": "TL10",
+    "log": "BELT TLxx -> TL10",
+    "ok1": true,
+    "code1": "TL10"
+  },
+  {
+    "Name": "BELT 3. TL có Da B",
+    "ok": true,
+    "code": "TL25",
+    "log": "BELT TLxx -> TL25",
+    "ok1": true,
+    "code1": "TL25"
+  },
+  {
+    "Name": "BELT 3. TL tiền tố PCN-",
+    "ok": true,
+    "code": "TL15",
+    "log": "BELT TLxx -> TL15",
+    "ok1": true,
+    "code1": "TL15"
+  },
+  {
+    "Name": "BELT 3. TL - VUÔNG (gạch ngang nhưng không phải MẪU)",
+    "ok": true,
+    "code": "TL12",
+    "log": "BELT TLxx -> TL12",
+    "ok1": true,
+    "code1": "TL12"
+  },
+  {
+    "Name": "BELT 3. TL có TLC phía sau",
+    "ok": true,
+    "code": "TL10",
+    "log": "BELT TLxx -> TL10",
+    "ok1": true,
+    "code1": "TL10"
+  },
+  {
+    "Name": "BELT 4. Không mã, lấy toàn bộ Tên hàng (cột E)",
+    "ok": true,
+    "code": "THẮT LƯNG NAM LOẠI XIÊN",
+    "log": "BELT không có mã, lấy toàn bộ tên -> THẮT LƯNG NAM LOẠI XIÊN",
+    "ok1": true,
+    "code1": "THẮT LƯNG NAM LOẠI XIÊN - Da A (Chiếc)"
+  },
+  {
+    "Name": "BELT 4. Không mã, cột E trống thì lấy cả tên đang có",
+    "ok": true,
+    "code": "THẮT LƯNG DA BÒ (TLC)",
+    "log": "BELT không có mã, lấy toàn bộ tên -> THẮT LƯNG DA BÒ (TLC)",
+    "ok1": true,
+    "code1": "THẮT LƯNG DA BÒ (TLC)"
+  },
+  {
+    "Name": "BELT 5. Không phải thắt lưng, dây đồng hồ TLxx",
+    "ok": false,
+    "code": "",
+    "log": "",
+    "ok1": false,
+    "code1": ""
+  },
+  {
+    "Name": "BELT 5. Không phải thắt lưng, kính model",
+    "ok": false,
+    "code": "",
+    "log": "",
+    "ok1": false,
+    "code1": ""
+  },
+  {
+    "Name": "BELT 1. TL-MAU dính số",
+    "ok": true,
+    "code": "TL10 Mẫu01",
+    "log": "BELT TLxx MẪUxx -> TL10 Mẫu01",
+    "ok1": true,
+    "code1": "TL10 Mẫu01"
+  },
+  {
+    "Name": "BELT 1. TL-MAU không NAM",
+    "ok": true,
+    "code": "TL25 Mẫu03",
+    "log": "BELT TLxx MẪUxx -> TL25 Mẫu03",
+    "ok1": true,
+    "code1": "TL25 Mẫu03"
+  },
+  {
+    "Name": "BELT 1. TL-MAU cách số",
+    "ok": true,
+    "code": "TL14 MẪU 1",
+    "log": "BELT TLxx MẪUxx -> TL14 MẪU 1",
+    "ok1": true,
+    "code1": "TL14 MẪU 1"
+  },
+  {
+    "Name": "BELT 1. TL-MAU 2 chữ số",
+    "ok": true,
+    "code": "TL14 MẪU 47",
+    "log": "BELT TLxx MẪUxx -> TL14 MẪU 47",
+    "ok1": true,
+    "code1": "TL14 MẪU 47"
+  },
+  {
+    "Name": "BELT 1. TL-MAU tiền tố PCN-",
+    "ok": true,
+    "code": "TL15 MẪU 9",
+    "log": "BELT TLxx MẪUxx -> TL15 MẪU 9",
+    "ok1": true,
+    "code1": "TL15 MẪU 9"
+  },
+  {
+    "Name": "BELT 1. TL-MAU thắt lưng nữ",
+    "ok": true,
+    "code": "TL16 MẪU 1",
+    "log": "BELT TLxx MẪUxx -> TL16 MẪU 1",
+    "ok1": true,
+    "code1": "TL16 MẪU 1"
+  },
+  {
+    "Name": "BELT 1. TL-MAU có TLC phía sau",
+    "ok": true,
+    "code": "TL14 MẪU 35",
+    "log": "BELT TLxx MẪUxx -> TL14 MẪU 35",
+    "ok1": true,
+    "code1": "TL14 MẪU 35"
+  },
+  {
+    "Name": "BELT 1. TL-MAU chữ thường",
+    "ok": true,
+    "code": "tl10 mẫu01",
+    "log": "BELT TLxx MẪUxx -> tl10 mẫu01",
+    "ok1": true,
+    "code1": "tl10 mẫu01"
+  },
+  {
+    "Name": "BELT 1. TL-MAU không dấu",
+    "ok": true,
+    "code": "TL10 MAU 01",
+    "log": "BELT TLxx MẪUxx -> TL10 MAU 01",
+    "ok1": true,
+    "code1": "TL10 MAU 01"
+  },
+  {
+    "Name": "BELT 1. TL-MAU khoảng trắng đầu/cuối",
+    "ok": true,
+    "code": "TL25 Mẫu03",
+    "log": "BELT TLxx MẪUxx -> TL25 Mẫu03",
+    "ok1": true,
+    "code1": "TL25 Mẫu03"
+  },
+  {
+    "Name": "BELT 1. TL - MẪU (gạch ngang), MẪU 1",
+    "ok": true,
+    "code": "TL12-MẪU 1",
+    "log": "BELT TLxx - MẪUxx -> TL12-MẪU 1",
+    "ok1": true,
+    "code1": "TL12-MẪU 1"
+  },
+  {
+    "Name": "BELT 1. TL - MẪU (gạch ngang), MẪU 4 khác MẪU 1",
+    "ok": true,
+    "code": "TL12-MẪU 4",
+    "log": "BELT TLxx - MẪUxx -> TL12-MẪU 4",
+    "ok1": true,
+    "code1": "TL12-MẪU 4"
+  },
+  {
+    "Name": "BELT 1. TL - MẪU (gạch ngang), 2 chữ số",
+    "ok": true,
+    "code": "TL12-MẪU 12",
+    "log": "BELT TLxx - MẪUxx -> TL12-MẪU 12",
+    "ok1": true,
+    "code1": "TL12-MẪU 12"
+  },
+  {
+    "Name": "BELT 1. TL-Mẫu dính gạch, chữ thường",
+    "ok": true,
+    "code": "TL12-Mẫu 3",
+    "log": "BELT TLxx - MẪUxx -> TL12-Mẫu 3",
+    "ok1": true,
+    "code1": "TL12-Mẫu 3"
+  },
+  {
+    "Name": "BELT 1. TL -Mẫu dính số",
+    "ok": true,
+    "code": "TL12-Mẫu05",
+    "log": "BELT TLxx - MẪUxx -> TL12-Mẫu05",
+    "ok1": true,
+    "code1": "TL12-Mẫu05"
+  },
+  {
+    "Name": "BELT 1. Có cả TLxx Mẫuxx và TLxx - Mẫuxx thì lấy dạng khoảng trắng",
+    "ok": true,
+    "code": "TL10 Mẫu01",
+    "log": "BELT TLxx MẪUxx -> TL10 Mẫu01",
+    "ok1": true,
+    "code1": "TL10 Mẫu01"
+  },
+  {
+    "Name": "BELT 1. TL-MAU thắng PUTL",
+    "ok": true,
+    "code": "TL10 Mẫu02",
+    "log": "BELT TLxx MẪUxx -> TL10 Mẫu02",
+    "ok1": true,
+    "code1": "TL10 Mẫu02"
+  },
+  {
+    "Name": "BELT 1. TL-MAU có model/mã khác",
+    "ok": true,
+    "code": "TL10 Mẫu05",
+    "log": "BELT TLxx MẪUxx -> TL10 Mẫu05",
+    "ok1": true,
+    "code1": "TL10 Mẫu05"
+  },
+  {
+    "Name": "BELT 2. PUTL có mô tả",
+    "ok": true,
+    "code": "PUTL01",
+    "log": "BELT PUTLxx -> PUTL01",
+    "ok1": true,
+    "code1": "PUTL01"
+  },
+  {
+    "Name": "BELT 2. PUTL thắt lưng nam",
+    "ok": true,
+    "code": "PUTL25",
+    "log": "BELT PUTLxx -> PUTL25",
+    "ok1": true,
+    "code1": "PUTL25"
+  },
+  {
+    "Name": "BELT 2. PUTL thắng TLxx",
+    "ok": true,
+    "code": "PUTL05",
+    "log": "BELT PUTLxx -> PUTL05",
+    "ok1": true,
+    "code1": "PUTL05"
+  },
+  {
+    "Name": "BELT 2. PUTL không bị hiểu là TL Mẫu",
+    "ok": true,
+    "code": "PUTL01",
+    "log": "BELT PUTLxx -> PUTL01",
+    "ok1": true,
+    "code1": "PUTL01"
+  },
+  {
+    "Name": "BELT 3. TL có XIÊN",
+    "ok": true,
+    "code": "TL10",
+    "log": "BELT TLxx -> TL10",
+    "ok1": true,
+    "code1": "TL10"
+  },
+  {
+    "Name": "BELT 3. TL có Da B",
+    "ok": true,
+    "code": "TL25",
+    "log": "BELT TLxx -> TL25",
+    "ok1": true,
+    "code1": "TL25"
+  },
+  {
+    "Name": "BELT 3. TL tiền tố PCN-",
+    "ok": true,
+    "code": "TL15",
+    "log": "BELT TLxx -> TL15",
+    "ok1": true,
+    "code1": "TL15"
+  },
+  {
+    "Name": "BELT 3. TL - VUÔNG (gạch ngang nhưng không phải MẪU)",
+    "ok": true,
+    "code": "TL12",
+    "log": "BELT TLxx -> TL12",
+    "ok1": true,
+    "code1": "TL12"
+  },
+  {
+    "Name": "BELT 3. TL có TLC phía sau",
+    "ok": true,
+    "code": "TL10",
+    "log": "BELT TLxx -> TL10",
+    "ok1": true,
+    "code1": "TL10"
+  },
+  {
+    "Name": "BELT 4. Không mã, lấy toàn bộ Tên hàng (cột E)",
+    "ok": true,
+    "code": "THẮT LƯNG NAM LOẠI XIÊN",
+    "log": "BELT không có mã, lấy toàn bộ tên -> THẮT LƯNG NAM LOẠI XIÊN",
+    "ok1": true,
+    "code1": "THẮT LƯNG NAM LOẠI XIÊN - Da A (Chiếc)"
+  },
+  {
+    "Name": "BELT 4. Không mã, cột E trống thì lấy cả tên đang có",
+    "ok": true,
+    "code": "THẮT LƯNG DA BÒ (TLC)",
+    "log": "BELT không có mã, lấy toàn bộ tên -> THẮT LƯNG DA BÒ (TLC)",
+    "ok1": true,
+    "code1": "THẮT LƯNG DA BÒ (TLC)"
+  },
+  {
+    "Name": "BELT 5. Không phải thắt lưng, dây đồng hồ TLxx",
+    "ok": false,
+    "code": "",
+    "log": "",
+    "ok1": false,
+    "code1": ""
+  },
+  {
+    "Name": "BELT 5. Không phải thắt lưng, kính model",
+    "ok": false,
+    "code": "",
+    "log": "",
+    "ok1": false,
+    "code1": ""
+  }
+]

@@ -1,0 +1,1351 @@
+[
+  {
+    "Name": "MODEL",
+    "Input": "MODEL 6282",
+    "Expected": "6282",
+    "Actual": "6282",
+    "Pass": true,
+    "RuleName": "ModelRule",
+    "NormalizedText": "MODEL 6282",
+    "Tokens": [
+      "0:Model:MODEL@0-4",
+      "1:Code:6282@6-9"
+    ],
+    "RuleTrace": [
+      "✔ ModelRule"
+    ],
+    "Success": true
+  },
+  {
+    "Name": "MODEL-2",
+    "Input": "MODEL P850-01",
+    "Expected": "P850-01",
+    "Actual": "P850-01",
+    "Pass": true,
+    "RuleName": "ModelRule",
+    "NormalizedText": "MODEL P850-01",
+    "Tokens": [
+      "0:Model:MODEL@0-4",
+      "1:Code:P850-01@6-12"
+    ],
+    "RuleTrace": [
+      "✔ ModelRule"
+    ],
+    "Success": true
+  },
+  {
+    "Name": "MODEL-3",
+    "Input": "model 3162p-01 (MK293 BLACK BROWN)",
+    "Expected": "3162P-01",
+    "Actual": "3162P-01",
+    "Pass": true,
+    "RuleName": "ModelRule",
+    "NormalizedText": "model 3162p-01 (MK293 BLACK BROWN)",
+    "Tokens": [
+      "0:Model:model@0-4",
+      "1:Code:3162p-01@6-13",
+      "2:Word:(@15-15",
+      "3:Mk:MK293@16-20",
+      "4:Color:BLACK@22-26",
+      "5:Color:BROWN@28-32",
+      "6:Word:)@33-33"
+    ],
+    "RuleTrace": [
+      "✔ ModelRule"
+    ],
+    "Success": true
+  },
+  {
+    "Name": "LEFT MK",
+    "Input": "2113-MK108",
+    "Expected": "2113",
+    "Actual": "2113",
+    "Pass": true,
+    "RuleName": "LeftOfMkRule",
+    "NormalizedText": "2113-MK108",
+    "Tokens": [
+      "0:Code:2113@0-3",
+      "1:Separator:-@4-4",
+      "2:Mk:MK108@5-9"
+    ],
+    "RuleTrace": [
+      "✘ ModelRule",
+      "✘ KeywordRule",
+      "✔ LeftOfMkRule"
+    ],
+    "Success": true
+  },
+  {
+    "Name": "LEFT MK 2",
+    "Input": "RD1007-MK228",
+    "Expected": "RD1007",
+    "Actual": "RD1007",
+    "Pass": true,
+    "RuleName": "LeftOfMkRule",
+    "NormalizedText": "RD1007-MK228",
+    "Tokens": [
+      "0:Code:RD1007@0-5",
+      "1:Separator:-@6-6",
+      "2:Mk:MK228@7-11"
+    ],
+    "RuleTrace": [
+      "✘ ModelRule",
+      "✘ KeywordRule",
+      "✔ LeftOfMkRule"
+    ],
+    "Success": true
+  },
+  {
+    "Name": "LEFT MK 3",
+    "Input": "6233/66503-MK221",
+    "Expected": "6233/66503",
+    "Actual": "6233/66503",
+    "Pass": true,
+    "RuleName": "LeftOfMkRule",
+    "NormalizedText": "6233/66503-MK221",
+    "Tokens": [
+      "0:Code:6233/66503@0-9",
+      "1:Separator:-@10-10",
+      "2:Mk:MK221@11-15"
+    ],
+    "RuleTrace": [
+      "✘ ModelRule",
+      "✘ KeywordRule",
+      "✔ LeftOfMkRule"
+    ],
+    "Success": true
+  },
+  {
+    "Name": "LEFT MK 4",
+    "Input": "6250-2-MK112",
+    "Expected": "6250-2",
+    "Actual": "6250-2",
+    "Pass": true,
+    "RuleName": "LeftOfMkRule",
+    "NormalizedText": "6250-2-MK112",
+    "Tokens": [
+      "0:Code:6250-2@0-5",
+      "1:Separator:-@6-6",
+      "2:Mk:MK112@7-11"
+    ],
+    "RuleTrace": [
+      "✘ ModelRule",
+      "✘ KeywordRule",
+      "✔ LeftOfMkRule"
+    ],
+    "Success": true
+  },
+  {
+    "Name": "RIGHT MK",
+    "Input": "MK109-P8315",
+    "Expected": "P8315",
+    "Actual": "P8315",
+    "Pass": true,
+    "RuleName": "RightOfMkRule",
+    "NormalizedText": "MK109-P8315",
+    "Tokens": [
+      "0:Mk:MK109@0-4",
+      "1:Separator:-@5-5",
+      "2:Code:P8315@6-10"
+    ],
+    "RuleTrace": [
+      "✘ ModelRule",
+      "✘ KeywordRule",
+      "✘ LeftOfMkRule",
+      "✔ RightOfMkRule"
+    ],
+    "Success": true
+  },
+  {
+    "Name": "RIGHT MK 2",
+    "Input": "MK061-AB102",
+    "Expected": "AB102",
+    "Actual": "AB102",
+    "Pass": true,
+    "RuleName": "RightOfMkRule",
+    "NormalizedText": "MK061-AB102",
+    "Tokens": [
+      "0:Mk:MK061@0-4",
+      "1:Separator:-@5-5",
+      "2:Code:AB102@6-10"
+    ],
+    "RuleTrace": [
+      "✘ ModelRule",
+      "✘ KeywordRule",
+      "✘ LeftOfMkRule",
+      "✔ RightOfMkRule"
+    ],
+    "Success": true
+  },
+  {
+    "Name": "MK ONLY",
+    "Input": "MK081",
+    "Expected": "MK081",
+    "Actual": "MK081",
+    "Pass": true,
+    "RuleName": "MkOnlyRule",
+    "NormalizedText": "MK081",
+    "Tokens": [
+      "0:Mk:MK081@0-4"
+    ],
+    "RuleTrace": [
+      "✘ ModelRule",
+      "✘ KeywordRule",
+      "✘ LeftOfMkRule",
+      "✘ RightOfMkRule",
+      "✔ MkOnlyRule"
+    ],
+    "Success": true
+  },
+  {
+    "Name": "K ONLY",
+    "Input": "K020",
+    "Expected": "K020",
+    "Actual": "K020",
+    "Pass": true,
+    "RuleName": "KOnlyRule",
+    "NormalizedText": "K020",
+    "Tokens": [
+      "0:K:K020@0-3"
+    ],
+    "RuleTrace": [
+      "✘ ModelRule",
+      "✘ KeywordRule",
+      "✘ LeftOfMkRule",
+      "✘ RightOfMkRule",
+      "✘ MkOnlyRule",
+      "✔ KOnlyRule"
+    ],
+    "Success": true
+  },
+  {
+    "Name": "PCN",
+    "Input": "PCN15",
+    "Expected": "PCN15",
+    "Actual": "PCN15",
+    "Pass": true,
+    "RuleName": "PcnRule",
+    "NormalizedText": "PCN15",
+    "Tokens": [
+      "0:Pcn:PCN15@0-4"
+    ],
+    "RuleTrace": [
+      "✘ ModelRule",
+      "✘ KeywordRule",
+      "✘ LeftOfMkRule",
+      "✘ RightOfMkRule",
+      "✘ MkOnlyRule",
+      "✘ KOnlyRule",
+      "✔ PcnRule"
+    ],
+    "Success": true
+  },
+  {
+    "Name": "CODE",
+    "Input": "XY35096",
+    "Expected": "XY35096",
+    "Actual": "XY35096",
+    "Pass": true,
+    "RuleName": "FirstCodeRule",
+    "NormalizedText": "XY35096",
+    "Tokens": [
+      "0:Code:XY35096@0-6"
+    ],
+    "RuleTrace": [
+      "✘ ModelRule",
+      "✘ KeywordRule",
+      "✘ LeftOfMkRule",
+      "✘ RightOfMkRule",
+      "✘ MkOnlyRule",
+      "✘ KOnlyRule",
+      "✘ PcnRule",
+      "✘ MuHatRule",
+      "✔ FirstCodeRule"
+    ],
+    "Success": true
+  },
+  {
+    "Name": "NUMBER",
+    "Input": "2113",
+    "Expected": "2113",
+    "Actual": "2113",
+    "Pass": true,
+    "RuleName": "FirstCodeRule",
+    "NormalizedText": "2113",
+    "Tokens": [
+      "0:Code:2113@0-3"
+    ],
+    "RuleTrace": [
+      "✘ ModelRule",
+      "✘ KeywordRule",
+      "✘ LeftOfMkRule",
+      "✘ RightOfMkRule",
+      "✘ MkOnlyRule",
+      "✘ KOnlyRule",
+      "✘ PcnRule",
+      "✘ MuHatRule",
+      "✔ FirstCodeRule"
+    ],
+    "Success": true
+  },
+  {
+    "Name": "MÃ",
+    "Input": "MÃ P8315",
+    "Expected": "P8315",
+    "Actual": "P8315",
+    "Pass": true,
+    "RuleName": "KeywordRule",
+    "NormalizedText": "MÃ P8315",
+    "Tokens": [
+      "0:Keyword:MÃ@0-1",
+      "1:Code:P8315@3-7"
+    ],
+    "RuleTrace": [
+      "✘ ModelRule",
+      "✔ KeywordRule"
+    ],
+    "Success": true
+  },
+  {
+    "Name": "CODE KEYWORD",
+    "Input": "CODE AB102",
+    "Expected": "AB102",
+    "Actual": "AB102",
+    "Pass": true,
+    "RuleName": "KeywordRule",
+    "NormalizedText": "CODE AB102",
+    "Tokens": [
+      "0:Keyword:CODE@0-3",
+      "1:Code:AB102@5-9"
+    ],
+    "RuleTrace": [
+      "✘ ModelRule",
+      "✔ KeywordRule"
+    ],
+    "Success": true
+  },
+  {
+    "Name": "GLASSES NAME D-CODE",
+    "Input": "KÍNH PUCINI D2823-K026 - WHITE (Chiếc)",
+    "Expected": "D2823",
+    "Actual": "D2823",
+    "Pass": true,
+    "RuleName": "FirstCodeRule",
+    "NormalizedText": "KÍNH PUCINI D2823-K026 - WHITE (Chiếc)",
+    "Tokens": [
+      "0:Word:KÍNH@0-3",
+      "1:Brand:PUCINI@5-10",
+      "2:Code:D2823-K026@12-21",
+      "3:Separator:-@23-23",
+      "4:Color:WHITE@25-29",
+      "5:Word:(@31-31",
+      "6:Word:Chiếc@32-36",
+      "7:Word:)@37-37"
+    ],
+    "RuleTrace": [
+      "✘ ModelRule",
+      "✘ KeywordRule",
+      "✘ LeftOfMkRule",
+      "✘ RightOfMkRule",
+      "✘ MkOnlyRule",
+      "✘ KOnlyRule",
+      "✘ PcnRule",
+      "✘ MuHatRule",
+      "✔ FirstCodeRule"
+    ],
+    "Success": true
+  },
+  {
+    "Name": "MK WITH CODE PAIR",
+    "Input": "KÍNH PUCINI MK101 - H008 X H019 - BLACK - PCN2 (Chiếc)",
+    "Expected": "H008xH019",
+    "Actual": "H008xH019",
+    "Pass": true,
+    "RuleName": "RightOfMkRule",
+    "NormalizedText": "KÍNH PUCINI MK101 - H008 X H019 - BLACK - PCN2 (Chiếc)",
+    "Tokens": [
+      "0:Word:KÍNH@0-3",
+      "1:Brand:PUCINI@5-10",
+      "2:Mk:MK101@12-16",
+      "3:Separator:-@18-18",
+      "4:Code:H008@20-23",
+      "5:Word:X@25-25",
+      "6:Code:H019@27-30",
+      "7:Separator:-@32-32",
+      "8:Color:BLACK@34-38",
+      "9:Separator:-@40-40",
+      "10:Pcn:PCN2@42-45",
+      "11:Word:(@47-47",
+      "12:Word:Chiếc@48-52",
+      "13:Word:)@53-53"
+    ],
+    "RuleTrace": [
+      "✘ ModelRule",
+      "✘ KeywordRule",
+      "✘ LeftOfMkRule",
+      "✔ RightOfMkRule"
+    ],
+    "Success": true
+  },
+  {
+    "Name": "MODEL WITH TRAILING MK",
+    "Input": "Kính râm, gọng bằng nhựa + sắt, mắt kính bằng mica, không phải kính thuốc, kt(16*16*7)cm(+/-10%), model 6215P, nhãn hiệu PUCINI, mới 100% - ( MK262 GREY )",
+    "Expected": "6215P",
+    "Actual": "6215P",
+    "Pass": true,
+    "RuleName": "ModelRule",
+    "NormalizedText": "Kính râm, gọng bằng nhựa + sắt, mắt kính bằng mica, không phải kính thuốc, kt(16*16*7)cm(+/-10%), model 6215P, nhãn hiệu PUCINI, mới 100% - ( MK262 GREY )",
+    "Tokens": [
+      "0:Word:Kính@0-3",
+      "1:Word:râm@5-7",
+      "2:Word:,@8-8",
+      "3:Word:gọng@10-13",
+      "4:Word:bằng@15-18",
+      "5:Word:nhựa@20-23",
+      "6:Word:+@25-25",
+      "7:Word:sắt@27-29",
+      "8:Word:,@30-30",
+      "9:Word:mắt@32-34",
+      "10:Word:kính@36-39",
+      "11:Word:bằng@41-44",
+      "12:Word:mica@46-49",
+      "13:Word:,@50-50",
+      "14:Word:không@52-56",
+      "15:Word:phải@58-61",
+      "16:Word:kính@63-66",
+      "17:Word:thuốc@68-72",
+      "18:Word:,@73-73",
+      "19:Word:kt@75-76",
+      "20:Word:(@77-77",
+      "21:Word:16*16*7@78-84",
+      "22:Word:)@85-85",
+      "23:Word:cm@86-87",
+      "24:Word:(@88-88",
+      "25:Word:+/-10%@89-94",
+      "26:Word:)@95-95",
+      "27:Word:,@96-96",
+      "28:Model:model@98-102",
+      "29:Code:6215P@104-108",
+      "30:Word:,@109-109",
+      "31:Word:nhãn@111-114",
+      "32:Word:hiệu@116-119",
+      "33:Brand:PUCINI@121-126",
+      "34:Word:,@127-127",
+      "35:Word:mới@129-131",
+      "36:Word:100%@133-136",
+      "37:Separator:-@138-138",
+      "38:Word:(@140-140",
+      "39:Mk:MK262@142-146",
+      "40:Color:GREY@148-151",
+      "41:Word:)@153-153"
+    ],
+    "RuleTrace": [
+      "✔ ModelRule"
+    ],
+    "Success": true
+  },
+  {
+    "Name": "BELT 1. TL-MAU dính số",
+    "Input": "THẮT LƯNG NAM TL10 Mẫu01 - Da bò",
+    "Expected": "TL10 Mẫu01",
+    "Actual": "TL10 Mẫu01",
+    "Pass": true,
+    "RuleName": "BeltRule",
+    "NormalizedText": "THẮT LƯNG NAM TL10 Mẫu01 - Da bò",
+    "Tokens": [],
+    "RuleTrace": [
+      "✔ BeltRule"
+    ],
+    "Success": true
+  },
+  {
+    "Name": "BELT 1. TL-MAU không NAM",
+    "Input": "THẮT LƯNG TL25 Mẫu03",
+    "Expected": "TL25 Mẫu03",
+    "Actual": "TL25 Mẫu03",
+    "Pass": true,
+    "RuleName": "BeltRule",
+    "NormalizedText": "THẮT LƯNG TL25 Mẫu03",
+    "Tokens": [],
+    "RuleTrace": [
+      "✔ BeltRule"
+    ],
+    "Success": true
+  },
+  {
+    "Name": "BELT 1. TL-MAU cách số",
+    "Input": "THẮT LƯNG NAM TL14 MẪU 1 - VUÔNG (TLC)",
+    "Expected": "TL14 MẪU 1",
+    "Actual": "TL14 MẪU 1",
+    "Pass": true,
+    "RuleName": "BeltRule",
+    "NormalizedText": "THẮT LƯNG NAM TL14 MẪU 1 - VUÔNG (TLC)",
+    "Tokens": [],
+    "RuleTrace": [
+      "✔ BeltRule"
+    ],
+    "Success": true
+  },
+  {
+    "Name": "BELT 1. TL-MAU 2 chữ số",
+    "Input": "THẮT LƯNG NAM TL14 MẪU 47 - VUÔNG (TLC)",
+    "Expected": "TL14 MẪU 47",
+    "Actual": "TL14 MẪU 47",
+    "Pass": true,
+    "RuleName": "BeltRule",
+    "NormalizedText": "THẮT LƯNG NAM TL14 MẪU 47 - VUÔNG (TLC)",
+    "Tokens": [],
+    "RuleTrace": [
+      "✔ BeltRule"
+    ],
+    "Success": true
+  },
+  {
+    "Name": "BELT 1. TL-MAU tiền tố PCN-",
+    "Input": "THẮT LƯNG NAM PCN-TL15 MẪU 9 - VUÔNG (TLC)",
+    "Expected": "TL15 MẪU 9",
+    "Actual": "TL15 MẪU 9",
+    "Pass": true,
+    "RuleName": "BeltRule",
+    "NormalizedText": "THẮT LƯNG NAM PCN-TL15 MẪU 9 - VUÔNG (TLC)",
+    "Tokens": [],
+    "RuleTrace": [
+      "✔ BeltRule"
+    ],
+    "Success": true
+  },
+  {
+    "Name": "BELT 1. TL-MAU thắt lưng nữ",
+    "Input": "THẮT LƯNG NỮ TL16 MẪU 1 - VUÔNG - Da A (TLC)",
+    "Expected": "TL16 MẪU 1",
+    "Actual": "TL16 MẪU 1",
+    "Pass": true,
+    "RuleName": "BeltRule",
+    "NormalizedText": "THẮT LƯNG NỮ TL16 MẪU 1 - VUÔNG - Da A (TLC)",
+    "Tokens": [],
+    "RuleTrace": [
+      "✔ BeltRule"
+    ],
+    "Success": true
+  },
+  {
+    "Name": "BELT 1. TL-MAU có TLC phía sau",
+    "Input": "THẮT LƯNG NAM TL14 MẪU 35 - TLC (Chiếc)",
+    "Expected": "TL14 MẪU 35",
+    "Actual": "TL14 MẪU 35",
+    "Pass": true,
+    "RuleName": "BeltRule",
+    "NormalizedText": "THẮT LƯNG NAM TL14 MẪU 35 - TLC (Chiếc)",
+    "Tokens": [],
+    "RuleTrace": [
+      "✔ BeltRule"
+    ],
+    "Success": true
+  },
+  {
+    "Name": "BELT 1. TL-MAU chữ thường",
+    "Input": "thắt lưng nam tl10 mẫu01 - da bò",
+    "Expected": "tl10 mẫu01",
+    "Actual": "tl10 mẫu01",
+    "Pass": true,
+    "RuleName": "BeltRule",
+    "NormalizedText": "thắt lưng nam tl10 mẫu01 - da bò",
+    "Tokens": [],
+    "RuleTrace": [
+      "✔ BeltRule"
+    ],
+    "Success": true
+  },
+  {
+    "Name": "BELT 1. TL-MAU không dấu",
+    "Input": "THAT LUNG NAM TL10 MAU 01",
+    "Expected": "TL10 MAU 01",
+    "Actual": "TL10 MAU 01",
+    "Pass": true,
+    "RuleName": "BeltRule",
+    "NormalizedText": "THAT LUNG NAM TL10 MAU 01",
+    "Tokens": [],
+    "RuleTrace": [
+      "✔ BeltRule"
+    ],
+    "Success": true
+  },
+  {
+    "Name": "BELT 1. TL-MAU khoảng trắng đầu/cuối",
+    "Input": "   THẮT LƯNG TL25 Mẫu03   ",
+    "Expected": "TL25 Mẫu03",
+    "Actual": "TL25 Mẫu03",
+    "Pass": true,
+    "RuleName": "BeltRule",
+    "NormalizedText": "THẮT LƯNG TL25 Mẫu03",
+    "Tokens": [],
+    "RuleTrace": [
+      "✔ BeltRule"
+    ],
+    "Success": true
+  },
+  {
+    "Name": "BELT 1. TL - MẪU (gạch ngang), MẪU 1",
+    "Input": "THẮT LƯNG NAM TL12 - MẪU 1 (CHIẾC)",
+    "Expected": "TL12-MẪU 1",
+    "Actual": "TL12-MẪU 1",
+    "Pass": true,
+    "RuleName": "BeltRule",
+    "NormalizedText": "THẮT LƯNG NAM TL12 - MẪU 1 (CHIẾC)",
+    "Tokens": [],
+    "RuleTrace": [
+      "✔ BeltRule"
+    ],
+    "Success": true
+  },
+  {
+    "Name": "BELT 1. TL - MẪU (gạch ngang), MẪU 4 khác MẪU 1",
+    "Input": "THẮT LƯNG NAM TL12 - MẪU 4 (CHIẾC)",
+    "Expected": "TL12-MẪU 4",
+    "Actual": "TL12-MẪU 4",
+    "Pass": true,
+    "RuleName": "BeltRule",
+    "NormalizedText": "THẮT LƯNG NAM TL12 - MẪU 4 (CHIẾC)",
+    "Tokens": [],
+    "RuleTrace": [
+      "✔ BeltRule"
+    ],
+    "Success": true
+  },
+  {
+    "Name": "BELT 1. TL - MẪU (gạch ngang), 2 chữ số",
+    "Input": "THẮT LƯNG NAM TL12 - MẪU 12 (CHIẾC)",
+    "Expected": "TL12-MẪU 12",
+    "Actual": "TL12-MẪU 12",
+    "Pass": true,
+    "RuleName": "BeltRule",
+    "NormalizedText": "THẮT LƯNG NAM TL12 - MẪU 12 (CHIẾC)",
+    "Tokens": [],
+    "RuleTrace": [
+      "✔ BeltRule"
+    ],
+    "Success": true
+  },
+  {
+    "Name": "BELT 1. TL-Mẫu dính gạch, chữ thường",
+    "Input": "THẮT LƯNG NAM TL12-Mẫu 3",
+    "Expected": "TL12-Mẫu 3",
+    "Actual": "TL12-Mẫu 3",
+    "Pass": true,
+    "RuleName": "BeltRule",
+    "NormalizedText": "THẮT LƯNG NAM TL12-Mẫu 3",
+    "Tokens": [],
+    "RuleTrace": [
+      "✔ BeltRule"
+    ],
+    "Success": true
+  },
+  {
+    "Name": "BELT 1. TL -Mẫu dính số",
+    "Input": "THẮT LƯNG NAM TL12 -Mẫu05",
+    "Expected": "TL12-Mẫu05",
+    "Actual": "TL12-Mẫu05",
+    "Pass": true,
+    "RuleName": "BeltRule",
+    "NormalizedText": "THẮT LƯNG NAM TL12 -Mẫu05",
+    "Tokens": [],
+    "RuleTrace": [
+      "✔ BeltRule"
+    ],
+    "Success": true
+  },
+  {
+    "Name": "BELT 1. Có cả TLxx Mẫuxx và TLxx - Mẫuxx thì lấy dạng khoảng trắng",
+    "Input": "THẮT LƯNG TL10 Mẫu01 TL12 - MẪU 2",
+    "Expected": "TL10 Mẫu01",
+    "Actual": "TL10 Mẫu01",
+    "Pass": true,
+    "RuleName": "BeltRule",
+    "NormalizedText": "THẮT LƯNG TL10 Mẫu01 TL12 - MẪU 2",
+    "Tokens": [],
+    "RuleTrace": [
+      "✔ BeltRule"
+    ],
+    "Success": true
+  },
+  {
+    "Name": "BELT 1. TL-MAU thắng PUTL",
+    "Input": "THẮT LƯNG PUTL01 TL10 Mẫu02",
+    "Expected": "TL10 Mẫu02",
+    "Actual": "TL10 Mẫu02",
+    "Pass": true,
+    "RuleName": "BeltRule",
+    "NormalizedText": "THẮT LƯNG PUTL01 TL10 Mẫu02",
+    "Tokens": [],
+    "RuleTrace": [
+      "✔ BeltRule"
+    ],
+    "Success": true
+  },
+  {
+    "Name": "BELT 1. TL-MAU có model/mã khác",
+    "Input": "THẮT LƯNG NAM model 6282 TL10 Mẫu05",
+    "Expected": "TL10 Mẫu05",
+    "Actual": "TL10 Mẫu05",
+    "Pass": true,
+    "RuleName": "BeltRule",
+    "NormalizedText": "THẮT LƯNG NAM model 6282 TL10 Mẫu05",
+    "Tokens": [],
+    "RuleTrace": [
+      "✔ BeltRule"
+    ],
+    "Success": true
+  },
+  {
+    "Name": "BELT 2. PUTL có mô tả",
+    "Input": "THẮT LƯNG PUTL01 - Da A",
+    "Expected": "PUTL01",
+    "Actual": "PUTL01",
+    "Pass": true,
+    "RuleName": "BeltRule",
+    "NormalizedText": "THẮT LƯNG PUTL01 - Da A",
+    "Tokens": [],
+    "RuleTrace": [
+      "✔ BeltRule"
+    ],
+    "Success": true
+  },
+  {
+    "Name": "BELT 2. PUTL thắt lưng nam",
+    "Input": "THẮT LƯNG NAM PUTL25",
+    "Expected": "PUTL25",
+    "Actual": "PUTL25",
+    "Pass": true,
+    "RuleName": "BeltRule",
+    "NormalizedText": "THẮT LƯNG NAM PUTL25",
+    "Tokens": [],
+    "RuleTrace": [
+      "✔ BeltRule"
+    ],
+    "Success": true
+  },
+  {
+    "Name": "BELT 2. PUTL thắng TLxx",
+    "Input": "THẮT LƯNG NAM PUTL05 TL10",
+    "Expected": "PUTL05",
+    "Actual": "PUTL05",
+    "Pass": true,
+    "RuleName": "BeltRule",
+    "NormalizedText": "THẮT LƯNG NAM PUTL05 TL10",
+    "Tokens": [],
+    "RuleTrace": [
+      "✔ BeltRule"
+    ],
+    "Success": true
+  },
+  {
+    "Name": "BELT 2. PUTL không bị hiểu là TL Mẫu",
+    "Input": "THẮT LƯNG PUTL01 Mẫu02",
+    "Expected": "PUTL01",
+    "Actual": "PUTL01",
+    "Pass": true,
+    "RuleName": "BeltRule",
+    "NormalizedText": "THẮT LƯNG PUTL01 Mẫu02",
+    "Tokens": [],
+    "RuleTrace": [
+      "✔ BeltRule"
+    ],
+    "Success": true
+  },
+  {
+    "Name": "BELT 3. TL có XIÊN",
+    "Input": "THẮT LƯNG NAM TL10 - Da A - XIÊN",
+    "Expected": "TL10",
+    "Actual": "TL10",
+    "Pass": true,
+    "RuleName": "BeltRule",
+    "NormalizedText": "THẮT LƯNG NAM TL10 - Da A - XIÊN",
+    "Tokens": [],
+    "RuleTrace": [
+      "✔ BeltRule"
+    ],
+    "Success": true
+  },
+  {
+    "Name": "BELT 3. TL có Da B",
+    "Input": "THẮT LƯNG NAM TL25 - Da B",
+    "Expected": "TL25",
+    "Actual": "TL25",
+    "Pass": true,
+    "RuleName": "BeltRule",
+    "NormalizedText": "THẮT LƯNG NAM TL25 - Da B",
+    "Tokens": [],
+    "RuleTrace": [
+      "✔ BeltRule"
+    ],
+    "Success": true
+  },
+  {
+    "Name": "BELT 3. TL tiền tố PCN-",
+    "Input": "THẮT LƯNG NAM PCN-TL15 - VUÔNG",
+    "Expected": "TL15",
+    "Actual": "TL15",
+    "Pass": true,
+    "RuleName": "BeltRule",
+    "NormalizedText": "THẮT LƯNG NAM PCN-TL15 - VUÔNG",
+    "Tokens": [],
+    "RuleTrace": [
+      "✔ BeltRule"
+    ],
+    "Success": true
+  },
+  {
+    "Name": "BELT 3. TL - VUÔNG (gạch ngang nhưng không phải MẪU)",
+    "Input": "THẮT LƯNG NAM TL12 - VUÔNG - Da A (CHIẾC)",
+    "Expected": "TL12",
+    "Actual": "TL12",
+    "Pass": true,
+    "RuleName": "BeltRule",
+    "NormalizedText": "THẮT LƯNG NAM TL12 - VUÔNG - Da A (CHIẾC)",
+    "Tokens": [],
+    "RuleTrace": [
+      "✔ BeltRule"
+    ],
+    "Success": true
+  },
+  {
+    "Name": "BELT 3. TL có TLC phía sau",
+    "Input": "THẮT LƯNG NAM TL10 - Da A (TLC)",
+    "Expected": "TL10",
+    "Actual": "TL10",
+    "Pass": true,
+    "RuleName": "BeltRule",
+    "NormalizedText": "THẮT LƯNG NAM TL10 - Da A (TLC)",
+    "Tokens": [],
+    "RuleTrace": [
+      "✔ BeltRule"
+    ],
+    "Success": true
+  },
+  {
+    "Name": "BELT 4. Không mã, lấy toàn bộ Tên hàng (cột E)",
+    "Input": "THẮT LƯNG NAM LOẠI XIÊN - Da A (Chiếc)",
+    "Expected": "THẮT LƯNG NAM LOẠI XIÊN",
+    "Actual": "THẮT LƯNG NAM LOẠI XIÊN",
+    "Pass": true,
+    "RuleName": "BeltRule",
+    "NormalizedText": "THẮT LƯNG NAM LOẠI XIÊN - Da A (Chiếc)",
+    "Tokens": [],
+    "RuleTrace": [
+      "✔ BeltRule"
+    ],
+    "Success": true
+  },
+  {
+    "Name": "BELT 4. Không mã, cột E trống thì lấy cả tên đang có",
+    "Input": "  THẮT LƯNG DA BÒ (TLC)  ",
+    "Expected": "THẮT LƯNG DA BÒ (TLC)",
+    "Actual": "THẮT LƯNG DA BÒ (TLC)",
+    "Pass": true,
+    "RuleName": "BeltRule",
+    "NormalizedText": "THẮT LƯNG DA BÒ (TLC)",
+    "Tokens": [],
+    "RuleTrace": [
+      "✔ BeltRule"
+    ],
+    "Success": true
+  },
+  {
+    "Name": "BELT 5. Không phải thắt lưng, dây đồng hồ TLxx",
+    "Input": "DÂY ĐỒNG HỒ TL20 - BLACK",
+    "Expected": "TL20",
+    "Actual": "TL20",
+    "Pass": true,
+    "RuleName": "FirstCodeRule",
+    "NormalizedText": "DÂY ĐỒNG HỒ TL20 - BLACK",
+    "Tokens": [
+      "0:Word:DÂY@0-2",
+      "1:Word:ĐỒNG@4-7",
+      "2:Word:HỒ@9-10",
+      "3:Code:TL20@12-15",
+      "4:Separator:-@17-17",
+      "5:Color:BLACK@19-23"
+    ],
+    "RuleTrace": [
+      "✘ ModelRule",
+      "✘ KeywordRule",
+      "✘ LeftOfMkRule",
+      "✘ RightOfMkRule",
+      "✘ MkOnlyRule",
+      "✘ KOnlyRule",
+      "✘ PcnRule",
+      "✘ MuHatRule",
+      "✔ FirstCodeRule"
+    ],
+    "Success": true
+  },
+  {
+    "Name": "BELT 5. Không phải thắt lưng, kính model",
+    "Input": "MODEL 6282",
+    "Expected": "6282",
+    "Actual": "6282",
+    "Pass": true,
+    "RuleName": "ModelRule",
+    "NormalizedText": "MODEL 6282",
+    "Tokens": [
+      "0:Model:MODEL@0-4",
+      "1:Code:6282@6-9"
+    ],
+    "RuleTrace": [
+      "✔ ModelRule"
+    ],
+    "Success": true
+  },
+  {
+    "Name": "BELT 1. TL-MAU dính số",
+    "Input": "THẮT LƯNG NAM TL10 Mẫu01 - Da bò",
+    "Expected": "TL10 Mẫu01",
+    "Actual": "TL10 Mẫu01",
+    "Pass": true,
+    "RuleName": "BeltRule",
+    "NormalizedText": "THẮT LƯNG NAM TL10 Mẫu01 - Da bò",
+    "Tokens": [],
+    "RuleTrace": [
+      "✔ BeltRule"
+    ],
+    "Success": true
+  },
+  {
+    "Name": "BELT 1. TL-MAU không NAM",
+    "Input": "THẮT LƯNG TL25 Mẫu03",
+    "Expected": "TL25 Mẫu03",
+    "Actual": "TL25 Mẫu03",
+    "Pass": true,
+    "RuleName": "BeltRule",
+    "NormalizedText": "THẮT LƯNG TL25 Mẫu03",
+    "Tokens": [],
+    "RuleTrace": [
+      "✔ BeltRule"
+    ],
+    "Success": true
+  },
+  {
+    "Name": "BELT 1. TL-MAU cách số",
+    "Input": "THẮT LƯNG NAM TL14 MẪU 1 - VUÔNG (TLC)",
+    "Expected": "TL14 MẪU 1",
+    "Actual": "TL14 MẪU 1",
+    "Pass": true,
+    "RuleName": "BeltRule",
+    "NormalizedText": "THẮT LƯNG NAM TL14 MẪU 1 - VUÔNG (TLC)",
+    "Tokens": [],
+    "RuleTrace": [
+      "✔ BeltRule"
+    ],
+    "Success": true
+  },
+  {
+    "Name": "BELT 1. TL-MAU 2 chữ số",
+    "Input": "THẮT LƯNG NAM TL14 MẪU 47 - VUÔNG (TLC)",
+    "Expected": "TL14 MẪU 47",
+    "Actual": "TL14 MẪU 47",
+    "Pass": true,
+    "RuleName": "BeltRule",
+    "NormalizedText": "THẮT LƯNG NAM TL14 MẪU 47 - VUÔNG (TLC)",
+    "Tokens": [],
+    "RuleTrace": [
+      "✔ BeltRule"
+    ],
+    "Success": true
+  },
+  {
+    "Name": "BELT 1. TL-MAU tiền tố PCN-",
+    "Input": "THẮT LƯNG NAM PCN-TL15 MẪU 9 - VUÔNG (TLC)",
+    "Expected": "TL15 MẪU 9",
+    "Actual": "TL15 MẪU 9",
+    "Pass": true,
+    "RuleName": "BeltRule",
+    "NormalizedText": "THẮT LƯNG NAM PCN-TL15 MẪU 9 - VUÔNG (TLC)",
+    "Tokens": [],
+    "RuleTrace": [
+      "✔ BeltRule"
+    ],
+    "Success": true
+  },
+  {
+    "Name": "BELT 1. TL-MAU thắt lưng nữ",
+    "Input": "THẮT LƯNG NỮ TL16 MẪU 1 - VUÔNG - Da A (TLC)",
+    "Expected": "TL16 MẪU 1",
+    "Actual": "TL16 MẪU 1",
+    "Pass": true,
+    "RuleName": "BeltRule",
+    "NormalizedText": "THẮT LƯNG NỮ TL16 MẪU 1 - VUÔNG - Da A (TLC)",
+    "Tokens": [],
+    "RuleTrace": [
+      "✔ BeltRule"
+    ],
+    "Success": true
+  },
+  {
+    "Name": "BELT 1. TL-MAU có TLC phía sau",
+    "Input": "THẮT LƯNG NAM TL14 MẪU 35 - TLC (Chiếc)",
+    "Expected": "TL14 MẪU 35",
+    "Actual": "TL14 MẪU 35",
+    "Pass": true,
+    "RuleName": "BeltRule",
+    "NormalizedText": "THẮT LƯNG NAM TL14 MẪU 35 - TLC (Chiếc)",
+    "Tokens": [],
+    "RuleTrace": [
+      "✔ BeltRule"
+    ],
+    "Success": true
+  },
+  {
+    "Name": "BELT 1. TL-MAU chữ thường",
+    "Input": "thắt lưng nam tl10 mẫu01 - da bò",
+    "Expected": "tl10 mẫu01",
+    "Actual": "tl10 mẫu01",
+    "Pass": true,
+    "RuleName": "BeltRule",
+    "NormalizedText": "thắt lưng nam tl10 mẫu01 - da bò",
+    "Tokens": [],
+    "RuleTrace": [
+      "✔ BeltRule"
+    ],
+    "Success": true
+  },
+  {
+    "Name": "BELT 1. TL-MAU không dấu",
+    "Input": "THAT LUNG NAM TL10 MAU 01",
+    "Expected": "TL10 MAU 01",
+    "Actual": "TL10 MAU 01",
+    "Pass": true,
+    "RuleName": "BeltRule",
+    "NormalizedText": "THAT LUNG NAM TL10 MAU 01",
+    "Tokens": [],
+    "RuleTrace": [
+      "✔ BeltRule"
+    ],
+    "Success": true
+  },
+  {
+    "Name": "BELT 1. TL-MAU khoảng trắng đầu/cuối",
+    "Input": "   THẮT LƯNG TL25 Mẫu03   ",
+    "Expected": "TL25 Mẫu03",
+    "Actual": "TL25 Mẫu03",
+    "Pass": true,
+    "RuleName": "BeltRule",
+    "NormalizedText": "THẮT LƯNG TL25 Mẫu03",
+    "Tokens": [],
+    "RuleTrace": [
+      "✔ BeltRule"
+    ],
+    "Success": true
+  },
+  {
+    "Name": "BELT 1. TL - MẪU (gạch ngang), MẪU 1",
+    "Input": "THẮT LƯNG NAM TL12 - MẪU 1 (CHIẾC)",
+    "Expected": "TL12-MẪU 1",
+    "Actual": "TL12-MẪU 1",
+    "Pass": true,
+    "RuleName": "BeltRule",
+    "NormalizedText": "THẮT LƯNG NAM TL12 - MẪU 1 (CHIẾC)",
+    "Tokens": [],
+    "RuleTrace": [
+      "✔ BeltRule"
+    ],
+    "Success": true
+  },
+  {
+    "Name": "BELT 1. TL - MẪU (gạch ngang), MẪU 4 khác MẪU 1",
+    "Input": "THẮT LƯNG NAM TL12 - MẪU 4 (CHIẾC)",
+    "Expected": "TL12-MẪU 4",
+    "Actual": "TL12-MẪU 4",
+    "Pass": true,
+    "RuleName": "BeltRule",
+    "NormalizedText": "THẮT LƯNG NAM TL12 - MẪU 4 (CHIẾC)",
+    "Tokens": [],
+    "RuleTrace": [
+      "✔ BeltRule"
+    ],
+    "Success": true
+  },
+  {
+    "Name": "BELT 1. TL - MẪU (gạch ngang), 2 chữ số",
+    "Input": "THẮT LƯNG NAM TL12 - MẪU 12 (CHIẾC)",
+    "Expected": "TL12-MẪU 12",
+    "Actual": "TL12-MẪU 12",
+    "Pass": true,
+    "RuleName": "BeltRule",
+    "NormalizedText": "THẮT LƯNG NAM TL12 - MẪU 12 (CHIẾC)",
+    "Tokens": [],
+    "RuleTrace": [
+      "✔ BeltRule"
+    ],
+    "Success": true
+  },
+  {
+    "Name": "BELT 1. TL-Mẫu dính gạch, chữ thường",
+    "Input": "THẮT LƯNG NAM TL12-Mẫu 3",
+    "Expected": "TL12-Mẫu 3",
+    "Actual": "TL12-Mẫu 3",
+    "Pass": true,
+    "RuleName": "BeltRule",
+    "NormalizedText": "THẮT LƯNG NAM TL12-Mẫu 3",
+    "Tokens": [],
+    "RuleTrace": [
+      "✔ BeltRule"
+    ],
+    "Success": true
+  },
+  {
+    "Name": "BELT 1. TL -Mẫu dính số",
+    "Input": "THẮT LƯNG NAM TL12 -Mẫu05",
+    "Expected": "TL12-Mẫu05",
+    "Actual": "TL12-Mẫu05",
+    "Pass": true,
+    "RuleName": "BeltRule",
+    "NormalizedText": "THẮT LƯNG NAM TL12 -Mẫu05",
+    "Tokens": [],
+    "RuleTrace": [
+      "✔ BeltRule"
+    ],
+    "Success": true
+  },
+  {
+    "Name": "BELT 1. Có cả TLxx Mẫuxx và TLxx - Mẫuxx thì lấy dạng khoảng trắng",
+    "Input": "THẮT LƯNG TL10 Mẫu01 TL12 - MẪU 2",
+    "Expected": "TL10 Mẫu01",
+    "Actual": "TL10 Mẫu01",
+    "Pass": true,
+    "RuleName": "BeltRule",
+    "NormalizedText": "THẮT LƯNG TL10 Mẫu01 TL12 - MẪU 2",
+    "Tokens": [],
+    "RuleTrace": [
+      "✔ BeltRule"
+    ],
+    "Success": true
+  },
+  {
+    "Name": "BELT 1. TL-MAU thắng PUTL",
+    "Input": "THẮT LƯNG PUTL01 TL10 Mẫu02",
+    "Expected": "TL10 Mẫu02",
+    "Actual": "TL10 Mẫu02",
+    "Pass": true,
+    "RuleName": "BeltRule",
+    "NormalizedText": "THẮT LƯNG PUTL01 TL10 Mẫu02",
+    "Tokens": [],
+    "RuleTrace": [
+      "✔ BeltRule"
+    ],
+    "Success": true
+  },
+  {
+    "Name": "BELT 1. TL-MAU có model/mã khác",
+    "Input": "THẮT LƯNG NAM model 6282 TL10 Mẫu05",
+    "Expected": "TL10 Mẫu05",
+    "Actual": "TL10 Mẫu05",
+    "Pass": true,
+    "RuleName": "BeltRule",
+    "NormalizedText": "THẮT LƯNG NAM model 6282 TL10 Mẫu05",
+    "Tokens": [],
+    "RuleTrace": [
+      "✔ BeltRule"
+    ],
+    "Success": true
+  },
+  {
+    "Name": "BELT 2. PUTL có mô tả",
+    "Input": "THẮT LƯNG PUTL01 - Da A",
+    "Expected": "PUTL01",
+    "Actual": "PUTL01",
+    "Pass": true,
+    "RuleName": "BeltRule",
+    "NormalizedText": "THẮT LƯNG PUTL01 - Da A",
+    "Tokens": [],
+    "RuleTrace": [
+      "✔ BeltRule"
+    ],
+    "Success": true
+  },
+  {
+    "Name": "BELT 2. PUTL thắt lưng nam",
+    "Input": "THẮT LƯNG NAM PUTL25",
+    "Expected": "PUTL25",
+    "Actual": "PUTL25",
+    "Pass": true,
+    "RuleName": "BeltRule",
+    "NormalizedText": "THẮT LƯNG NAM PUTL25",
+    "Tokens": [],
+    "RuleTrace": [
+      "✔ BeltRule"
+    ],
+    "Success": true
+  },
+  {
+    "Name": "BELT 2. PUTL thắng TLxx",
+    "Input": "THẮT LƯNG NAM PUTL05 TL10",
+    "Expected": "PUTL05",
+    "Actual": "PUTL05",
+    "Pass": true,
+    "RuleName": "BeltRule",
+    "NormalizedText": "THẮT LƯNG NAM PUTL05 TL10",
+    "Tokens": [],
+    "RuleTrace": [
+      "✔ BeltRule"
+    ],
+    "Success": true
+  },
+  {
+    "Name": "BELT 2. PUTL không bị hiểu là TL Mẫu",
+    "Input": "THẮT LƯNG PUTL01 Mẫu02",
+    "Expected": "PUTL01",
+    "Actual": "PUTL01",
+    "Pass": true,
+    "RuleName": "BeltRule",
+    "NormalizedText": "THẮT LƯNG PUTL01 Mẫu02",
+    "Tokens": [],
+    "RuleTrace": [
+      "✔ BeltRule"
+    ],
+    "Success": true
+  },
+  {
+    "Name": "BELT 3. TL có XIÊN",
+    "Input": "THẮT LƯNG NAM TL10 - Da A - XIÊN",
+    "Expected": "TL10",
+    "Actual": "TL10",
+    "Pass": true,
+    "RuleName": "BeltRule",
+    "NormalizedText": "THẮT LƯNG NAM TL10 - Da A - XIÊN",
+    "Tokens": [],
+    "RuleTrace": [
+      "✔ BeltRule"
+    ],
+    "Success": true
+  },
+  {
+    "Name": "BELT 3. TL có Da B",
+    "Input": "THẮT LƯNG NAM TL25 - Da B",
+    "Expected": "TL25",
+    "Actual": "TL25",
+    "Pass": true,
+    "RuleName": "BeltRule",
+    "NormalizedText": "THẮT LƯNG NAM TL25 - Da B",
+    "Tokens": [],
+    "RuleTrace": [
+      "✔ BeltRule"
+    ],
+    "Success": true
+  },
+  {
+    "Name": "BELT 3. TL tiền tố PCN-",
+    "Input": "THẮT LƯNG NAM PCN-TL15 - VUÔNG",
+    "Expected": "TL15",
+    "Actual": "TL15",
+    "Pass": true,
+    "RuleName": "BeltRule",
+    "NormalizedText": "THẮT LƯNG NAM PCN-TL15 - VUÔNG",
+    "Tokens": [],
+    "RuleTrace": [
+      "✔ BeltRule"
+    ],
+    "Success": true
+  },
+  {
+    "Name": "BELT 3. TL - VUÔNG (gạch ngang nhưng không phải MẪU)",
+    "Input": "THẮT LƯNG NAM TL12 - VUÔNG - Da A (CHIẾC)",
+    "Expected": "TL12",
+    "Actual": "TL12",
+    "Pass": true,
+    "RuleName": "BeltRule",
+    "NormalizedText": "THẮT LƯNG NAM TL12 - VUÔNG - Da A (CHIẾC)",
+    "Tokens": [],
+    "RuleTrace": [
+      "✔ BeltRule"
+    ],
+    "Success": true
+  },
+  {
+    "Name": "BELT 3. TL có TLC phía sau",
+    "Input": "THẮT LƯNG NAM TL10 - Da A (TLC)",
+    "Expected": "TL10",
+    "Actual": "TL10",
+    "Pass": true,
+    "RuleName": "BeltRule",
+    "NormalizedText": "THẮT LƯNG NAM TL10 - Da A (TLC)",
+    "Tokens": [],
+    "RuleTrace": [
+      "✔ BeltRule"
+    ],
+    "Success": true
+  },
+  {
+    "Name": "BELT 4. Không mã, lấy toàn bộ Tên hàng (cột E)",
+    "Input": "THẮT LƯNG NAM LOẠI XIÊN - Da A (Chiếc)",
+    "Expected": "THẮT LƯNG NAM LOẠI XIÊN",
+    "Actual": "THẮT LƯNG NAM LOẠI XIÊN",
+    "Pass": true,
+    "RuleName": "BeltRule",
+    "NormalizedText": "THẮT LƯNG NAM LOẠI XIÊN - Da A (Chiếc)",
+    "Tokens": [],
+    "RuleTrace": [
+      "✔ BeltRule"
+    ],
+    "Success": true
+  },
+  {
+    "Name": "BELT 4. Không mã, cột E trống thì lấy cả tên đang có",
+    "Input": "  THẮT LƯNG DA BÒ (TLC)  ",
+    "Expected": "THẮT LƯNG DA BÒ (TLC)",
+    "Actual": "THẮT LƯNG DA BÒ (TLC)",
+    "Pass": true,
+    "RuleName": "BeltRule",
+    "NormalizedText": "THẮT LƯNG DA BÒ (TLC)",
+    "Tokens": [],
+    "RuleTrace": [
+      "✔ BeltRule"
+    ],
+    "Success": true
+  },
+  {
+    "Name": "BELT 5. Không phải thắt lưng, dây đồng hồ TLxx",
+    "Input": "DÂY ĐỒNG HỒ TL20 - BLACK",
+    "Expected": "TL20",
+    "Actual": "TL20",
+    "Pass": true,
+    "RuleName": "FirstCodeRule",
+    "NormalizedText": "DÂY ĐỒNG HỒ TL20 - BLACK",
+    "Tokens": [
+      "0:Word:DÂY@0-2",
+      "1:Word:ĐỒNG@4-7",
+      "2:Word:HỒ@9-10",
+      "3:Code:TL20@12-15",
+      "4:Separator:-@17-17",
+      "5:Color:BLACK@19-23"
+    ],
+    "RuleTrace": [
+      "✘ ModelRule",
+      "✘ KeywordRule",
+      "✘ LeftOfMkRule",
+      "✘ RightOfMkRule",
+      "✘ MkOnlyRule",
+      "✘ KOnlyRule",
+      "✘ PcnRule",
+      "✘ MuHatRule",
+      "✔ FirstCodeRule"
+    ],
+    "Success": true
+  },
+  {
+    "Name": "BELT 5. Không phải thắt lưng, kính model",
+    "Input": "MODEL 6282",
+    "Expected": "6282",
+    "Actual": "6282",
+    "Pass": true,
+    "RuleName": "ModelRule",
+    "NormalizedText": "MODEL 6282",
+    "Tokens": [
+      "0:Model:MODEL@0-4",
+      "1:Code:6282@6-9"
+    ],
+    "RuleTrace": [
+      "✔ ModelRule"
+    ],
+    "Success": true
+  }
+]

@@ -1,0 +1,191 @@
+[
+  {
+    "Input": "",
+    "NoFallback": {
+      "BarcodeCode": "",
+      "BaseCode": "",
+      "AttributeText": "",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    },
+    "WithFallback": {
+      "BarcodeCode": "FB01",
+      "BaseCode": "",
+      "AttributeText": "",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  },
+  {
+    "Input": "   ",
+    "NoFallback": {
+      "BarcodeCode": "",
+      "BaseCode": "",
+      "AttributeText": "",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    },
+    "WithFallback": {
+      "BarcodeCode": "FB01",
+      "BaseCode": "",
+      "AttributeText": "",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  },
+  {
+    "Input": "abc",
+    "NoFallback": {
+      "BarcodeCode": "",
+      "BaseCode": "",
+      "AttributeText": "",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    },
+    "WithFallback": {
+      "BarcodeCode": "FB01",
+      "BaseCode": "",
+      "AttributeText": "",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  },
+  {
+    "Input": "MK",
+    "NoFallback": {
+      "BarcodeCode": "",
+      "BaseCode": "",
+      "AttributeText": "",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    },
+    "WithFallback": {
+      "BarcodeCode": "FB01",
+      "BaseCode": "",
+      "AttributeText": "",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  },
+  {
+    "Input": "Kính MK1234",
+    "NoFallback": {
+      "BarcodeCode": "MK1234",
+      "BaseCode": "",
+      "AttributeText": "",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    },
+    "WithFallback": {
+      "BarcodeCode": "MK1234",
+      "BaseCode": "",
+      "AttributeText": "",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  },
+  {
+    "Input": "123456",
+    "NoFallback": {
+      "BarcodeCode": "",
+      "BaseCode": "",
+      "AttributeText": "",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    },
+    "WithFallback": {
+      "BarcodeCode": "FB01",
+      "BaseCode": "",
+      "AttributeText": "",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  },
+  {
+    "Input": "TL",
+    "NoFallback": {
+      "BarcodeCode": "",
+      "BaseCode": "",
+      "AttributeText": "",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    },
+    "WithFallback": {
+      "BarcodeCode": "FB01",
+      "BaseCode": "",
+      "AttributeText": "",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  },
+  {
+    "Input": "Gọng kính model 6282 C3",
+    "NoFallback": {
+      "BarcodeCode": "6282",
+      "BaseCode": "",
+      "AttributeText": "",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    },
+    "WithFallback": {
+      "BarcodeCode": "6282",
+      "BaseCode": "",
+      "AttributeText": "",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  },
+  {
+    "Input": "San pham 12.5 ABC",
+    "NoFallback": {
+      "BarcodeCode": "",
+      "BaseCode": "",
+      "AttributeText": "",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    },
+    "WithFallback": {
+      "BarcodeCode": "FB01",
+      "BaseCode": "",
+      "AttributeText": "",
+      "GlassesInfo": "",
+      "GlassesTitle": "",
+      "GlassesInfoLeft": "",
+      "GlassesInfoRight": ""
+    }
+  }
+]

@@ -1,0 +1,75 @@
+[
+  [
+    "Cửa hàng",
+    "Nhóm hàng",
+    "Mã hàng",
+    "Mã vạch",
+    "Tên hàng",
+    "Tên hàng (thuộc tính)",
+    "ĐVT",
+    "Số lượng",
+    "Giá bán",
+    "Mô tả"
+  ],
+  [
+    "CH1",
+    "Kính",
+    "SP001",
+    "8930001",
+    "Kính mát nam",
+    "Kính mát nam MK1234 C1 - Đen",
+    "Chiếc",
+    "2",
+    "150000",
+    "mô tả 1"
+  ],
+  [
+    "CH1",
+    "Kính",
+    "00123",
+    "0012300",
+    "Gọng kính",
+    "Gọng kính model 6282 C3",
+    "Chiếc",
+    "3",
+    "250000",
+    ""
+  ],
+  [
+    "CH1",
+    "TL",
+    "TL001",
+    "",
+    "THẮT LƯNG NAM TL10 Mẫu01 - Da bò",
+    "THẮT LƯNG NAM TL10 Mẫu01 - Da bò",
+    "Chiếc",
+    "",
+    "99000",
+    ""
+  ],
+  [],
+  [
+    "CH1",
+    "TL",
+    "TL002",
+    "",
+    "THẮT LƯNG PUTL01 - Da A",
+    "THẮT LƯNG PUTL01 - Da A",
+    "Chiếc",
+    "0",
+    "0",
+    "dòng công thức"
+  ],
+  [
+    "CH1",
+    "Khác",
+    "SP999",
+    "",
+    "Sản phẩm không dấu",
+    "San pham 12.5 ABC",
+    "Cái",
+    "-1",
+    "1.234.000",
+    ""
+  ]
+]
