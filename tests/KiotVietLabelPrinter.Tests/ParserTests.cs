@@ -1,6 +1,5 @@
 using KiotVietLabelPrinter.Models;
-using KiotVietLabelPrinter.Models.Glasses;
-using KiotVietLabelPrinter.Services;
+using KiotVietLabelPrinter.Services.Barcodes;
 using KiotVietLabelPrinter.Services.Glasses;
 using KiotVietLabelPrinter.Services.Glasses.Tests;
 using Xunit;

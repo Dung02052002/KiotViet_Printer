@@ -4,7 +4,8 @@ using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using KiotVietLabelPrinter.Models;
-using KiotVietLabelPrinter.Services;
+using KiotVietLabelPrinter.Services.Barcodes;
+using KiotVietLabelPrinter.Services.ImageTools;
 using Xunit;
 
 namespace KiotVietLabelPrinter.Tests;

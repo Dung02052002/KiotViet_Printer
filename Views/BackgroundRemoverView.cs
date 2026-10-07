@@ -1,8 +1,8 @@
 using System.Diagnostics;
 using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
+using KiotVietLabelPrinter.Infrastructure.Diagnostics;
 using KiotVietLabelPrinter.Models;
-using KiotVietLabelPrinter.Services;
 using KiotVietLabelPrinter.Services.BackgroundRemoval;
 using KiotVietLabelPrinter.UI;
 using SkiaSharp;

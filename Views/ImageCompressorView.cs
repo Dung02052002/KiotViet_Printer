@@ -1,6 +1,6 @@
 using System.Diagnostics;
 using KiotVietLabelPrinter.Models;
-using KiotVietLabelPrinter.Services;
+using KiotVietLabelPrinter.Services.ImageTools;
 using KiotVietLabelPrinter.UI;
 
 namespace KiotVietLabelPrinter.Views;

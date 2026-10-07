@@ -1,0 +1,20 @@
+using KiotVietLabelPrinter.Models;
+
+namespace KiotVietLabelPrinter.Services.Labels;
+
+public interface ILabelHandler
+{
+    string HandlerType { get; }
+
+    List<PreviewRow> BuildPreview(
+        List<ProductRow> products,
+        LabelDefinition label,
+        string employeeCode);
+
+    void PrepareDataAndPrint(
+        List<ProductRow> products,
+        LabelDefinition label,
+        string employeeCode,
+        PriceOverride? priceOverride = null,
+        Dictionary<string, string>? nameOverrides = null);
+}

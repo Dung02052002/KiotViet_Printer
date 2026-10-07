@@ -1,6 +1,8 @@
 ﻿using System.Runtime.InteropServices;
 using KiotVietLabelPrinter.Forms;
-using KiotVietLabelPrinter.Services;
+using KiotVietLabelPrinter.Infrastructure.BarTender;
+using KiotVietLabelPrinter.Infrastructure.Diagnostics;
+using KiotVietLabelPrinter.Infrastructure.Storage;
 using KiotVietLabelPrinter.Services.BackgroundRemoval;
 
 namespace KiotVietLabelPrinter;

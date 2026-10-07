@@ -2,8 +2,10 @@ using System.Diagnostics;
 using System.Drawing.Drawing2D;
 using System.Runtime.InteropServices;
 using KiotVietLabelPrinter.Forms;
+using KiotVietLabelPrinter.Infrastructure.Excel;
+using KiotVietLabelPrinter.Infrastructure.Printing;
 using KiotVietLabelPrinter.Models;
-using KiotVietLabelPrinter.Services;
+using KiotVietLabelPrinter.Services.Barcodes;
 using KiotVietLabelPrinter.UI;
 
 namespace KiotVietLabelPrinter.Views;
