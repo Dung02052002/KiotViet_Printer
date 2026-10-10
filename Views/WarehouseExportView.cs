@@ -16,9 +16,10 @@ namespace KiotVietLabelPrinter.Views;
 // FormMain.OpenWarehouseExport). Màn hình chỉ thu thập lựa chọn, hiển thị và
 // hỏi xác nhận; đọc/đối chiếu/ghi Excel nằm ở WarehouseDocumentService, xem
 // trước bản in ở WarehousePrintPreviewService (+ FormWarehousePrintPreview),
-// in ở WarehousePrinterService. Máy in / font của màn hình này lưu riêng trong
-// WarehouseSettingsStore, không đụng tới cấu hình in tem. Thiết lập trang in
-// tuỳ chỉnh KHÔNG được lưu: mỗi lần mở / đổi file mẫu đều về "giữ nguyên mẫu".
+// in ở WarehousePrinterService, tình trạng file đã xuất ở WarehouseExportTracker.
+// Máy in / font của màn hình này lưu riêng trong WarehouseSettingsStore, không
+// đụng tới cấu hình in tem. Thiết lập trang in tuỳ chỉnh KHÔNG được lưu: mỗi
+// lần mở / đổi file mẫu đều về "giữ nguyên mẫu".
 public class WarehouseExportView : UserControl
 {
     private const string Title = "Phiếu xuất kho";
@@ -29,20 +30,23 @@ public class WarehouseExportView : UserControl
     private readonly InstalledFontService _fontService = new();
     private readonly WarehouseSettingsStore _settingsStore = new();
     private readonly WarehouseExportSettings _settings;
+    private readonly WarehouseExportTracker _export = new();
 
     private WarehouseTemplateLayout? _layout;
     private WarehouseDocument? _document;
-    private WarehouseExportResult? _lastExport;
-    private bool _exportStale;
 
     /// <summary>Thiết lập trang in của file mẫu — gốc để biết người dùng đã đổi mục nào.</summary>
     private WarehousePageSetup? _templatePage;
 
-    /// <summary>Dấu file của lần xuất đã được xem trước bản in (để gợi ý xem trước trước khi in).</summary>
-    private WarehouseFileStamp? _previewedStamp;
     private bool _busy;
     private bool _loadingUi;
     private Font? _previewFont;
+
+    // Kiểm tra máy in phải hỏi spooler (chậm với máy in mạng) — chỉ làm khi nạp
+    // danh sách / đổi máy in, không phải mỗi lần UpdateState (mỗi phím gõ).
+    // Trước khi xem trước / in vẫn kiểm tra lại trực tiếp.
+    private bool _printerAvailable;
+    private string _windowsDefaultPrinter = "";
 
     /// <summary>Đang xuất / in — FormMain hỏi lại trước khi đóng app.</summary>
     public bool IsBusy => _busy;
@@ -167,14 +171,21 @@ public class WarehouseExportView : UserControl
         UpdateState();
     }
 
-    /// <summary>Gọi khi FormMain mở màn hình — hiện cảnh báo đọc thiết lập (nếu có) đúng một lần.</summary>
+    /// <summary>
+    /// Gọi mỗi khi FormMain mở màn hình: hiện cảnh báo đọc thiết lập (nếu có)
+    /// đúng một lần và nạp lại danh sách máy in (máy in có thể vừa bị gỡ / thêm
+    /// trong lúc màn hình đang ẩn).
+    /// </summary>
     public void OnShown()
     {
         if (_settingsStore.LoadWarning is { } warning)
         {
             MessageBox.Show(warning, Title, MessageBoxButtons.OK, MessageBoxIcon.Warning);
-            _settingsStore.Save(_settings);
+            SaveSettings();
         }
+
+        if (!_busy)
+            LoadPrinters();
     }
 
     #region Dựng giao diện
@@ -291,6 +302,9 @@ public class WarehouseExportView : UserControl
                 return;
             _settings.PrinterName = cboPrinter.SelectedItem as string ?? "";
             SaveSettings();
+            RefreshPrinterAvailability();
+            // Bản xem trước phân trang theo máy in cũ — không còn đại diện cho bản sẽ in.
+            _export.ForgetPreview();
             UpdateState();
         };
         pnlCard.Controls.Add(cboPrinter);
@@ -440,6 +454,7 @@ public class WarehouseExportView : UserControl
         AddColumn("colActual", "SL thực xuất", 9, readOnly: false, numeric: true, minWidth: 112);
         AddColumn("colStatus", "Trạng thái", 25, readOnly: true);
 
+        dgvRows.CellBeginEdit += (_, e) => _editingValue = dgvRows.Rows[e.RowIndex].Cells[e.ColumnIndex].Value?.ToString();
         dgvRows.CellEndEdit += Grid_CellEndEdit;
         dgvRows.CurrentCellDirtyStateChanged += (_, _) =>
         {
@@ -449,10 +464,17 @@ public class WarehouseExportView : UserControl
         };
         dgvRows.CellValueChanged += (_, e) =>
         {
-            if (e.RowIndex >= 0 && dgvRows.Columns[e.ColumnIndex].Name == "colUnit")
-                Grid_CellEndEdit(dgvRows, e);
+            if (!_fillingGrid && e.RowIndex >= 0 && dgvRows.Columns[e.ColumnIndex].Name == "colUnit")
+                ApplyCellEdit(e.RowIndex, e.ColumnIndex);
         };
-        dgvRows.DataError += (_, e) => e.ThrowException = false;
+        dgvRows.DataError += (_, e) =>
+        {
+            // Giá trị ô không hiển thị được (vd đơn vị lạ trong combo): không ném lỗi ra
+            // hộp thoại thô của DataGridView, nhưng ghi log để còn lần ra.
+            e.ThrowException = false;
+            if (e.Exception != null)
+                WarehouseLog.Error($"Bảng xem trước: ô dòng {e.RowIndex + 1}, cột {dgvRows.Columns[e.ColumnIndex].HeaderText}", e.Exception);
+        };
         pnlCard.Controls.Add(dgvRows);
     }
 
@@ -724,7 +746,7 @@ public class WarehouseExportView : UserControl
 
     private void OnTicketInputChanged()
     {
-        MarkExportStale();
+        _export.MarkStale();
         UpdateState();
     }
     #endregion
@@ -775,7 +797,7 @@ public class WarehouseExportView : UserControl
 
         txtOutput.Text = dialog.SelectedPath;
         SaveSettings();
-        MarkExportStale();
+        _export.MarkStale();
         UpdateState();
     }
 
@@ -784,11 +806,14 @@ public class WarehouseExportView : UserControl
 
     private async Task SetTemplateAsync(string path, bool showErrors)
     {
+        if (_busy)
+            return;
+
         txtTemplate.Text = path;
         _layout = null;
         _templatePage = null;
         _document = null;
-        MarkExportStale();
+        _export.MarkStale();
         FillGrid();
 
         try
@@ -824,6 +849,10 @@ public class WarehouseExportView : UserControl
             if (showErrors)
                 MessageBox.Show(ex.Message, Title, MessageBoxButtons.OK, MessageBoxIcon.Warning);
         }
+        catch (Exception ex)
+        {
+            ReportUnexpected(null, "đọc file phiếu mẫu", ex, showErrors);
+        }
         finally
         {
             SetBusy(false, _layout != null ? "Đã đọc file phiếu mẫu." : "File phiếu mẫu chưa hợp lệ.");
@@ -837,6 +866,9 @@ public class WarehouseExportView : UserControl
     #region Đọc + xem trước dữ liệu
     private async Task LoadDocumentAsync(bool showErrors)
     {
+        if (_busy)
+            return;
+
         string template = txtTemplate.Text;
         string goods = txtGoods.Text;
         if (string.IsNullOrWhiteSpace(template) || string.IsNullOrWhiteSpace(goods))
@@ -847,13 +879,27 @@ public class WarehouseExportView : UserControl
             return;
         }
 
+        dgvRows.CancelEdit();
         _document = null;
-        MarkExportStale();
+        _export.MarkStale();
+        string? pageNote = null;
         try
         {
             SetBusy(true, "Đang đọc và đối chiếu dữ liệu...");
             _document = await Task.Run(() => _documentService.Load(template, goods));
             _layout = _document.Layout;
+
+            // File mẫu vừa được đọc lại; nếu thiết lập in của nó đã khác lần đọc trước
+            // (mẫu bị sửa bên ngoài) thì phần "chỉ đổi mục khác mẫu" đang so với số
+            // liệu cũ — đưa về đúng thiết lập hiện tại của mẫu.
+            if (_templatePage != _layout.Page)
+            {
+                bool hadTemplate = _templatePage != null;
+                _templatePage = _layout.Page;
+                FillPageControls(_templatePage, keepTemplate: true);
+                if (hadTemplate)
+                    pageNote = " Thiết lập in của file mẫu đã thay đổi — đã cập nhật theo file mẫu.";
+            }
         }
         catch (WarehouseException ex)
         {
@@ -861,11 +907,15 @@ public class WarehouseExportView : UserControl
             if (showErrors)
                 MessageBox.Show(ex.Message, Title, MessageBoxButtons.OK, MessageBoxIcon.Warning);
         }
+        catch (Exception ex)
+        {
+            ReportUnexpected(null, "đọc dữ liệu hàng hóa", ex, showErrors);
+        }
         finally
         {
             FillGrid();
             SetBusy(false, _document != null
-                ? $"Đã đọc {_document.Rows.Count} dòng hàng từ {Path.GetFileName(goods)}."
+                ? $"Đã đọc {_document.Rows.Count} dòng hàng từ {Path.GetFileName(goods)}." + pageNote
                 : "Chưa đọc được dữ liệu.");
         }
     }
@@ -915,31 +965,51 @@ public class WarehouseExportView : UserControl
         gridRow.Cells["colTicketName"].ToolTipText = item.TicketName;
     }
 
+    /// <summary>Giá trị ô lúc bắt đầu sửa — để biết người dùng có thật sự đổi gì không.</summary>
+    private string? _editingValue;
+
     private void Grid_CellEndEdit(object? sender, DataGridViewCellEventArgs e)
     {
-        if (e.RowIndex < 0 || dgvRows.Rows[e.RowIndex].Tag is not WarehouseProductRow item)
+        string? before = _editingValue;
+        _editingValue = null;
+        if (e.RowIndex < 0 || dgvRows.Columns[e.ColumnIndex].Name == "colUnit")
+            return; // đơn vị đã xử lý ở CellValueChanged
+
+        // Vào ô rồi thoát ra không sửa gì (Esc, bấm chỗ khác): bản đã xuất vẫn đúng, không bắt xuất lại.
+        string after = dgvRows.Rows[e.RowIndex].Cells[e.ColumnIndex].Value?.ToString() ?? "";
+        if (before == after)
             return;
 
-        DataGridViewRow gridRow = dgvRows.Rows[e.RowIndex];
-        string column = dgvRows.Columns[e.ColumnIndex].Name;
-        string text = gridRow.Cells[e.ColumnIndex].Value?.ToString() ?? "";
+        ApplyCellEdit(e.RowIndex, e.ColumnIndex);
+    }
+
+    private void ApplyCellEdit(int rowIndex, int columnIndex)
+    {
+        if (dgvRows.Rows[rowIndex].Tag is not WarehouseProductRow item)
+            return;
+
+        DataGridViewRow gridRow = dgvRows.Rows[rowIndex];
+        string column = dgvRows.Columns[columnIndex].Name;
+        string text = gridRow.Cells[columnIndex].Value?.ToString() ?? "";
 
         switch (column)
         {
             case "colTicketName":
                 item.TicketName = VietnameseText.CollapseSpaces(text);
-                gridRow.Cells[e.ColumnIndex].Value = item.TicketName;
+                gridRow.Cells[columnIndex].Value = item.TicketName;
                 break;
             case "colUnit":
+                if (item.Unit == text)
+                    return;
                 item.Unit = text;
                 break;
             case "colRequested":
                 item.RequestedQuantity = ParseQuantity(text);
-                gridRow.Cells[e.ColumnIndex].Value = FormatQuantity(item.RequestedQuantity) is { Length: > 0 } r ? r : text;
+                gridRow.Cells[columnIndex].Value = FormatQuantity(item.RequestedQuantity) is { Length: > 0 } r ? r : text;
                 break;
             case "colActual":
                 item.ActualQuantity = ParseQuantity(text);
-                gridRow.Cells[e.ColumnIndex].Value = FormatQuantity(item.ActualQuantity) is { Length: > 0 } a ? a : text;
+                gridRow.Cells[columnIndex].Value = FormatQuantity(item.ActualQuantity) is { Length: > 0 } a ? a : text;
                 break;
             default:
                 return;
@@ -947,7 +1017,7 @@ public class WarehouseExportView : UserControl
 
         WarehouseProductNameService.Revalidate(item);
         PaintRow(gridRow, item);
-        MarkExportStale();
+        _export.MarkStale();
         UpdateState();
     }
 
@@ -972,16 +1042,20 @@ public class WarehouseExportView : UserControl
             foreach (string printer in _printerService.GetInstalledPrinters())
                 cboPrinter.Items.Add(printer);
 
-            int index = cboPrinter.Items.IndexOf(_settings.PrinterName);
-            cboPrinter.SelectedIndex = index;
+            // Máy in đã lưu không còn: để trống (KHÔNG tự chuyển sang máy in mặc định).
+            cboPrinter.SelectedIndex = cboPrinter.Items.IndexOf(_settings.PrinterName);
+            _windowsDefaultPrinter = _printerService.GetWindowsDefaultPrinter();
         }
         finally
         {
             _loadingUi = false;
         }
 
+        RefreshPrinterAvailability();
         UpdateState();
     }
+
+    private void RefreshPrinterAvailability() => _printerAvailable = _printerService.IsPrinterAvailable(SelectedPrinter);
 
     private string SelectedPrinter => cboPrinter.SelectedItem as string ?? "";
     #endregion
@@ -1103,7 +1177,7 @@ public class WarehouseExportView : UserControl
         if (_loadingUi)
             return;
 
-        MarkExportStale();
+        _export.MarkStale();
         UpdatePageInfo();
         UpdateState();
     }
@@ -1142,6 +1216,9 @@ public class WarehouseExportView : UserControl
     /// <summary>Đọc lại thiết lập trang in trực tiếp từ file mẫu (file có thể vừa được sửa) và đưa lên các ô.</summary>
     private async Task LoadPageFromTemplateAsync()
     {
+        if (_busy)
+            return;
+
         string template = txtTemplate.Text;
         if (!File.Exists(template))
         {
@@ -1160,6 +1237,10 @@ public class WarehouseExportView : UserControl
             WarehouseLog.Error($"Đọc thiết lập in của mẫu {template}", ex);
             MessageBox.Show(ex.Message, Title, MessageBoxButtons.OK, MessageBoxIcon.Warning);
         }
+        catch (Exception ex)
+        {
+            ReportUnexpected(null, "đọc thiết lập in của file mẫu", ex, show: true);
+        }
         finally
         {
             SetBusy(false, layout != null ? "Đã lấy thiết lập in từ file mẫu." : "Chưa đọc được thiết lập in của mẫu.");
@@ -1170,7 +1251,7 @@ public class WarehouseExportView : UserControl
 
         _templatePage = layout.Page;
         FillPageControls(layout.Page, keepTemplate: false);
-        MarkExportStale();
+        _export.MarkStale();
         UpdateState();
     }
 
@@ -1180,7 +1261,7 @@ public class WarehouseExportView : UserControl
             return;
 
         FillPageControls(_templatePage, keepTemplate: true);
-        MarkExportStale();
+        _export.MarkStale();
         UpdateState();
         lblStatus.Text = "Đã khôi phục thiết lập in của file mẫu.";
     }
@@ -1204,7 +1285,7 @@ public class WarehouseExportView : UserControl
 
         SaveSettings();
         UpdateFontPreview();
-        MarkExportStale();
+        _export.MarkStale();
         UpdateState();
     }
 
@@ -1263,6 +1344,7 @@ public class WarehouseExportView : UserControl
 
     private void ValidateAndShow()
     {
+        dgvRows.EndEdit();
         WarehouseValidationReport report = BuildReport();
         string exists = report.ExistingOutputPath != null
             ? $"\n\nLưu ý: file {Path.GetFileName(report.ExistingOutputPath)} đã có trong thư mục output — khi xuất sẽ hỏi trước khi ghi đè."
@@ -1305,6 +1387,9 @@ public class WarehouseExportView : UserControl
 
     private async Task ExportAsync()
     {
+        if (_busy)
+            return;
+
         dgvRows.EndEdit();
         WarehouseValidationReport report = BuildReport();
         if (!report.CanExport)
@@ -1342,30 +1427,37 @@ public class WarehouseExportView : UserControl
             OverwriteExisting = overwrite
         };
 
+        WarehouseExportResult? result = null;
         try
         {
             SetBusy(true, $"Đang xuất phiếu {code}...");
-            WarehouseExportResult result = await Task.Run(() => _documentService.Export(request));
-            _lastExport = result;
-            _exportStale = false;
-            _previewedStamp = null;
+            result = await Task.Run(() => _documentService.Export(request));
+            _export.Record(result);
             WarehouseLog.Info($"Xuất phiếu {code}: {result.OutputPath} ({result.RowCount} dòng, chênh {result.RowDelta}), " +
                               $"font={request.Font.Scope}, thiết lập in: {request.Page.Describe()}");
-
-            MessageBox.Show(
-                $"Đã xuất phiếu {code} ({result.RowCount} dòng hàng):\n{result.OutputPath}\n\n" +
-                "Đã mở lại file và kiểm tra:\n" + string.Join("\n", result.VerifiedChecks.Select(c => "  ✓ " + c)) +
-                "\n\nBước tiếp theo: XEM TRƯỚC BẢN IN để kiểm tra từng trang trước khi in.",
-                Title, MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
         catch (WarehouseException ex)
         {
             WarehouseLog.Error($"Xuất phiếu {code} → {output}", ex);
             MessageBox.Show(ex.Message, Title, MessageBoxButtons.OK, MessageBoxIcon.Warning);
         }
+        catch (Exception ex)
+        {
+            ReportUnexpected(null, $"xuất phiếu {code}", ex, show: true);
+        }
         finally
         {
-            SetBusy(false, _lastExport != null && !_exportStale ? $"Đã xuất: {_lastExport.OutputPath}" : "Chưa xuất được phiếu.");
+            SetBusy(false, result != null ? $"Đã xuất và kiểm tra lại: {result.OutputPath}" : "Chưa xuất được phiếu.");
+        }
+
+        // Thông báo thành công chỉ sau khi file đã được mở lại và kiểm tra (Export ném lỗi nếu không đạt).
+        if (result != null)
+        {
+            MessageBox.Show(
+                $"Đã xuất phiếu {code} ({result.RowCount} dòng hàng):\n{result.OutputPath}\n\n" +
+                "Đã mở lại file và kiểm tra:\n" + string.Join("\n", result.VerifiedChecks.Select(c => "  ✓ " + c)) +
+                "\n\nBước tiếp theo: XEM TRƯỚC BẢN IN để kiểm tra từng trang trước khi in.",
+                Title, MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
     }
 
@@ -1376,16 +1468,9 @@ public class WarehouseExportView : UserControl
     /// </summary>
     private bool IsExportCurrent(out string reason)
     {
-        reason = _lastExport == null
-            ? "Chưa có file phiếu. Hãy bấm XUẤT PHIẾU EXCEL trước."
-            : _exportStale
-                ? "Dữ liệu, font hoặc thiết lập in đã thay đổi sau lần xuất trước — bản đã xuất là bản CŨ.\n\nHãy bấm XUẤT PHIẾU EXCEL lại."
-                : !File.Exists(_lastExport.OutputPath)
-                    ? $"File phiếu không còn tồn tại:\n{_lastExport.OutputPath}\n\nHãy xuất lại."
-                    : !_lastExport.Stamp.Matches(_lastExport.OutputPath)
-                        ? $"File phiếu đã bị sửa hoặc ghi đè bên ngoài sau khi xuất:\n{_lastExport.OutputPath}\n\nHãy xuất lại để in đúng dữ liệu đã kiểm tra."
-                        : "";
-        return reason.Length == 0;
+        WarehouseExportState state = _export.Check();
+        reason = _export.Describe(state);
+        return state == WarehouseExportState.Current;
     }
 
     private string DescribeFont()
@@ -1405,9 +1490,15 @@ public class WarehouseExportView : UserControl
     /// </summary>
     private async Task PrintPreviewAsync()
     {
+        if (_busy)
+            return;
+
+        // Ô đang sửa dở trong bảng được ghi nhận trước — nếu nó đổi dữ liệu thì bản đã xuất thành bản cũ.
+        dgvRows.EndEdit();
         if (!IsExportCurrent(out string reason))
         {
             MessageBox.Show(reason, Title, MessageBoxButtons.OK, MessageBoxIcon.Information);
+            UpdateState();
             return;
         }
 
@@ -1419,9 +1510,10 @@ public class WarehouseExportView : UserControl
             return;
         }
 
-        WarehouseExportResult export = _lastExport!;
+        WarehouseExportResult export = _export.Last!;
         string printer = SelectedPrinter;
-        bool printerOk = _printerService.IsPrinterAvailable(printer);
+        RefreshPrinterAvailability();
+        bool printerOk = _printerAvailable;
         string pdfFolder = WarehousePrintPreviewService.DefaultPreviewFolder;
         WarehousePrintPreview? preview = null;
 
@@ -1439,27 +1531,30 @@ public class WarehouseExportView : UserControl
                 PdfFolder = pdfFolder,
                 FontDescription = DescribeFont()
             });
-            _previewedStamp = preview.SourceStamp;
-            WarehouseLog.Info($"Xem trước {export.OutputPath}: {preview.PageCount} trang (mẫu {preview.TemplatePageCount?.ToString() ?? "?"}), " +
-                              $"máy in phân trang {preview.PaginationPrinter}, {preview.WarningCount} cảnh báo bố cục");
+            _export.MarkPreviewed(preview.SourceStamp);
+            WarehouseLog.Info($"Xem trước {export.OutputPath}: {preview.RenderedPageCount} trang PDF / Excel báo {preview.PageCount} " +
+                              $"(mẫu {preview.TemplatePageCount?.ToString() ?? "?"}), máy in phân trang {preview.PaginationPrinter}, " +
+                              $"{preview.WarningCount} cảnh báo bố cục");
         }
         catch (WarehouseException ex)
         {
             WarehouseLog.Error($"Xem trước bản in {export.OutputPath}", ex);
             MessageBox.Show(ex.Message, Title, MessageBoxButtons.OK, MessageBoxIcon.Warning);
         }
+        catch (Exception ex)
+        {
+            ReportUnexpected(null, "dựng bản xem trước bản in", ex, show: true);
+        }
         finally
         {
-            SetBusy(false, preview != null
-                ? $"Bản xem trước: {preview.PageCount} trang, {preview.WarningCount} cảnh báo bố cục."
-                : "Chưa dựng được bản xem trước.");
+            SetBusy(false, preview != null ? DescribePreview(preview) : "Chưa dựng được bản xem trước.");
         }
 
         if (preview == null)
             return;
 
         string hint = printerOk
-            ? $"Bấm IN để in {preview.PageCount} trang ra máy in: {printer}"
+            ? $"Bấm IN để in {preview.RenderedPageCount} trang ra máy in: {printer}"
             : "Chưa chọn máy in hợp lệ nên chưa in được — đang phân trang theo máy in mặc định của Excel. Chọn máy in ở màn hình phiếu rồi xem trước lại.";
         try
         {
@@ -1478,6 +1573,12 @@ public class WarehouseExportView : UserControl
         }
     }
 
+    /// <summary>Dòng trạng thái sau khi dựng xem trước — số trang là số trang THỰC TẾ của bản xem trước.</summary>
+    private static string DescribePreview(WarehousePrintPreview preview) =>
+        $"Bản xem trước: {preview.RenderedPageCount} trang" +
+        (preview.RenderedPageCount != preview.PageCount ? $" (Excel báo {preview.PageCount} trang — xem cảnh báo)" : "") +
+        $", {preview.WarningCount} cảnh báo bố cục.";
+
     /// <summary>
     /// In file phiếu mới nhất ra máy in đã chọn sau khi người dùng xác nhận.
     /// <paramref name="preview"/> != null: in từ cửa sổ xem trước — file phải
@@ -1485,9 +1586,14 @@ public class WarehouseExportView : UserControl
     /// </summary>
     private async Task<bool> PrintAsync(IWin32Window? owner, WarehousePrintPreview? preview)
     {
+        if (_busy)
+            return false;
+
+        dgvRows.EndEdit();
         if (!IsExportCurrent(out string reason))
         {
             MessageBox.Show(owner, reason, Title, MessageBoxButtons.OK, MessageBoxIcon.Information);
+            UpdateState();
             return false;
         }
 
@@ -1498,9 +1604,12 @@ public class WarehouseExportView : UserControl
             return false;
         }
 
+        // Kiểm tra trực tiếp (không dùng kết quả lưu sẵn): máy in có thể vừa bị gỡ / tắt.
         string printer = SelectedPrinter;
-        if (!_printerService.IsPrinterAvailable(printer))
+        RefreshPrinterAvailability();
+        if (!_printerAvailable)
         {
+            UpdateState();
             MessageBox.Show(owner, printer.Length == 0
                     ? "Chưa chọn máy in cho phiếu xuất kho."
                     : $"Máy in \"{printer}\" không còn tồn tại hoặc không dùng được.\n\nHãy bấm Làm mới và chọn lại máy in.",
@@ -1508,10 +1617,10 @@ public class WarehouseExportView : UserControl
             return false;
         }
 
-        WarehouseExportResult export = _lastExport!;
+        WarehouseExportResult export = _export.Last!;
         string file = export.OutputPath;
-        string pages = preview != null ? $" ({preview.PageCount} trang)" : "";
-        string notPreviewed = preview == null && _previewedStamp != export.Stamp
+        string pages = preview != null ? $" ({preview.RenderedPageCount} trang)" : "";
+        string notPreviewed = preview == null && !_export.WasPreviewed
             ? "\n\nChưa xem trước bản in của file này — nên bấm XEM TRƯỚC BẢN IN để kiểm tra từng trang trước."
             : "";
         if (MessageBox.Show(owner, $"In phiếu {Path.GetFileName(file)}{pages} ra máy in:\n{printer}?{notPreviewed}", Title,
@@ -1531,9 +1640,14 @@ public class WarehouseExportView : UserControl
             WarehouseLog.Error($"In phiếu {file} → {printer}", ex);
             MessageBox.Show(owner, ex.Message, Title, MessageBoxButtons.OK, MessageBoxIcon.Warning);
         }
+        catch (Exception ex)
+        {
+            ReportUnexpected(owner, $"in phiếu ra máy in \"{printer}\"", ex, show: true);
+        }
         finally
         {
-            SetBusy(false, ok ? $"Đã gửi lệnh in {Path.GetFileName(file)} tới {printer}." : "In chưa thành công.");
+            // "Đã gửi" = Excel đã giao lệnh in cho hàng đợi của máy in; giấy ra hay chưa do máy in quyết định.
+            SetBusy(false, ok ? $"Đã gửi lệnh in {Path.GetFileName(file)} tới hàng đợi của {printer}." : "In chưa thành công.");
         }
 
         return ok;
@@ -1553,6 +1667,23 @@ public class WarehouseExportView : UserControl
         }
     }
 
+    /// <summary>
+    /// Lỗi ngoài dự kiến của một thao tác (không phải WarehouseException đã có
+    /// thông báo sẵn): ghi log đầy đủ, báo người dùng thao tác nào hỏng và cách
+    /// xử lý — không hiện stack trace, không để thao tác chạy nền âm thầm thất bại.
+    /// </summary>
+    private void ReportUnexpected(IWin32Window? owner, string action, Exception ex, bool show)
+    {
+        WarehouseLog.Error($"Lỗi ngoài dự kiến khi {action}", ex);
+        if (show)
+            MessageBox.Show(owner, $"Không {action} được do lỗi ngoài dự kiến:\n{ex.Message}\n\n" +
+                                   "Hãy kiểm tra file đang không bị chương trình khác mở/khoá rồi thử lại. " +
+                                   "Chi tiết kỹ thuật đã được ghi vào thư mục logs.",
+                Title, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        else
+            lblStatus.Text = $"Không {action} được: {ex.Message}";
+    }
+
     private void ClearData()
     {
         if ((_document != null || txtTicketCode.Text.Length > 0) &&
@@ -1560,12 +1691,11 @@ public class WarehouseExportView : UserControl
                 Title, MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button2) != DialogResult.Yes)
             return;
 
+        dgvRows.CancelEdit();
         txtTicketCode.Text = "";
         txtGoods.Text = "";
         _document = null;
-        _lastExport = null;
-        _exportStale = false;
-        _previewedStamp = null;
+        _export.Reset();
         FillGrid();
         lblStatus.Text = "Đã xóa dữ liệu phiếu.";
     }
@@ -1581,7 +1711,7 @@ public class WarehouseExportView : UserControl
 
         try
         {
-            string? file = _lastExport != null && File.Exists(_lastExport.OutputPath) ? _lastExport.OutputPath : null;
+            string? file = _export.Last is { } last && File.Exists(last.OutputPath) ? last.OutputPath : null;
             Process.Start(new ProcessStartInfo("explorer.exe", file != null ? $"/select,\"{file}\"" : $"\"{folder}\"") { UseShellExecute = true });
         }
         catch (System.ComponentModel.Win32Exception ex)
@@ -1589,12 +1719,6 @@ public class WarehouseExportView : UserControl
             WarehouseLog.Error($"Mở thư mục {folder}", ex);
             MessageBox.Show($"Không mở được thư mục:\n{folder}", Title, MessageBoxButtons.OK, MessageBoxIcon.Warning);
         }
-    }
-
-    private void MarkExportStale()
-    {
-        if (_lastExport != null)
-            _exportStale = true;
     }
     #endregion
 
@@ -1626,22 +1750,28 @@ public class WarehouseExportView : UserControl
               $"số lượng lấy từ cột \"{_document.Goods.QuantityColumnHeader}\" · {_document.Rows.Count} dòng hàng";
 
         string folder = txtOutput.Text.Trim();
+        string extension = _layout?.FileExtension ?? ".xlsx";
         lblOutputInfo.Text = folder.Length == 0
             ? "Thư mục chưa có sẽ được tạo khi xuất."
             : code.IsValid
-                ? $"Tên file dự kiến: {code.Code}{_layout?.FileExtension ?? ".xlsx"}" +
-                  (File.Exists(Path.Combine(folder, code.Code + (_layout?.FileExtension ?? ".xlsx"))) ? "  (đã tồn tại — sẽ hỏi trước khi ghi đè)" : "") +
+                ? $"Tên file dự kiến: {code.Code}{extension}" +
+                  (File.Exists(Path.Combine(folder, code.Code + extension)) ? "  (đã tồn tại — sẽ hỏi trước khi ghi đè)" : "") +
                   (Directory.Exists(folder) ? "" : "  · thư mục chưa có, sẽ được tạo")
                 : "Tên file dự kiến: <mã phiếu>.xlsx";
 
         string printer = SelectedPrinter;
-        bool printerOk = _printerService.IsPrinterAvailable(printer);
+        bool printerOk = _printerAvailable;
         lblPrinterStatus.Text = printer.Length == 0
-            ? $"Chưa chọn máy in. (Máy in mặc định của Windows: {_printerService.GetWindowsDefaultPrinter()} — không bị thay đổi.)"
+            ? (_settings.PrinterName.Length > 0
+                ? $"✗ Máy in đã chọn trước đây \"{_settings.PrinterName}\" không còn trên máy này — chọn máy in khác. " +
+                  "(Không tự chuyển sang máy in mặc định.)"
+                : $"Chưa chọn máy in. (Máy in mặc định của Windows: {_windowsDefaultPrinter} — không bị thay đổi.)")
             : printerOk
                 ? $"✓ Đang chọn: {printer}. In bằng Microsoft Excel, đúng khổ giấy/lề của file mẫu."
                 : $"✗ Máy in \"{printer}\" không dùng được — bấm Làm mới hoặc chọn máy khác.";
-        lblPrinterStatus.ForeColor = printer.Length == 0 ? AppTheme.Colors.TextMuted : printerOk ? AppTheme.Colors.Success : AppTheme.Colors.Danger;
+        lblPrinterStatus.ForeColor = printer.Length == 0
+            ? (_settings.PrinterName.Length > 0 ? AppTheme.Colors.Danger : AppTheme.Colors.TextMuted)
+            : printerOk ? AppTheme.Colors.Success : AppTheme.Colors.Danger;
 
         int errors = _document?.ErrorCount ?? 0;
         int warnings = _document?.WarningCount ?? 0;
@@ -1652,12 +1782,18 @@ public class WarehouseExportView : UserControl
               (errors > 0 ? " — sửa các dòng lỗi (đỏ) trước khi xuất." : "");
         lblSummary.ForeColor = errors > 0 ? AppTheme.Colors.Danger : warnings > 0 ? WarningText : AppTheme.Colors.TextSecondary;
 
-        bool exported = IsExportCurrent(out _);
-        lblDataState.Text = _busy ? "Đang xử lý..."
-            : _document == null ? "Trạng thái: chưa có dữ liệu."
-            : exported ? $"Trạng thái: đã xuất {Path.GetFileName(_lastExport!.OutputPath)} — xem trước bản in rồi in."
-            : _lastExport != null ? "Trạng thái: bản đã xuất là bản cũ (dữ liệu/thiết lập đã đổi hoặc file bị sửa) — cần xuất lại."
-            : errors > 0 ? "Trạng thái: còn dòng lỗi." : "Trạng thái: sẵn sàng xuất.";
+        WarehouseExportState exportState = _export.Check();
+        bool exported = exportState == WarehouseExportState.Current;
+        (lblDataState.Text, lblDataState.ForeColor) =
+            _busy ? ("Đang xử lý...", AppTheme.Colors.TextSecondary)
+            : _document == null ? ("Trạng thái: chưa có dữ liệu.", AppTheme.Colors.TextSecondary)
+            : exported ? ($"Trạng thái: đã xuất {Path.GetFileName(_export.Last!.OutputPath)}" +
+                          (_export.WasPreviewed ? " — đã xem trước, có thể in." : " — xem trước bản in rồi in."), AppTheme.Colors.Success)
+            : exportState == WarehouseExportState.Stale ? ("Trạng thái: bản đã xuất là bản CŨ (dữ liệu/thiết lập đã đổi) — cần xuất lại.", WarningText)
+            : exportState == WarehouseExportState.Missing ? ("Trạng thái: file đã xuất không còn trên đĩa — cần xuất lại.", WarningText)
+            : exportState == WarehouseExportState.ModifiedExternally ? ("Trạng thái: file đã xuất bị sửa bên ngoài — cần xuất lại.", WarningText)
+            : errors > 0 ? ("Trạng thái: còn dòng lỗi.", AppTheme.Colors.Danger)
+            : ("Trạng thái: sẵn sàng xuất.", AppTheme.Colors.TextSecondary);
 
         bool idle = !_busy;
         btnChooseTemplate.Enabled = idle;
