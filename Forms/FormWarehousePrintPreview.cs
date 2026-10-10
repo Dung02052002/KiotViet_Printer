@@ -69,7 +69,14 @@ public sealed class FormWarehousePrintPreview : Form
         _printAction = printAction;
         _printHint = printHint;
         _renderer = PdfPageRenderer.Open(preview.PdfPath);
-        _navigator = new WarehousePreviewNavigator(Math.Max(1, _renderer.PageCount));
+        if (_renderer.PageCount < 1)
+        {
+            // Không giả làm "Trang 1 / 1" cho một tài liệu rỗng.
+            _renderer.Dispose();
+            throw new WarehouseException(WarehouseErrorKind.PreviewFailed,
+                "Bản xem trước không có trang nào — hãy xuất lại phiếu rồi xem trước lại.");
+        }
+        _navigator = new WarehousePreviewNavigator(_renderer.PageCount);
 
         Text = $"Xem trước bản in — {Path.GetFileName(preview.WorkbookPath)}";
         Width = 1360;

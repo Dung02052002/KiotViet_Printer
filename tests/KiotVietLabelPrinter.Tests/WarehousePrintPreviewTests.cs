@@ -448,7 +448,11 @@ public class WarehousePrintPreviewExcelTests
 
         Assert.True(preview.PageCount >= 3, $"90 dòng hàng (mỗi dòng ~47pt) phải nhiều trang, Excel báo {preview.PageCount}");
         using (PdfPageRenderer pdf = PdfPageRenderer.Open(preview.PdfPath))
+        {
             Assert.Equal(preview.PageCount, pdf.PageCount);
+            // Số trang hiển thị cho người dùng = số trang thật của bản xem trước, không ước lượng.
+            Assert.Equal(pdf.PageCount, preview.RenderedPageCount);
+        }
 
         Assert.Equal(preview.PageCount, preview.Pages.Count);
         Assert.Contains("đầu phiếu", preview.Pages[0].Content);

@@ -62,6 +62,22 @@ public class WarehousePrintPreviewService
         string pdfPath = Path.Combine(request.PdfFolder,
             $"{Path.GetFileNameWithoutExtension(request.WorkbookPath)}-{Guid.NewGuid():N}.pdf");
 
+        try
+        {
+            return await BuildPreviewAsync(request, stamp, facts, pdfPath);
+        }
+        catch (Exception)
+        {
+            // Dựng hỏng giữa chừng: không để PDF dở dang (hoặc PDF của bản không
+            // dùng được) nằm lại thư mục tạm — người gọi chỉ dọn PDF của bản thành công.
+            DeletePreviewFile(pdfPath);
+            throw;
+        }
+    }
+
+    private static async Task<WarehousePrintPreview> BuildPreviewAsync(WarehousePreviewRequest request, WarehouseFileStamp stamp,
+        WorkbookFacts facts, string pdfPath)
+    {
         ExcelFacts excel = await ExcelAutomation.RunAsync(
             session => MeasureWithExcel(session, request, pdfPath),
             PreviewTimeout, "dựng bản xem trước in", WarehouseErrorKind.PreviewFailed);
@@ -78,8 +94,16 @@ public class WarehousePrintPreviewService
         issues.AddRange(facts.Issues);
 
         string printedPaper;
+        int renderedPages;
         using (PdfPageRenderer pdf = PdfPageRenderer.Open(pdfPath))
         {
+            // PDF rỗng = không có gì để xem: báo lỗi thay vì mở cửa sổ xem trước "1 trang" trống.
+            if (pdf.PageCount < 1)
+                throw new WarehouseException(WarehouseErrorKind.PreviewFailed,
+                    "Excel xuất bản xem trước không có trang nào — vùng in của phiếu có thể đang trống.\n\n" +
+                    "Hãy mở file phiếu bằng Excel kiểm tra vùng in rồi xuất lại.");
+
+            renderedPages = pdf.PageCount;
             if (pdf.PageCount != excel.PageCount)
                 issues.Add(new(WarehousePreviewIssueLevel.Warning,
                     $"Excel báo {excel.PageCount} trang nhưng bản xem trước có {pdf.PageCount} trang — hãy xem kỹ trước khi in."));
@@ -100,6 +124,7 @@ public class WarehousePrintPreviewService
             SheetName = request.Layout.SheetName,
             PdfPath = pdfPath,
             PageCount = excel.PageCount,
+            RenderedPageCount = renderedPages,
             TemplatePageCount = excel.TemplatePageCount,
             PaginationPrinter = excel.Printer,
             Page = facts.Page,
@@ -554,6 +579,20 @@ public class WarehousePrintPreviewService
             {
                 System.Diagnostics.Debug.WriteLine($"Không xoá được file xem trước cũ {file}: {ex.Message}");
             }
+        }
+    }
+
+    private static void DeletePreviewFile(string pdfPath)
+    {
+        try
+        {
+            if (File.Exists(pdfPath))
+                File.Delete(pdfPath);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            // Còn khoá (Excel vừa bị dừng) — CleanupOldPreviews sẽ dọn ở lần xem trước sau.
+            System.Diagnostics.Debug.WriteLine($"Không xoá được file xem trước {pdfPath}: {ex.Message}");
         }
     }
 

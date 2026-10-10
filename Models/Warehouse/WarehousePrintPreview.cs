@@ -72,6 +72,12 @@ public sealed class WarehousePrintPreview
     /// <summary>Số trang Excel tính khi in (PageSetup.Pages.Count).</summary>
     public required int PageCount { get; init; }
 
+    /// <summary>
+    /// Số trang của file PDF xem trước — đúng số trang người dùng lật qua trong
+    /// cửa sổ xem trước (luôn ≥ 1). Lệch với <see cref="PageCount"/> thì đã có cảnh báo.
+    /// </summary>
+    public required int RenderedPageCount { get; init; }
+
     /// <summary>Số trang của file mẫu với cùng máy in (null = không đo được).</summary>
     public int? TemplatePageCount { get; init; }
 
