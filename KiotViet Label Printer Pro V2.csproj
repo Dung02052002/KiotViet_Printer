@@ -37,6 +37,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- PDFium (Apache-2.0): dựng ảnh từng trang PDF cho Xem trước bản in phiếu xuất kho. -->
+    <PackageReference Include="bblanchon.PDFium.Win32" Version="152.0.7961" />
     <PackageReference Include="ClosedXML" Version="0.105.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
     <PackageReference Include="NPOI" Version="2.8.0" />
