@@ -37,6 +37,7 @@ public class FormMain : Form
     private readonly BackgroundRemoverView bgRemoverView = new();
     private readonly ImageCompressorView imageCompressorView = new();
     private readonly BarcodeGeneratorView barcodeGeneratorView = new();
+    private readonly WarehouseExportView warehouseExportView = new();
 
     // Workspace
     private readonly RoundedPanel pnlWorkspace = new();
@@ -122,6 +123,7 @@ public class FormMain : Form
         BuildBackgroundRemoverPanel();
         BuildImageCompressorPanel();
         BuildBarcodeGeneratorPanel();
+        BuildWarehouseExportPanel();
     }
 
     #region Header
@@ -272,14 +274,14 @@ public class FormMain : Form
         flpCategories.FlowDirection = FlowDirection.LeftToRight;
         pnlCategory.Controls.Add(flpCategories);
 
-        lblToolsTitle.Text = "CÔNG CỤ HÌNH ẢNH";
+        lblToolsTitle.Text = "CÔNG CỤ";
         lblToolsTitle.Left = 4;
         lblToolsTitle.Width = 400;
         lblToolsTitle.Font = AppTheme.Fonts.SectionTitle;
         lblToolsTitle.ForeColor = AppTheme.Colors.TextPrimary;
         pnlCategory.Controls.Add(lblToolsTitle);
 
-        lblToolsHint.Text = "Xử lý ảnh sản phẩm trực tiếp trên máy.";
+        lblToolsHint.Text = "Xử lý ảnh sản phẩm, tạo mã vạch và phiếu xuất kho trực tiếp trên máy.";
         lblToolsHint.Left = 4;
         lblToolsHint.Width = 700;
         lblToolsHint.Font = AppTheme.Fonts.Body;
@@ -297,11 +299,22 @@ public class FormMain : Form
         flpTools.FlowDirection = FlowDirection.LeftToRight;
         pnlCategory.Controls.Add(flpTools);
 
+        // AutoSize + WrapContents chỉ xuống dòng khi bị giới hạn chiều rộng:
+        // không có MaximumSize thì panel cứ nới ngang và card thứ 4 (Phiếu
+        // xuất kho) nằm ngoài mép phải, bị cắt mất.
+        pnlCategory.SizeChanged += (_, _) => ConstrainToolsWidth();
+        ConstrainToolsWidth();
+
         // Chiều cao flpCategories chỉ biết được sau khi có card (và đổi lại mỗi
         // khi cửa sổ resize làm card xuống dòng khác) — dời section thứ hai mỗi
         // khi đó thay vì đặt cứng một toạ độ Top.
         flpCategories.SizeChanged += (_, _) => RepositionToolsSection();
         RepositionToolsSection();
+    }
+
+    private void ConstrainToolsWidth()
+    {
+        flpTools.MaximumSize = new Size(Math.Max(1, pnlCategory.ClientSize.Width), 0);
     }
 
     private void RepositionToolsSection()
@@ -401,6 +414,7 @@ public class FormMain : Form
         {
             "IMAGE_COMPRESS" => IconGlyphs.Kind.Compress,
             "BARCODE_GENERATE" => IconGlyphs.Kind.Barcode,
+            "WAREHOUSE_EXPORT" => IconGlyphs.Kind.Document,
             _ => IconGlyphs.Kind.Image
         };
         return BuildCard(tool.Name, tool.Description, icon, null, (_, _) => OpenTool(tool));
@@ -412,6 +426,8 @@ public class FormMain : Form
             OpenImageCompressor(tool);
         else if (tool.Code == "BARCODE_GENERATE")
             OpenBarcodeGenerator(tool);
+        else if (tool.Code == "WAREHOUSE_EXPORT")
+            OpenWarehouseExport(tool);
         else
             OpenBackgroundRemover(tool);
     }
@@ -585,6 +601,22 @@ public class FormMain : Form
         barcodeGeneratorView.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Bottom;
         barcodeGeneratorView.Visible = false;
         Controls.Add(barcodeGeneratorView);
+    }
+    #endregion
+
+    #region Warehouse export panel
+    // Phiếu xuất kho: nhúng như các công cụ khác (cùng vị trí/kích thước, cùng
+    // cơ chế show/hide). Máy in/font của màn hình này lưu riêng, không dùng
+    // chung trạng thái máy in với luồng in tem.
+    private void BuildWarehouseExportPanel()
+    {
+        warehouseExportView.Left = 32;
+        warehouseExportView.Top = 204;
+        warehouseExportView.Width = ClientSize.Width - 64;
+        warehouseExportView.Height = ClientSize.Height - 236;
+        warehouseExportView.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Bottom;
+        warehouseExportView.Visible = false;
+        Controls.Add(warehouseExportView);
     }
     #endregion
 
@@ -1149,6 +1181,7 @@ public class FormMain : Form
         bgRemoverView.Visible = false;
         imageCompressorView.Visible = false;
         barcodeGeneratorView.Visible = false;
+        warehouseExportView.Visible = false;
         btnBack.Visible = false;
 
         lblSubtitle.Text = "Chọn danh mục tem để bắt đầu";
@@ -1163,6 +1196,7 @@ public class FormMain : Form
         pnlWorkspace.Visible = false;
         imageCompressorView.Visible = false;
         barcodeGeneratorView.Visible = false;
+        warehouseExportView.Visible = false;
         btnBack.Visible = true;
 
         UiMotion.SlideIn(bgRemoverView, 32, 14);
@@ -1176,6 +1210,7 @@ public class FormMain : Form
         pnlWorkspace.Visible = false;
         bgRemoverView.Visible = false;
         barcodeGeneratorView.Visible = false;
+        warehouseExportView.Visible = false;
         btnBack.Visible = true;
 
         UiMotion.SlideIn(imageCompressorView, 32, 14);
@@ -1189,11 +1224,27 @@ public class FormMain : Form
         pnlWorkspace.Visible = false;
         bgRemoverView.Visible = false;
         imageCompressorView.Visible = false;
+        warehouseExportView.Visible = false;
         btnBack.Visible = true;
 
         UiMotion.SlideIn(barcodeGeneratorView, 32, 14);
 
         lblSubtitle.Text = $"Công cụ: {tool.Name}";
+    }
+
+    private void OpenWarehouseExport(ToolDefinition tool)
+    {
+        pnlCategory.Visible = false;
+        pnlWorkspace.Visible = false;
+        bgRemoverView.Visible = false;
+        imageCompressorView.Visible = false;
+        barcodeGeneratorView.Visible = false;
+        btnBack.Visible = true;
+
+        UiMotion.SlideIn(warehouseExportView, 32, 14);
+
+        lblSubtitle.Text = $"Công cụ: {tool.Name}";
+        warehouseExportView.OnShown();
     }
 
     private void OpenLabelWorkspace(LabelDefinition label)
@@ -1204,6 +1255,7 @@ public class FormMain : Form
         bgRemoverView.Visible = false;
         imageCompressorView.Visible = false;
         barcodeGeneratorView.Visible = false;
+        warehouseExportView.Visible = false;
         btnBack.Visible = true;
 
         UiMotion.SlideIn(pnlWorkspace, 32, 14);
@@ -1304,13 +1356,13 @@ public class FormMain : Form
             }
         }
         else if (e.CloseReason == CloseReason.UserClosing &&
-                 (bgRemoverView.IsBusy || imageCompressorView.IsBusy || barcodeGeneratorView.IsBusy))
+                 (bgRemoverView.IsBusy || imageCompressorView.IsBusy || barcodeGeneratorView.IsBusy || warehouseExportView.IsBusy))
         {
-            // Công cụ hình ảnh / tạo mã vạch chạy nền: đóng app sẽ bỏ dở các
-            // ảnh chưa xử lý mà không có thông báo nào.
+            // Công cụ hình ảnh / tạo mã vạch / phiếu xuất kho chạy nền: đóng app
+            // sẽ bỏ dở phần chưa xử lý mà không có thông báo nào.
             DialogResult answer = MessageBox.Show(
-                "Công cụ hình ảnh / tạo mã vạch đang xử lý chưa xong.\n\n" +
-                "Thoát bây giờ sẽ dừng giữa chừng: các ảnh chưa xử lý sẽ KHÔNG được tạo.\n\n" +
+                "Công cụ hình ảnh / tạo mã vạch / phiếu xuất kho đang xử lý chưa xong.\n\n" +
+                "Thoát bây giờ sẽ dừng giữa chừng: phần chưa xong (ảnh, mã vạch, phiếu đang xuất / in) sẽ KHÔNG được hoàn tất.\n\n" +
                 "Bạn vẫn muốn thoát?",
                 "Đang xử lý",
                 MessageBoxButtons.YesNo,

@@ -212,6 +212,13 @@ public class ConfigService
                 Config.Tools.Add(BarcodeGenerateTool());
                 changed = true;
             }
+
+            // Tương tự cho "Phiếu xuất kho" (thêm sau "Tạo mã vạch").
+            if (!Config.Tools.Any(t => t.Code == "WAREHOUSE_EXPORT"))
+            {
+                Config.Tools.Add(WarehouseExportTool());
+                changed = true;
+            }
         }
 
         // Lỗi lưu phần bổ sung không được làm mất config đã đọc được.
@@ -352,7 +359,8 @@ public class ConfigService
                 IsEnabled = true
             },
             ImageCompressTool(),
-            BarcodeGenerateTool()
+            BarcodeGenerateTool(),
+            WarehouseExportTool()
         };
     }
 
@@ -374,6 +382,17 @@ public class ConfigService
             Code = "BARCODE_GENERATE",
             Name = "Tạo mã vạch",
             Description = "Tạo barcode Code 128 từ mã hàng",
+            IsEnabled = true
+        };
+    }
+
+    private static ToolDefinition WarehouseExportTool()
+    {
+        return new ToolDefinition
+        {
+            Code = "WAREHOUSE_EXPORT",
+            Name = "Phiếu xuất kho",
+            Description = "Tạo phiếu xuất kho từ file mẫu + file hàng hóa",
             IsEnabled = true
         };
     }

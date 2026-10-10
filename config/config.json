@@ -67,6 +67,12 @@
       "Name": "Tạo mã vạch",
       "Description": "Tạo barcode Code 128 từ mã hàng",
       "IsEnabled": true
+    },
+    {
+      "Code": "WAREHOUSE_EXPORT",
+      "Name": "Phiếu xuất kho",
+      "Description": "Tạo phiếu xuất kho từ file mẫu + file hàng hóa",
+      "IsEnabled": true
     }
   ]
 }

@@ -39,6 +39,7 @@
   "Tools": [
     "BG_REMOVE",
     "IMAGE_COMPRESS",
-    "BARCODE_GENERATE"
+    "BARCODE_GENERATE",
+    "WAREHOUSE_EXPORT"
   ]
 }
