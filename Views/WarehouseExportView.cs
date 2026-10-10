@@ -403,7 +403,7 @@ public class WarehouseExportView : UserControl
         txtPrefix.Leave += (_, _) => SaveSettings();
         txtPrefix.Margin = new Padding(0, 0, S(ColumnGap), 0);
 
-        StyleTextBox(txtTicketCode, "VD: 23609");
+        StyleTextBox(txtTicketCode, "VD: 23609 hoặc 23609, 23610");
         txtTicketCode.TextChanged += (_, _) => OnTicketInputChanged();
         txtTicketCode.Margin = new Padding(0, 0, S(ColumnGap * 2), 0);
 

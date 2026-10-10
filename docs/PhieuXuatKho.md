@@ -13,7 +13,10 @@ Màn hình chính → mục **CÔNG CỤ** → card **Phiếu xuất kho**.
 
 1. **Mã phiếu**: nhập `23609` → mã hoàn chỉnh `XK23609`. Nhập sẵn `XK23609`
    (hoặc `xk23609`) cũng được, không bị ghép tiền tố hai lần. Chỉ dùng chữ không
-   dấu, số, `-`, `_`. Tiền tố đổi được ở ô *Tiền tố*.
+   dấu, số, `-`, `_`, `.` (vd `23609.01` → `XK23609.01`). Tiền tố đổi được ở ô *Tiền tố*.
+   Nhiều phiếu chuyển gộp một phiếu xuất: ngăn bằng dấu phẩy, `23609, 23610` →
+   `XK23609,XK23610` (mỗi mã đều có tiền tố; file kết quả `XK23609,XK23610.xlsx`).
+   Không được để dấu phẩy thừa ở đầu/cuối, hai dấu phẩy liền nhau hay mã lặp.
 2. **CHỌN FILE PHIẾU MẪU**: file phiếu xuất kho mẫu (.xlsx / .xls), ví dụ
    `Desktop/Phiếu xuât Sài Gòn/<cửa hàng>/Phiếu Xuất Kho.xlsx`. Phần mềm tự tìm
    ô `Số : ...` và bảng *Tên hàng hóa | Đơn vị tính | Số lượng (Yêu cầu / Thực xuất)*

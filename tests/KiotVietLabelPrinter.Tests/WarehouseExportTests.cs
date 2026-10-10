@@ -20,6 +20,9 @@ public class WarehouseTicketCodeTests
     [InlineData("XK23609", "XK23609")]
     [InlineData("xk23609", "XK23609")]
     [InlineData("023056", "XK023056")]
+    [InlineData("23609.01", "XK23609.01")]
+    [InlineData("xk23609.01", "XK23609.01")]
+    [InlineData("23609.1.2", "XK23609.1.2")]
     public void Normalize_AddsPrefixOnce(string input, string expected)
     {
         TicketCodeResult result = WarehouseTicketCodeService.Normalize(input);
@@ -35,6 +38,10 @@ public class WarehouseTicketCodeTests
     [InlineData("236 09")]
     [InlineData("23609/1")]
     [InlineData("phiếu1")]
+    [InlineData(".01")]          // dấu chấm đầu
+    [InlineData("23609.")]       // dấu chấm cuối (Windows tự cắt khỏi tên file)
+    [InlineData("23609..01")]    // hai dấu chấm liền nhau
+    [InlineData("23609. 01")]
     public void Normalize_RejectsInvalid(string? input)
     {
         TicketCodeResult result = WarehouseTicketCodeService.Normalize(input);
@@ -47,6 +54,50 @@ public class WarehouseTicketCodeTests
     {
         Assert.Equal("PX23609", WarehouseTicketCodeService.Normalize("23609", "PX").Code);
         Assert.Equal("PX23609", WarehouseTicketCodeService.Normalize("px23609", "PX").Code);
+    }
+
+    [Theory]
+    [InlineData("23609,23610", "XK23609,XK23610")]
+    [InlineData("23609, 23610", "XK23609,XK23610")]
+    [InlineData(" 23609 ,  23610 ", "XK23609,XK23610")]
+    [InlineData("XK23609,23610", "XK23609,XK23610")]
+    [InlineData("xk23609,Xk23610,23611", "XK23609,XK23610,XK23611")]
+    [InlineData("23609.01, 23609.02", "XK23609.01,XK23609.02")]
+    public void Normalize_CommaSeparatedCodes_PrefixesEachCode(string input, string expected)
+    {
+        TicketCodeResult result = WarehouseTicketCodeService.Normalize(input);
+        Assert.True(result.IsValid, result.Error);
+        Assert.Equal(expected, result.Code);
+    }
+
+    [Theory]
+    [InlineData(",23609")]          // dấu phẩy đầu
+    [InlineData("23609,")]          // dấu phẩy cuối
+    [InlineData("23609,,23610")]    // hai dấu phẩy liền nhau
+    [InlineData("23609, ,23610")]   // phần trống chỉ có khoảng trắng
+    [InlineData(",")]
+    [InlineData("23609,XK")]        // một phần chỉ có tiền tố
+    [InlineData("23609,236 10")]    // khoảng trắng trong một mã
+    [InlineData("23609;23610")]     // dấu ngăn cách khác dấu phẩy
+    [InlineData("23609,xk23609")]   // trùng mã sau khi chuẩn hóa
+    public void Normalize_CommaSeparatedCodes_RejectsInvalid(string input)
+    {
+        TicketCodeResult result = WarehouseTicketCodeService.Normalize(input);
+        Assert.False(result.IsValid);
+        Assert.False(string.IsNullOrWhiteSpace(result.Error));
+    }
+
+    [Fact]
+    public void Normalize_RejectsCodeLongerThanMaxLength()
+    {
+        string input = string.Join(",", Enumerable.Range(10000, 20)); // 20 mã ≈ 139 ký tự sau khi ghép tiền tố
+        Assert.False(WarehouseTicketCodeService.Normalize(input).IsValid);
+    }
+
+    [Fact]
+    public void Normalize_RejectsCommaInPrefix()
+    {
+        Assert.False(WarehouseTicketCodeService.Normalize("23609", "X,K").IsValid);
     }
 }
 
@@ -440,6 +491,23 @@ public class WarehouseExcelTests
         Assert.Equal("Tên hàng hóa", Text(s, "A12"));
         Assert.Contains("A18:B18", Enumerable.Range(0, s.NumMergedRegions).Select(i => s.GetMergedRegion(i).FormatAsString()));
         Assert.Equal("Sheet1!$A$1:$D$18", wb.GetPrintArea(0));
+    }
+
+    [Fact]
+    public void Export_CommaSeparatedTicketCode_WritesCodeCellAndFileName()
+    {
+        string dir = TestData.NewTempDir();
+        string template = WarehouseTestData.CreateTemplate(dir, dataRows: 4);
+        string code = WarehouseTicketCodeService.Normalize("23609, 23610").Code!;
+        string output = WarehouseDocumentService.BuildOutputPath(dir, code, ".xlsx");
+
+        // Export tự mở lại file và đối chiếu ô số phiếu — mã có dấu phẩy phải qua được bước này.
+        WarehouseExportResult result = Export(template, output, 4, code: code);
+
+        Assert.Equal(Path.Combine(dir, "XK23609,XK23610.xlsx"), result.OutputPath);
+        using IWorkbook wb = Open(output);
+        Assert.Equal("Số : XK23609,XK23610", Text(wb.GetSheetAt(0), "B5"));
+        Assert.Equal(code, result.Layout.TemplateTicketCode);
     }
 
     [Fact]
