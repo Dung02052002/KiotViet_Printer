@@ -20,15 +20,32 @@ namespace KiotVietLabelPrinter.Views;
 // Máy in / font của màn hình này lưu riêng trong WarehouseSettingsStore, không
 // đụng tới cấu hình in tem. Thiết lập trang in tuỳ chỉnh KHÔNG được lưu: mỗi
 // lần mở / đổi file mẫu đều về "giữ nguyên mẫu".
+//
+// Bố cục: card bo góc (chỉ vẽ viền + bóng) chứa MỘT vùng cuộn cho nội dung và
+// một thanh thao tác cố định ở đáy (nút luôn nhìn thấy, không bị cuộn mất).
+// Nội dung xếp bằng TableLayoutPanel tự co giãn theo font/DPI — không đặt toạ
+// độ tay. Lưu ý: card không được tự cuộn (AutoScroll) — Windows cuộn bằng cách
+// dịch ảnh đã vẽ, viền bo góc và bóng của card sẽ bị kéo theo vào giữa nội
+// dung thành các đường viền / mảng trắng chồng lên nhau.
 public class WarehouseExportView : UserControl
 {
     private const string Title = "Phiếu xuất kho";
+
+    // Kích thước theo đơn vị logic (96 DPI) — luôn đổi qua S() trước khi dùng.
+    private const int ControlHeight = 40;
+    private const int ActionHeight = 44;
+    private const int ColumnGap = 12;
+    private const int SectionGap = 22;
+    private const int SideBySideMinWidth = 900;
+    private const int MinContentWidth = 700;
+    private const int MinVisibleGridRows = 4;
+    private const int PrinterColumnPercent = 42;
 
     private readonly WarehouseDocumentService _documentService = new();
     private readonly WarehousePrinterService _printerService = new();
     private readonly WarehousePrintPreviewService _previewService = new();
     private readonly InstalledFontService _fontService = new();
-    private readonly WarehouseSettingsStore _settingsStore = new();
+    private readonly WarehouseSettingsStore _settingsStore;
     private readonly WarehouseExportSettings _settings;
     private readonly WarehouseExportTracker _export = new();
 
@@ -40,6 +57,7 @@ public class WarehouseExportView : UserControl
 
     private bool _busy;
     private bool _loadingUi;
+    private bool _fillingGrid;
     private Font? _previewFont;
 
     // Kiểm tra máy in phải hỏi spooler (chậm với máy in mạng) — chỉ làm khi nạp
@@ -51,20 +69,49 @@ public class WarehouseExportView : UserControl
     /// <summary>Đang xuất / in — FormMain hỏi lại trước khi đóng app.</summary>
     public bool IsBusy => _busy;
 
-    private readonly CardPanel pnlCard;
-    private bool _fillingGrid;
-
     /// <summary>
-    /// Khung cuộn của màn hình. Lúc đang bận (khóa các ô nhập) hoặc đang nạp
-    /// bảng, WinForms chuyển focus sang control khác và mặc định tự cuộn tới
-    /// control đó — màn hình nhảy lung tung. Chỉ chặn tự cuộn trong lúc đó;
-    /// bình thường (Tab giữa các ô) vẫn cuộn theo như cũ.
+    /// Vùng cuộn duy nhất của màn hình. Lúc đang bận (khóa các ô nhập) hoặc
+    /// đang nạp bảng, WinForms chuyển focus sang control khác và mặc định tự
+    /// cuộn tới control đó — màn hình nhảy lung tung. Chỉ chặn tự cuộn trong
+    /// lúc đó; bình thường (Tab giữa các ô) vẫn cuộn theo như cũ.
     /// </summary>
-    private sealed class CardPanel(Func<bool> suppressAutoScroll) : RoundedPanel
+    private sealed class ScrollPanel : Panel
     {
+        private readonly Func<bool> _suppressAutoScroll;
+
+        public ScrollPanel(Func<bool> suppressAutoScroll)
+        {
+            _suppressAutoScroll = suppressAutoScroll;
+            DoubleBuffered = true;
+            SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer, true);
+        }
+
         protected override Point ScrollToControl(Control activeControl) =>
-            suppressAutoScroll() ? DisplayRectangle.Location : base.ScrollToControl(activeControl);
+            _suppressAutoScroll() ? DisplayRectangle.Location : base.ScrollToControl(activeControl);
+
+        /// <summary>Cuộn trang như khi lăn chuột trên nền trang (dùng khi control con nhường cú lăn).</summary>
+        public void ScrollByWheel(int delta) => OnMouseWheel(new HandledMouseEventArgs(MouseButtons.None, 0, 0, 0, delta));
     }
+
+    // Khung
+    private readonly RoundedPanel pnlCard = new();
+    private readonly ScrollPanel pnlScroll;
+    private readonly TableLayoutPanel tlpContent = NewTable(1);
+    private readonly TableLayoutPanel tlpColumns = NewTable(2);
+    private readonly TableLayoutPanel secPrinter = NewTable(1);
+    private readonly TableLayoutPanel secFont = NewTable(1);
+    private readonly TableLayoutPanel secPage = NewTable(1);
+    private readonly TableLayoutPanel tlpPageActions = NewTable(2);
+    private readonly FlowLayoutPanel flpMargins = NewFlow();
+    private readonly FlowLayoutPanel flpPageButtons = NewFlow();
+    private readonly TableLayoutPanel tlpFooter = NewTable(1);
+    private readonly TableLayoutPanel tlpActions = NewTable(1);
+    private bool? _sideBySide;
+    private bool _applyingLayout;
+    private bool _relayoutPending;
+    private readonly Dictionary<Label, int> _wrapWidths = new();
+    private bool? _pageButtonsInline;
+    private int _actionsPerRow;
 
     // Header
     private readonly RoundedPanel pnlIconBadge = new();
@@ -148,6 +195,7 @@ public class WarehouseExportView : UserControl
     private readonly RoundedButton btnClear = new();
     private readonly RoundedButton btnOpenFolder = new();
     private readonly Label lblStatus = new();
+    private RoundedButton[] Actions => [btnValidate, btnPreview, btnExport, btnPrintPreview, btnPrint, btnClear, btnOpenFolder];
 
     private static readonly (WarehouseFontApplyScope Scope, string Text)[] Scopes =
     [
@@ -160,10 +208,15 @@ public class WarehouseExportView : UserControl
     private static readonly Color WarningBack = Color.FromArgb(255, 247, 230);
     private static readonly Color WarningText = Color.FromArgb(160, 98, 0);
 
-    public WarehouseExportView()
+    public WarehouseExportView() : this(new WarehouseSettingsStore())
+    {
+    }
+
+    public WarehouseExportView(WarehouseSettingsStore settingsStore)
     {
         Dock = DockStyle.Fill;
-        pnlCard = new CardPanel(() => _busy || _fillingGrid);
+        _settingsStore = settingsStore;
+        pnlScroll = new ScrollPanel(() => _busy || _fillingGrid);
         _settings = _settingsStore.Load();
 
         BuildUi();
@@ -188,39 +241,105 @@ public class WarehouseExportView : UserControl
             LoadPrinters();
     }
 
+    /// <summary>Đơn vị logic (96 DPI) → pixel thật theo DPI màn hình.</summary>
+    private int S(int logical) => LogicalToDeviceUnits(logical);
+
     #region Dựng giao diện
+    // Quy ước bố cục: mỗi khối là một cột xếp chồng (Stack); hàng nào nhiều cột
+    // thì là một lưới riêng KHÔNG gộp ô (column span). TableLayoutPanel tự co
+    // giãn đo sai các ô gộp vắt qua cột % (đo ở bề rộng gần 0 → khối cao hàng
+    // nghìn px) — nên không dùng gộp ô ở đâu cả.
     private void BuildUi()
     {
+        SuspendLayout();
+
         pnlCard.Dock = DockStyle.Fill;
         pnlCard.CornerRadius = 22;
         pnlCard.FillColor = AppTheme.Colors.SurfaceElevated;
         pnlCard.BorderColor = AppTheme.Colors.Border;
         pnlCard.BorderThickness = 1;
         pnlCard.ShadowEnabled = true;
-        pnlCard.AutoScroll = true;
+        // Nội dung nằm lọt trong viền bo góc + bóng đổ của card.
+        pnlCard.Padding = new Padding(S(20), S(20), S(20), S(14));
         Controls.Add(pnlCard);
 
-        BuildHeader();
-        BuildTicketSection();
-        BuildFilesSection();
-        BuildPrinterSection();
-        BuildFontSection();
-        BuildPageSection();
-        BuildPreviewSection();
-        BuildActions();
+        pnlScroll.Dock = DockStyle.Fill;
+        pnlScroll.AutoScroll = true;
+        pnlScroll.BackColor = AppTheme.Colors.SurfaceElevated;
 
-        pnlCard.SizeChanged += (_, _) => RelayoutAll();
-        RelayoutAll();
+        tlpContent.Dock = DockStyle.Top;
+        tlpContent.Padding = new Padding(S(12), S(12), S(12), S(12));
+        // Hẹp hơn mức này thì cuộn ngang thay vì bóp các ô tới mức chữ bị cắt.
+        tlpContent.MinimumSize = new Size(S(MinContentWidth), 0);
+        pnlScroll.Controls.Add(tlpContent);
+
+        AddSection(BuildHeader(), first: true);
+        AddSection(BuildTicketSection());
+        AddSection(BuildFilesSection());
+        AddSection(BuildPrinterAndFontSections());
+        AddSection(BuildPageSection());
+        AddSection(BuildPreviewSection());
+
+        // Fill thêm trước, Bottom thêm sau: thanh thao tác được xếp trước và vùng cuộn lấy phần còn lại.
+        pnlCard.Controls.Add(pnlScroll);
+        pnlCard.Controls.Add(BuildFooter());
+
+        pnlScroll.ClientSizeChanged += (_, _) => ApplyResponsiveLayout();
+        tlpFooter.SizeChanged += (_, _) => ApplyResponsiveLayout();
+
+        ResumeLayout(true);
+        ApplyResponsiveLayout();
     }
 
-    private void BuildHeader()
+    private void AddSection(Control section, bool first = false)
     {
-        pnlIconBadge.SetBounds(32, 32, 44, 44);
+        section.Dock = DockStyle.Fill;
+        section.Margin = new Padding(0, first ? 0 : S(SectionGap), 0, 0);
+        tlpContent.Controls.Add(section);
+    }
+
+    /// <summary>Các control xếp chồng, mỗi control một hàng.</summary>
+    private static TableLayoutPanel Stack(params Control[] rows)
+    {
+        TableLayoutPanel stack = NewTable(1);
+        AddRows(stack, rows);
+        return stack;
+    }
+
+    /// <summary>Đổ các hàng vào một khối dạng cột xếp chồng.</summary>
+    private static void AddRows(TableLayoutPanel stack, params Control[] rows)
+    {
+        for (int i = 0; i < rows.Length; i++)
+            stack.Controls.Add(rows[i], 0, stack.Controls.Count);
+    }
+
+    /// <summary>Lưới nhiều cột không gộp ô: <paramref name="cells"/> xếp lần lượt từ trái qua phải, hết cột thì xuống hàng.</summary>
+    private static TableLayoutPanel Grid(ColumnStyle[] columns, params Control?[] cells)
+    {
+        TableLayoutPanel grid = NewTable(columns.Length);
+        for (int c = 0; c < columns.Length; c++)
+            grid.ColumnStyles[c] = columns[c];
+        for (int i = 0; i < cells.Length; i++)
+        {
+            if (cells[i] is { } cell)
+                grid.Controls.Add(cell, i % columns.Length, i / columns.Length);
+        }
+        return grid;
+    }
+
+    private static ColumnStyle Percent(float value) => new(SizeType.Percent, value);
+    private static ColumnStyle AutoColumn() => new(SizeType.AutoSize);
+    private ColumnStyle Fixed(int logical) => new(SizeType.Absolute, S(logical));
+
+    private Control BuildHeader()
+    {
+        pnlIconBadge.Size = new Size(S(44), S(44));
+        pnlIconBadge.Margin = new Padding(0, 0, S(12), 0);
+        pnlIconBadge.Anchor = AnchorStyles.Left;
         pnlIconBadge.CornerRadius = 13;
         pnlIconBadge.FillColor = AppTheme.Colors.PrimaryLight;
         pnlIconBadge.BorderThickness = 0;
         pnlIconBadge.ContainerColor = AppTheme.Colors.SurfaceElevated;
-        pnlCard.Controls.Add(pnlIconBadge);
 
         iconHeader.Dock = DockStyle.Fill;
         iconHeader.Kind = IconGlyphs.Kind.Document;
@@ -229,24 +348,23 @@ public class WarehouseExportView : UserControl
         pnlIconBadge.Controls.Add(iconHeader);
 
         lblHeaderTitle.Text = "PHIẾU XUẤT KHO";
-        lblHeaderTitle.SetBounds(88, 32, 500, 26);
         lblHeaderTitle.Font = AppTheme.Fonts.SectionTitle;
         lblHeaderTitle.ForeColor = AppTheme.Colors.TextPrimary;
-        pnlCard.Controls.Add(lblHeaderTitle);
+        lblHeaderTitle.AutoSize = true;
+        lblHeaderTitle.Margin = Padding.Empty;
 
         lblHeaderSubtitle.Text = "Điền mã phiếu, tên hàng, đơn vị và số lượng vào chính file phiếu mẫu — giữ nguyên bố cục, định dạng và thiết lập in.";
-        lblHeaderSubtitle.SetBounds(88, 58, 800, 18);
-        lblHeaderSubtitle.Font = AppTheme.Fonts.Hint;
-        lblHeaderSubtitle.ForeColor = AppTheme.Colors.TextMuted;
-        lblHeaderSubtitle.AutoEllipsis = true;
-        pnlCard.Controls.Add(lblHeaderSubtitle);
+        StyleOneLine(lblHeaderSubtitle, AppTheme.Fonts.Hint, AppTheme.Colors.TextMuted);
 
         pnlHeaderDivider.Height = 1;
+        pnlHeaderDivider.Anchor = AnchorStyles.Left | AnchorStyles.Right;
+        pnlHeaderDivider.Margin = new Padding(0, S(18), 0, 0);
         pnlHeaderDivider.BackColor = AppTheme.Colors.Border;
-        pnlCard.Controls.Add(pnlHeaderDivider);
+
+        return Stack(Grid([AutoColumn(), Percent(100)], pnlIconBadge, Stack(lblHeaderTitle, lblHeaderSubtitle)), pnlHeaderDivider);
     }
 
-    private void BuildTicketSection()
+    private Control BuildTicketSection()
     {
         StyleOverline(lblTicketTitle, "THÔNG TIN PHIẾU");
         StyleCaption(lblPrefix, "Tiền tố");
@@ -255,39 +373,63 @@ public class WarehouseExportView : UserControl
         StyleTextBox(txtPrefix, "XK");
         txtPrefix.TextChanged += (_, _) => OnTicketInputChanged();
         txtPrefix.Leave += (_, _) => SaveSettings();
+        txtPrefix.Margin = new Padding(0, 0, S(ColumnGap), 0);
 
         StyleTextBox(txtTicketCode, "VD: 23609");
         txtTicketCode.TextChanged += (_, _) => OnTicketInputChanged();
+        txtTicketCode.Margin = new Padding(0, 0, S(ColumnGap * 2), 0);
 
-        lblFullCode.Font = AppTheme.Fonts.BodyBold;
-        lblFullCode.ForeColor = AppTheme.Colors.TextPrimary;
-        lblFullCode.AutoEllipsis = true;
-        pnlCard.Controls.Add(lblFullCode);
+        StyleOneLine(lblFullCode, AppTheme.Fonts.BodyBold, AppTheme.Colors.TextPrimary);
+        StyleOneLine(lblDataState, AppTheme.Fonts.Hint, AppTheme.Colors.TextSecondary);
 
-        lblDataState.Font = AppTheme.Fonts.Hint;
-        lblDataState.ForeColor = AppTheme.Colors.TextSecondary;
-        lblDataState.AutoEllipsis = true;
-        pnlCard.Controls.Add(lblDataState);
+        // [Tiền tố] [Mã phiếu] [Mã hoàn chỉnh + trạng thái]
+        return Stack(lblTicketTitle, Grid([Fixed(96 + ColumnGap), Fixed(260 + ColumnGap * 2), Percent(100)],
+            lblPrefix, lblTicketCode, null,
+            txtPrefix, txtTicketCode, Stack(lblFullCode, lblDataState)));
     }
 
-    private void BuildFilesSection()
+    private Control BuildFilesSection()
     {
         StyleOverline(lblFilesTitle, "FILE ĐẦU VÀO VÀ THƯ MỤC OUTPUT");
 
         StyleFileButton(btnChooseTemplate, "CHỌN FILE PHIẾU MẪU", IconGlyphs.Kind.Document, ChooseTemplate);
         StyleTextBox(txtTemplate, "Chưa chọn file phiếu xuất kho mẫu (.xlsx / .xls)");
-        txtTemplate.ReadOnly = true;
-        StyleInfo(lblTemplateInfo);
-
         StyleFileButton(btnChooseGoods, "CHỌN FILE HÀNG HÓA", IconGlyphs.Kind.Document, ChooseGoods);
         StyleTextBox(txtGoods, "Chưa chọn file hàng hóa (file Chi tiết chuyển hàng từ KiotViet)");
-        txtGoods.ReadOnly = true;
-        StyleInfo(lblGoodsInfo);
-
         StyleFileButton(btnChooseOutput, "CHỌN THƯ MỤC OUTPUT", IconGlyphs.Kind.Folder, ChooseOutputFolder);
         StyleTextBox(txtOutput, "Chưa chọn thư mục lưu file phiếu");
-        txtOutput.ReadOnly = true;
-        StyleInfo(lblOutputInfo);
+
+        // Ba nút cùng độ rộng = nút có chữ dài nhất (đo theo font thật, không đặt cứng).
+        int buttonWidth = new[] { btnChooseTemplate, btnChooseGoods, btnChooseOutput }.Max(b => b.GetContentWidth(S(16)));
+        List<Control?> cells = new();
+        foreach ((RoundedButton button, RoundedTextBox box, Label info) in new[]
+                 {
+                     (btnChooseTemplate, txtTemplate, lblTemplateInfo),
+                     (btnChooseGoods, txtGoods, lblGoodsInfo),
+                     (btnChooseOutput, txtOutput, lblOutputInfo)
+                 })
+        {
+            button.Size = new Size(buttonWidth, S(ControlHeight));
+            button.Margin = new Padding(0, 0, S(ColumnGap), 0);
+            box.ReadOnly = true;
+            StyleOneLine(info, AppTheme.Fonts.Hint, AppTheme.Colors.TextMuted);
+            info.Margin = new Padding(S(4), S(3), 0, S(8));
+            // [nút chọn] [đường dẫn] / [ ] [dòng thông tin]
+            cells.AddRange([button, box, null, info]);
+        }
+
+        return Stack(lblFilesTitle, Grid([AutoColumn(), Percent(100)], cells.ToArray()));
+    }
+
+    private Control BuildPrinterAndFontSections()
+    {
+        BuildPrinterSection();
+        BuildFontSection();
+        tlpColumns.ColumnStyles[0] = Percent(PrinterColumnPercent);
+        tlpColumns.ColumnStyles[1] = Percent(100 - PrinterColumnPercent);
+        tlpColumns.Controls.Add(secPrinter, 0, 0);
+        tlpColumns.Controls.Add(secFont, 1, 0);
+        return tlpColumns;
     }
 
     private void BuildPrinterSection()
@@ -296,6 +438,8 @@ public class WarehouseExportView : UserControl
 
         cboPrinter.DropDownStyle = ComboBoxStyle.DropDownList;
         AppTheme.StyleComboBox(cboPrinter);
+        cboPrinter.Anchor = AnchorStyles.Left | AnchorStyles.Right;
+        cboPrinter.Margin = new Padding(0, 0, S(ColumnGap), S(2));
         cboPrinter.SelectedIndexChanged += (_, _) =>
         {
             if (_loadingUi)
@@ -307,16 +451,18 @@ public class WarehouseExportView : UserControl
             _export.ForgetPreview();
             UpdateState();
         };
-        pnlCard.Controls.Add(cboPrinter);
 
         btnRefreshPrinters.Text = "Làm mới";
         btnRefreshPrinters.Icon = IconGlyphs.Kind.Refresh;
         btnRefreshPrinters.Variant = ButtonVariant.Outline;
         btnRefreshPrinters.ContainerColor = AppTheme.Colors.SurfaceElevated;
+        btnRefreshPrinters.Size = new Size(btnRefreshPrinters.GetContentWidth(S(16)), S(ControlHeight));
+        btnRefreshPrinters.Margin = Padding.Empty;
         btnRefreshPrinters.Click += (_, _) => LoadPrinters();
-        pnlCard.Controls.Add(btnRefreshPrinters);
 
-        StyleInfo(lblPrinterStatus);
+        StyleWrapping(lblPrinterStatus);
+
+        AddRows(secPrinter, lblPrinterTitle, Grid([Percent(100), AutoColumn()], cboPrinter, btnRefreshPrinters), lblPrinterStatus);
     }
 
     private void BuildFontSection()
@@ -331,14 +477,12 @@ public class WarehouseExportView : UserControl
             cboScope.Items.Add(text);
         AppTheme.StyleComboBox(cboScope);
         cboScope.SelectedIndexChanged += (_, _) => OnFontChanged();
-        pnlCard.Controls.Add(cboScope);
 
         cboFont.DropDownStyle = ComboBoxStyle.DropDownList;
         foreach (string family in _fontService.GetInstalledFamilies())
             cboFont.Items.Add(family);
         AppTheme.StyleComboBox(cboFont);
         cboFont.SelectedIndexChanged += (_, _) => OnFontChanged();
-        pnlCard.Controls.Add(cboFont);
 
         nudFontSize.Minimum = (decimal)WarehouseFontSettings.MinFontSize;
         nudFontSize.Maximum = (decimal)WarehouseFontSettings.MaxFontSize;
@@ -349,78 +493,112 @@ public class WarehouseExportView : UserControl
         nudFontSize.Font = AppTheme.Fonts.Body;
         nudFontSize.TextAlign = HorizontalAlignment.Right;
         nudFontSize.ValueChanged += (_, _) => OnFontChanged();
-        pnlCard.Controls.Add(nudFontSize);
+
+        StyleInputRow(cboScope, cboFont, nudFontSize);
 
         lblFontPreview.Text = "Giày nữ Pucini · Kính mắt · Đôi / Cái · ẮẰẲẴẶ ỨỪỬỮỰ ỳỹ";
         lblFontPreview.BackColor = AppTheme.Colors.GridHeaderBack;
         lblFontPreview.ForeColor = AppTheme.Colors.TextPrimary;
         lblFontPreview.TextAlign = ContentAlignment.MiddleLeft;
-        lblFontPreview.Padding = new Padding(10, 0, 10, 0);
+        lblFontPreview.Padding = new Padding(S(10), 0, S(10), 0);
         lblFontPreview.AutoEllipsis = true;
-        pnlCard.Controls.Add(lblFontPreview);
+        lblFontPreview.AutoSize = false;
+        lblFontPreview.Anchor = AnchorStyles.Left | AnchorStyles.Right;
+        lblFontPreview.Margin = new Padding(0, S(10), 0, S(4));
 
-        StyleInfo(lblFontWarning);
+        StyleOneLine(lblFontWarning, AppTheme.Fonts.Hint, AppTheme.Colors.TextMuted);
+
+        AddRows(secFont, lblFontTitle,
+            Grid([Percent(44), Percent(36), Percent(20)], lblScope, lblFontFamily, lblFontSize, cboScope, cboFont, nudFontSize),
+            lblFontPreview, lblFontWarning);
     }
 
-    private void BuildPageSection()
+    private Control BuildPageSection()
     {
         StyleOverline(lblPageTitle, "KHỔ GIẤY VÀ THIẾT LẬP IN");
         StyleCaption(lblPageMode, "Chế độ");
         StyleCaption(lblPaper, "Khổ giấy");
         StyleCaption(lblOrientation, "Hướng giấy");
         StyleCaption(lblScaleMode, "Tỷ lệ in");
-        StyleCaption(lblMargins, "Lề trang (cm): Trái · Phải · Trên · Dưới");
 
         cboPageMode.DropDownStyle = ComboBoxStyle.DropDownList;
         cboPageMode.Items.AddRange(["Giữ nguyên thiết lập in của file mẫu", "Tùy chỉnh (chỉ đổi mục khác mẫu)"]);
         cboPageMode.SelectedIndex = 0;
         AppTheme.StyleComboBox(cboPageMode);
         cboPageMode.SelectedIndexChanged += (_, _) => OnPageSettingsChanged();
-        pnlCard.Controls.Add(cboPageMode);
 
         foreach (ComboBox combo in new[] { cboPaper, cboOrientation, cboScaleMode })
         {
             combo.DropDownStyle = ComboBoxStyle.DropDownList;
             AppTheme.StyleComboBox(combo);
             combo.SelectedIndexChanged += (_, _) => OnPageSettingsChanged();
-            pnlCard.Controls.Add(combo);
         }
         cboOrientation.Items.AddRange(["Dọc", "Ngang"]);
 
         nudScale.Value = 100;
         StyleNumber(nudScale, WarehousePageSettings.MinScalePercent, WarehousePageSettings.MaxScalePercent, 0, 5);
+        StyleInputRow(cboPageMode, cboPaper, cboOrientation, cboScaleMode, nudScale);
+
+        // Dòng 2: 4 ô lề + 2 nút lấy / khôi phục thiết lập mẫu (hẹp thì 2 nút xuống dòng dưới).
+        StyleCaption(lblMargins, "Lề trang (cm): Trái · Phải · Trên · Dưới");
+        lblMargins.Margin = new Padding(0, S(12), 0, S(4));
+
         foreach (NumericUpDown margin in new[] { nudMarginLeft, nudMarginRight, nudMarginTop, nudMarginBottom })
+        {
             StyleNumber(margin, 0, 10, 2, 0.1m);
+            margin.Width = S(86);
+            margin.Margin = new Padding(0, 0, S(8), 0);
+            flpMargins.Controls.Add(margin);
+        }
 
         StyleAction(btnLoadPage, "LẤY THIẾT LẬP TỪ FILE MẪU", IconGlyphs.Kind.Refresh, ButtonVariant.Outline, async () => await LoadPageFromTemplateAsync());
         StyleAction(btnRestorePage, "KHÔI PHỤC THIẾT LẬP MẪU", IconGlyphs.Kind.ArrowLeft, ButtonVariant.Outline, RestoreTemplatePage);
+        foreach (RoundedButton button in new[] { btnRestorePage, btnLoadPage })
+        {
+            button.Size = new Size(button.GetContentWidth(S(16)), S(ControlHeight));
+            flpPageButtons.Controls.Add(button);
+        }
 
-        StyleInfo(lblPageInfo);
-        lblPageInfo.AutoEllipsis = false;
-        StyleInfo(lblPageWarning);
+        tlpPageActions.ColumnStyles[0] = AutoColumn();
+        tlpPageActions.ColumnStyles[1] = Percent(100);
+        flpMargins.Anchor = AnchorStyles.Left;
+        tlpPageActions.Controls.Add(flpMargins, 0, 0);
+        tlpPageActions.Controls.Add(flpPageButtons, 1, 0);
+
+        StyleWrapping(lblPageInfo);
+        lblPageInfo.Margin = new Padding(0, S(10), 0, S(2));
+        StyleOneLine(lblPageWarning, AppTheme.Fonts.Hint, AppTheme.Colors.TextMuted);
+
+        // Dòng 1: [Chế độ] [Khổ giấy] [Hướng] [Tỷ lệ] [%]
+        AddRows(secPage, lblPageTitle,
+            Grid([Percent(30), Percent(28), Percent(12), Percent(20), Percent(10)],
+                lblPageMode, lblPaper, lblOrientation, lblScaleMode, null,
+                cboPageMode, cboPaper, cboOrientation, cboScaleMode, nudScale),
+            lblMargins, tlpPageActions, lblPageInfo, lblPageWarning);
+        return secPage;
     }
 
-    private void StyleNumber(NumericUpDown box, decimal min, decimal max, int decimals, decimal increment)
+    /// <summary>Một hàng ô nhập cạnh nhau: giãn theo cột, cách nhau một khoảng (ô cuối sát mép phải).</summary>
+    private void StyleInputRow(params Control[] inputs)
     {
-        box.Minimum = min;
-        box.Maximum = max;
-        box.DecimalPlaces = decimals;
-        box.Increment = increment;
-        box.BorderStyle = BorderStyle.FixedSingle;
-        box.Font = AppTheme.Fonts.Body;
-        box.TextAlign = HorizontalAlignment.Right;
-        box.ValueChanged += (_, _) => OnPageSettingsChanged();
-        pnlCard.Controls.Add(box);
+        for (int i = 0; i < inputs.Length; i++)
+        {
+            inputs[i].Anchor = AnchorStyles.Left | AnchorStyles.Right;
+            // Đáy chừa 2px: ComboBox vẽ cao hơn chiều cao nó báo cho TableLayoutPanel một chút — không chừa thì mất viền dưới.
+            inputs[i].Margin = new Padding(0, 0, i < inputs.Length - 1 ? S(ColumnGap) : 0, S(2));
+        }
     }
 
-    private void BuildPreviewSection()
+    private Control BuildPreviewSection()
     {
+        TableLayoutPanel section = Stack();
+
         StyleOverline(lblPreviewTitle, "XEM TRƯỚC DỮ LIỆU  (SỬA ĐƯỢC TÊN HÀNG MỚI, ĐƠN VỊ, SỐ LƯỢNG)");
+        section.Controls.Add(lblPreviewTitle, 0, 0);
 
-        lblSummary.Font = AppTheme.Fonts.BodyBold;
-        lblSummary.ForeColor = AppTheme.Colors.TextSecondary;
-        lblSummary.AutoEllipsis = true;
-        pnlCard.Controls.Add(lblSummary);
+        StyleOneLine(lblSummary, AppTheme.Fonts.BodyBold, AppTheme.Colors.TextSecondary);
+        lblSummary.Margin = new Padding(0, 0, 0, S(6));
+        section.Controls.Add(lblSummary, 0, 1);
 
         dgvRows.AllowUserToAddRows = false;
         dgvRows.AllowUserToDeleteRows = false;
@@ -428,31 +606,40 @@ public class WarehouseExportView : UserControl
         dgvRows.SelectionMode = DataGridViewSelectionMode.CellSelect;
         dgvRows.MultiSelect = false;
         dgvRows.EditMode = DataGridViewEditMode.EditOnKeystrokeOrF2;
-        dgvRows.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
-        dgvRows.RowHeadersWidthSizeMode = DataGridViewRowHeadersWidthSizeMode.DisableResizing;
-        dgvRows.RowHeadersWidth = 44;
         dgvRows.ShowCellToolTips = true;
         AppTheme.StyleGrid(dgvRows);
 
-        AddColumn("colSourceRow", "Dòng", 5, readOnly: true, minWidth: 64);
-        AddColumn("colCode", "Mã hàng", 10, readOnly: true, minWidth: 96);
-        AddColumn("colSourceName", "Tên hàng gốc", 27, readOnly: true);
-        AddColumn("colTicketName", "Tên hàng mới (ghi lên phiếu)", 27, readOnly: false);
+        // Cột lấp đầy chiều rộng nhưng không hẹp hơn mức đọc được: cửa sổ hẹp
+        // thì hiện thanh cuộn ngang thay vì bóp tên hàng thành "...".
+        dgvRows.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+        dgvRows.ScrollBars = ScrollBars.Both;
+        // Tiêu đề cột xuống dòng khi cột hẹp (không bị cắt "..."); chiều cao tiêu đề theo chữ.
+        dgvRows.ColumnHeadersDefaultCellStyle.WrapMode = DataGridViewTriState.True;
+        dgvRows.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+        // Tên hàng / trạng thái dài xuống dòng. Chỉ đo các dòng đang hiển thị —
+        // không đo lại toàn bộ danh sách mỗi lần cập nhật.
+        dgvRows.AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.DisplayedCellsExceptHeaders;
+        dgvRows.RowTemplate.MinimumHeight = S(36);
+
+        AddColumn("colSourceRow", "Dòng", 5, readOnly: true, minWidth: S(56));
+        AddColumn("colCode", "Mã hàng", 10, readOnly: true, minWidth: S(96));
+        AddColumn("colSourceName", "Tên hàng gốc", 26, readOnly: true, minWidth: S(170), wrap: true);
+        AddColumn("colTicketName", "Tên hàng mới (ghi lên phiếu)", 26, readOnly: false, minWidth: S(170), wrap: true);
         DataGridViewComboBoxColumn unit = new()
         {
             Name = "colUnit",
             HeaderText = "Đơn vị",
             FillWeight = 8,
-            MinimumWidth = 78,
+            MinimumWidth = S(78),
             FlatStyle = FlatStyle.Flat,
             DisplayStyle = DataGridViewComboBoxDisplayStyle.Nothing,
             SortMode = DataGridViewColumnSortMode.NotSortable
         };
         unit.Items.AddRange(WarehouseUnitService.PairUnit, WarehouseUnitService.PieceUnit);
         dgvRows.Columns.Add(unit);
-        AddColumn("colRequested", "SL yêu cầu", 9, readOnly: false, numeric: true, minWidth: 104);
-        AddColumn("colActual", "SL thực xuất", 9, readOnly: false, numeric: true, minWidth: 112);
-        AddColumn("colStatus", "Trạng thái", 25, readOnly: true);
+        AddColumn("colRequested", "SL yêu cầu", 9, readOnly: false, numeric: true, minWidth: S(84));
+        AddColumn("colActual", "SL thực xuất", 9, readOnly: false, numeric: true, minWidth: S(84));
+        AddColumn("colStatus", "Trạng thái", 27, readOnly: true, minWidth: S(170), wrap: true);
 
         dgvRows.CellBeginEdit += (_, e) => _editingValue = dgvRows.Rows[e.RowIndex].Cells[e.ColumnIndex].Value?.ToString();
         dgvRows.CellEndEdit += Grid_CellEndEdit;
@@ -475,10 +662,14 @@ public class WarehouseExportView : UserControl
             if (e.Exception != null)
                 WarehouseLog.Error($"Bảng xem trước: ô dòng {e.RowIndex + 1}, cột {dgvRows.Columns[e.ColumnIndex].HeaderText}", e.Exception);
         };
-        pnlCard.Controls.Add(dgvRows);
+        // Chiều cao bảng do GridHeight() quyết định — không để hàng của bảng kéo giãn.
+        dgvRows.Anchor = AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Top;
+        dgvRows.Margin = Padding.Empty;
+        section.Controls.Add(dgvRows, 0, 2);
+        return section;
     }
 
-    private void AddColumn(string name, string header, float weight, bool readOnly, bool numeric = false, int minWidth = 60)
+    private void AddColumn(string name, string header, float weight, bool readOnly, int minWidth, bool numeric = false, bool wrap = false)
     {
         DataGridViewTextBoxColumn column = new()
         {
@@ -491,13 +682,25 @@ public class WarehouseExportView : UserControl
         };
         if (numeric)
             column.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
-        if (name is "colSourceName" or "colTicketName" or "colStatus")
-            column.DefaultCellStyle.WrapMode = DataGridViewTriState.False;
+        column.DefaultCellStyle.WrapMode = wrap ? DataGridViewTriState.True : DataGridViewTriState.False;
         dgvRows.Columns.Add(column);
     }
 
-    private void BuildActions()
+    private Control BuildFooter()
     {
+        tlpFooter.Dock = DockStyle.Bottom;
+        tlpFooter.Padding = new Padding(S(12), 0, S(12), 0);
+        tlpFooter.BackColor = AppTheme.Colors.SurfaceElevated;
+
+        Panel divider = new()
+        {
+            Height = 1,
+            Anchor = AnchorStyles.Left | AnchorStyles.Right,
+            Margin = new Padding(0, 0, 0, S(12)),
+            BackColor = AppTheme.Colors.Border
+        };
+        tlpFooter.Controls.Add(divider, 0, 0);
+
         StyleAction(btnValidate, "KIỂM TRA DỮ LIỆU", IconGlyphs.Kind.ShieldCheck, ButtonVariant.Outline, ValidateAndShow);
         StyleAction(btnPreview, "XEM TRƯỚC DỮ LIỆU", IconGlyphs.Kind.Eye, ButtonVariant.Outline, async () => await LoadDocumentAsync(showErrors: true));
         StyleAction(btnExport, "XUẤT PHIẾU EXCEL", IconGlyphs.Kind.Document, ButtonVariant.Primary, async () => await ExportAsync());
@@ -505,178 +708,146 @@ public class WarehouseExportView : UserControl
         StyleAction(btnPrint, "IN PHIẾU", IconGlyphs.Kind.Printer, ButtonVariant.Outline, async () => await PrintAsync(FindForm(), null));
         StyleAction(btnClear, "XÓA DỮ LIỆU", IconGlyphs.Kind.Trash, ButtonVariant.Outline, ClearData);
         StyleAction(btnOpenFolder, "Mở thư mục", IconGlyphs.Kind.Folder, ButtonVariant.Outline, OpenOutputFolder);
+        foreach (RoundedButton button in Actions)
+        {
+            button.Anchor = AnchorStyles.Left | AnchorStyles.Right;
+            button.Height = S(ActionHeight);
+            tlpActions.Controls.Add(button);
+        }
+        tlpActions.Dock = DockStyle.Fill;
+        tlpFooter.Controls.Add(tlpActions, 0, 1);
 
-        lblStatus.Font = AppTheme.Fonts.Hint;
-        lblStatus.ForeColor = AppTheme.Colors.TextSecondary;
-        lblStatus.AutoEllipsis = true;
+        StyleOneLine(lblStatus, AppTheme.Fonts.Hint, AppTheme.Colors.TextSecondary);
         lblStatus.Text = "Sẵn sàng.";
-        pnlCard.Controls.Add(lblStatus);
+        lblStatus.Margin = new Padding(0, S(2), 0, 0);
+        tlpFooter.Controls.Add(lblStatus, 0, 2);
+        return tlpFooter;
     }
     #endregion
 
-    #region Layout
-    private void RelayoutAll()
+    #region Bố cục co giãn
+    /// <summary>
+    /// Những gì phụ thuộc kích thước cửa sổ: xếp máy in / font cạnh nhau hay
+    /// chồng lên nhau, 2 nút thiết lập in cùng dòng với ô lề hay xuống dòng,
+    /// số nút thao tác mỗi hàng, và chiều cao bảng. Chỉ đổi khi thật sự cần
+    /// (tránh dàn trang lại liên tục).
+    /// </summary>
+    private void ApplyResponsiveLayout()
     {
-        int scrollY = pnlCard.AutoScrollPosition.Y;
-        const int left = 32;
-        const int gap = 12;
-        int width = Math.Max(640, pnlCard.ClientSize.Width - 64);
-        int right = left + width;
+        int contentWidth = Math.Max(tlpContent.MinimumSize.Width, pnlScroll.ClientSize.Width) - tlpContent.Padding.Horizontal;
+        if (_applyingLayout || contentWidth <= 0 || pnlScroll.ClientSize.Height <= 0)
+            return;
 
-        pnlHeaderDivider.SetBounds(left, 96 + scrollY, width, 1);
-        int top = 116;
-
-        // Thông tin phiếu: [Tiền tố] [Mã phiếu] [Mã hoàn chỉnh + trạng thái]
-        lblTicketTitle.SetBounds(left, top + scrollY, 400, 16);
-        top += 24;
-        const int prefixWidth = 90;
-        int codeWidth = Math.Min(260, (width - prefixWidth - gap * 2) / 2);
-        int codeLeft = left + prefixWidth + gap;
-        int infoLeft = codeLeft + codeWidth + gap * 2;
-        lblPrefix.SetBounds(left, top + scrollY, prefixWidth, 18);
-        lblTicketCode.SetBounds(codeLeft, top + scrollY, codeWidth, 18);
-        txtPrefix.SetBounds(left, top + 20 + scrollY, prefixWidth, 40);
-        txtTicketCode.SetBounds(codeLeft, top + 20 + scrollY, codeWidth, 40);
-        lblFullCode.SetBounds(infoLeft, top + 22 + scrollY, right - infoLeft, 20);
-        lblDataState.SetBounds(infoLeft, top + 42 + scrollY, right - infoLeft, 18);
-        top += 20 + 40 + 24;
-
-        // File đầu vào + output: [nút] [đường dẫn] / dòng thông tin
-        lblFilesTitle.SetBounds(left, top + scrollY, 400, 16);
-        top += 24;
-        const int fileButtonWidth = 230;
-        foreach ((RoundedButton button, RoundedTextBox box, Label info) in new[]
-                 {
-                     (btnChooseTemplate, txtTemplate, lblTemplateInfo),
-                     (btnChooseGoods, txtGoods, lblGoodsInfo),
-                     (btnChooseOutput, txtOutput, lblOutputInfo)
-                 })
+        _applyingLayout = true;
+        Size measuredFor = pnlScroll.ClientSize;
+        pnlScroll.SuspendLayout();
+        try
         {
-            button.SetBounds(left, top + scrollY, fileButtonWidth, 40);
-            box.SetBounds(left + fileButtonWidth + gap, top + scrollY, width - fileButtonWidth - gap, 40);
-            info.SetBounds(left + fileButtonWidth + gap + 4, top + 42 + scrollY, width - fileButtonWidth - gap - 4, 18);
-            top += 40 + 26;
+            bool sideBySide = contentWidth >= S(SideBySideMinWidth);
+            SetSideBySide(sideBySide);
+            // Bề rộng xuống dòng tính TẠI ĐÂY (ngoài lượt dàn trang của các bảng con):
+            // đổi kích thước nhãn giữa chừng lượt dàn trang của bảng cha thì bảng cha
+            // không đo lại, giữ nguyên chiều cao cũ (từng thành dải trống hàng nghìn px).
+            SetWrapWidth(lblPageInfo, contentWidth);
+            SetWrapWidth(lblPrinterStatus, sideBySide ? (int)(contentWidth * PrinterColumnPercent / 100f) - secPrinter.Margin.Horizontal : contentWidth);
+            SetPageButtonsInline(contentWidth >= flpMargins.PreferredSize.Width + flpPageButtons.PreferredSize.Width + S(ColumnGap * 2));
+            ArrangeActions(tlpFooter.ClientSize.Width - tlpFooter.Padding.Horizontal);
+            dgvRows.Height = GridHeight();
         }
-        top += 12;
+        finally
+        {
+            pnlScroll.ResumeLayout(true);
+            _applyingLayout = false;
+        }
 
-        // Hai cột: máy in (trái) + font (phải); hẹp quá thì xếp chồng.
-        const int columnGap = 28;
-        bool twoColumns = width >= 900;
-        int printerWidth = twoColumns ? (int)((width - columnGap) * 0.42) : width;
-        int fontLeft = twoColumns ? left + printerWidth + columnGap : left;
-        int fontWidth = twoColumns ? right - fontLeft : width;
+        // Thanh cuộn dọc vừa hiện / ẩn trong lượt này (bề rộng đổi ~17px): tính lại một lần
+        // cho đúng bề rộng mới. Chỉ một lần — không để hai trạng thái thanh cuộn đuổi nhau.
+        if (pnlScroll.ClientSize != measuredFor && !_relayoutPending)
+        {
+            _relayoutPending = true;
+            try
+            {
+                ApplyResponsiveLayout();
+            }
+            finally
+            {
+                _relayoutPending = false;
+            }
+        }
+    }
 
-        int printerBottom = LayoutPrinter(left, top, printerWidth, scrollY);
-        int fontTop = twoColumns ? top : printerBottom + 20;
-        int fontBottom = LayoutFont(fontLeft, fontTop, fontWidth, scrollY);
-        top = Math.Max(printerBottom, fontBottom) + 24;
+    /// <summary>
+    /// Bảng cao vừa đúng phần nhìn thấy của vùng cuộn (trừ tiêu đề + dòng tổng
+    /// hợp phía trên bảng): cuộn trang xuống tới bảng là thấy trọn bảng, chỉ
+    /// còn một thanh cuộn (của bảng) làm việc. Không thấp hơn vài dòng hàng.
+    /// </summary>
+    private int GridHeight()
+    {
+        int above = lblPreviewTitle.Height + lblPreviewTitle.Margin.Vertical + lblSummary.Height + lblSummary.Margin.Vertical;
+        int available = pnlScroll.ClientSize.Height - tlpContent.Padding.Vertical - above;
+        int minimum = dgvRows.ColumnHeadersHeight + dgvRows.RowTemplate.MinimumHeight * MinVisibleGridRows + S(2);
+        return Math.Max(minimum, available);
+    }
 
-        top = LayoutPage(left, top, width, scrollY) + 24;
+    private void SetSideBySide(bool sideBySide)
+    {
+        if (_sideBySide == sideBySide)
+            return;
+        _sideBySide = sideBySide;
 
-        // Xem trước
-        lblPreviewTitle.SetBounds(left, top + scrollY, width, 16);
-        top += 22;
-        lblSummary.SetBounds(left, top + scrollY, width, 20);
-        top += 26;
-        int gridHeight = Math.Max(260, Math.Min(460, pnlCard.ClientSize.Height - 360));
-        dgvRows.SetBounds(left, top + scrollY, width, gridHeight);
-        top += gridHeight + 16;
+        // Hẹp: font xuống dưới máy in, cột phải thu về 0 (đổi kiểu cột thay vì gộp ô).
+        tlpColumns.ColumnStyles[0] = Percent(sideBySide ? PrinterColumnPercent : 100);
+        tlpColumns.ColumnStyles[1] = sideBySide ? Percent(100 - PrinterColumnPercent) : new ColumnStyle(SizeType.Absolute, 0);
+        secPrinter.Margin = new Padding(0, 0, sideBySide ? S(28) : 0, 0);
+        secFont.Margin = new Padding(0, sideBySide ? 0 : S(SectionGap), 0, 0);
+        tlpColumns.SetCellPosition(secFont, new TableLayoutPanelCellPosition(sideBySide ? 1 : 0, sideBySide ? 0 : 1));
+    }
 
-        // Thao tác
-        RoundedButton[] actions = [btnValidate, btnPreview, btnExport, btnPrintPreview, btnPrint, btnClear, btnOpenFolder];
-        int perRow = width >= 1180 ? actions.Length : 4;
-        int buttonWidth = (width - gap * (perRow - 1)) / perRow;
+    private void SetPageButtonsInline(bool inline)
+    {
+        if (_pageButtonsInline == inline)
+            return;
+        _pageButtonsInline = inline;
+
+        // Cùng dòng: 2 nút dồn sát phải. Xuống dòng: nằm dưới các ô lề, dồn trái,
+        // "Lấy thiết lập" đứng trước "Khôi phục" như thứ tự đọc.
+        flpPageButtons.FlowDirection = inline ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
+        flpPageButtons.Anchor = inline ? AnchorStyles.Right : AnchorStyles.Left;
+        flpPageButtons.Margin = new Padding(0, inline ? 0 : S(10), 0, 0);
+        foreach (RoundedButton button in new[] { btnRestorePage, btnLoadPage })
+            button.Margin = inline ? new Padding(S(ColumnGap), 0, 0, 0) : new Padding(0, 0, S(ColumnGap), 0);
+        flpPageButtons.Controls.SetChildIndex(btnLoadPage, inline ? 1 : 0);
+        tlpPageActions.SetCellPosition(flpPageButtons, new TableLayoutPanelCellPosition(inline ? 1 : 0, inline ? 0 : 1));
+    }
+
+    /// <summary>Số nút thao tác mỗi hàng = bao nhiêu nút vừa mà chữ không bị cắt.</summary>
+    private void ArrangeActions(int width)
+    {
+        RoundedButton[] actions = Actions;
+        int gap = S(ColumnGap);
+        int minButton = actions.Max(b => b.GetContentWidth(S(14)));
+        int perRow = Math.Clamp((width + gap) / (minButton + gap), 1, actions.Length);
+        // Chia đều hai hàng (4 + 3) thay vì 6 + 1 khi không vừa một hàng.
+        int rows = (actions.Length + perRow - 1) / perRow;
+        perRow = (actions.Length + rows - 1) / rows;
+        if (perRow == _actionsPerRow)
+            return;
+        _actionsPerRow = perRow;
+
+        tlpActions.SuspendLayout();
+        tlpActions.ColumnStyles.Clear();
+        tlpActions.ColumnCount = perRow;
+        for (int c = 0; c < perRow; c++)
+            tlpActions.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f / perRow));
+        tlpActions.RowCount = rows;
         for (int i = 0; i < actions.Length; i++)
         {
+            int column = i % perRow;
             int row = i / perRow;
-            int col = i % perRow;
-            actions[i].SetBounds(left + col * (buttonWidth + gap), top + row * 56 + scrollY, buttonWidth, 44);
+            actions[i].Margin = new Padding(0, 0, column < perRow - 1 ? gap : 0, row < rows - 1 ? S(10) : 0);
+            tlpActions.SetCellPosition(actions[i], new TableLayoutPanelCellPosition(column, row));
         }
-        top += ((actions.Length + perRow - 1) / perRow) * 56;
-
-        lblStatus.SetBounds(left, top + scrollY, width, 18);
-        top += 30;
-
-        pnlCard.AutoScrollMinSize = new Size(0, top + 24);
-    }
-
-    private int LayoutPrinter(int left, int top, int width, int scrollY)
-    {
-        lblPrinterTitle.SetBounds(left, top + scrollY, width, 16);
-        top += 24;
-        const int refreshWidth = 120;
-        cboPrinter.SetBounds(left, top + 4 + scrollY, width - refreshWidth - 12, 32);
-        btnRefreshPrinters.SetBounds(left + width - refreshWidth, top + scrollY, refreshWidth, 40);
-        top += 46;
-        lblPrinterStatus.SetBounds(left, top + scrollY, width, 36);
-        return top + 36;
-    }
-
-    private int LayoutPage(int left, int top, int width, int scrollY)
-    {
-        const int gap = 12;
-        lblPageTitle.SetBounds(left, top + scrollY, width, 16);
-        top += 24;
-
-        // Dòng 1: [Chế độ] [Khổ giấy] [Hướng] [Tỷ lệ] [%]
-        int modeWidth = (int)((width - gap * 4) * 0.30);
-        int paperWidth = (int)((width - gap * 4) * 0.28);
-        int orientationWidth = (int)((width - gap * 4) * 0.12);
-        int scaleWidth = (int)((width - gap * 4) * 0.20);
-        int x = left;
-        foreach ((Label caption, Control input, int w) in new (Label, Control, int)[]
-                 {
-                     (lblPageMode, cboPageMode, modeWidth),
-                     (lblPaper, cboPaper, paperWidth),
-                     (lblOrientation, cboOrientation, orientationWidth),
-                     (lblScaleMode, cboScaleMode, scaleWidth)
-                 })
-        {
-            caption.SetBounds(x, top + scrollY, w, 18);
-            input.SetBounds(x, top + 20 + scrollY, w, 32);
-            x += w + gap;
-        }
-        nudScale.SetBounds(x, top + 21 + scrollY, left + width - x, 30);
-        top += 20 + 32 + 12;
-
-        // Dòng 2: 4 ô lề + 2 nút lấy / khôi phục thiết lập mẫu
-        lblMargins.SetBounds(left, top + scrollY, 420, 18);
-        x = left;
-        foreach (NumericUpDown margin in new[] { nudMarginLeft, nudMarginRight, nudMarginTop, nudMarginBottom })
-        {
-            margin.SetBounds(x, top + 21 + scrollY, 86, 30);
-            x += 86 + 8;
-        }
-        int buttonWidth = Math.Min(250, (left + width - x - gap * 2) / 2);
-        btnRestorePage.SetBounds(left + width - buttonWidth, top + 16 + scrollY, buttonWidth, 40);
-        btnLoadPage.SetBounds(btnRestorePage.Left - gap - buttonWidth, top + 16 + scrollY, buttonWidth, 40);
-        top += 20 + 40 + 8;
-
-        lblPageInfo.SetBounds(left, top + scrollY, width, 36);
-        top += 38;
-        lblPageWarning.SetBounds(left, top + scrollY, width, 18);
-        return top + 18;
-    }
-
-    private int LayoutFont(int left, int top, int width, int scrollY)
-    {
-        lblFontTitle.SetBounds(left, top + scrollY, width, 16);
-        top += 24;
-        const int gap = 12;
-        int scopeWidth = (int)((width - gap * 2) * 0.44);
-        int fontWidth = (int)((width - gap * 2) * 0.36);
-        int sizeLeft = left + scopeWidth + fontWidth + gap * 2;
-        lblScope.SetBounds(left, top + scrollY, scopeWidth, 18);
-        lblFontFamily.SetBounds(left + scopeWidth + gap, top + scrollY, fontWidth, 18);
-        lblFontSize.SetBounds(sizeLeft, top + scrollY, left + width - sizeLeft, 18);
-        cboScope.SetBounds(left, top + 20 + scrollY, scopeWidth, 32);
-        cboFont.SetBounds(left + scopeWidth + gap, top + 20 + scrollY, fontWidth, 32);
-        nudFontSize.SetBounds(sizeLeft, top + 20 + scrollY, left + width - sizeLeft, 30);
-        top += 20 + 32 + 10;
-        lblFontPreview.SetBounds(left, top + scrollY, width, 34);
-        top += 38;
-        lblFontWarning.SetBounds(left, top + scrollY, width, 18);
-        return top + 18;
+        tlpActions.ResumeLayout(true);
     }
     #endregion
 
@@ -799,6 +970,13 @@ public class WarehouseExportView : UserControl
         SaveSettings();
         _export.MarkStale();
         UpdateState();
+    }
+
+    /// <summary>Nạp file mẫu + file hàng hóa không qua hộp thoại chọn file (dùng cho test bố cục với dữ liệu thật).</summary>
+    internal async Task LoadFilesAsync(string templatePath, string goodsPath)
+    {
+        txtGoods.Text = goodsPath;
+        await SetTemplateAsync(templatePath, showErrors: false);
     }
 
     private static string? FolderOf(string path) =>
@@ -1323,6 +1501,8 @@ public class WarehouseExportView : UserControl
             // cũ ở đây sẽ để ô mẫu chữ cầm một font đã giải phóng ("Parameter is not valid").
             font?.Dispose();
         }
+        // Ô mẫu chữ cao theo cỡ chữ đang chọn — chữ to không bị cắt nửa dòng.
+        lblFontPreview.Height = Math.Max(S(36), lblFontPreview.Font.Height + S(10));
 
         if (keep)
         {
@@ -1843,12 +2023,40 @@ public class WarehouseExportView : UserControl
     #endregion
 
     #region Style helpers
+    private static TableLayoutPanel NewTable(int columns)
+    {
+        TableLayoutPanel table = new()
+        {
+            AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowAndShrink,
+            Dock = DockStyle.Fill,
+            Margin = Padding.Empty,
+            Padding = Padding.Empty,
+            ColumnCount = columns
+        };
+        // Mặc định: cột đầu lấp phần còn lại, các cột sau vừa nội dung — nơi dựng đổi theo index khi cần.
+        table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        for (int i = 1; i < columns; i++)
+            table.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+        return table;
+    }
+
+    private static FlowLayoutPanel NewFlow() => new()
+    {
+        AutoSize = true,
+        AutoSizeMode = AutoSizeMode.GrowAndShrink,
+        WrapContents = false,
+        Margin = Padding.Empty,
+        Padding = Padding.Empty
+    };
+
     private void StyleOverline(Label label, string text)
     {
         label.Text = text;
         label.Font = AppTheme.Fonts.Overline;
         label.ForeColor = AppTheme.Colors.TextMuted;
-        pnlCard.Controls.Add(label);
+        label.AutoSize = true;
+        label.Margin = new Padding(0, 0, 0, S(8));
     }
 
     private void StyleCaption(Label label, string text)
@@ -1856,43 +2064,96 @@ public class WarehouseExportView : UserControl
         label.Text = text;
         label.Font = AppTheme.Fonts.Hint;
         label.ForeColor = AppTheme.Colors.TextSecondary;
-        pnlCard.Controls.Add(label);
+        label.AutoSize = true;
+        label.Margin = new Padding(0, 0, 0, S(4));
     }
 
-    private void StyleInfo(Label label)
+    /// <summary>Một dòng, cao đúng theo font (theo DPI), dài quá thì "..." và di chuột vào xem đủ.</summary>
+    private void StyleOneLine(Label label, Font font, Color color)
+    {
+        label.Font = font;
+        label.ForeColor = color;
+        label.AutoSize = false;
+        label.AutoEllipsis = true;
+        // Chỉ giãn NGANG theo ô. Dock = Fill sẽ kéo cả chiều cao theo hàng của
+        // TableLayoutPanel, rồi chính chiều cao đó lại được báo ngược lên làm
+        // hàng không bao giờ co lại được (vùng trống lớn, nội dung dài mãi ra).
+        label.Anchor = AnchorStyles.Left | AnchorStyles.Right;
+        label.TextAlign = ContentAlignment.MiddleLeft;
+        label.Height = font.Height + S(4);
+        label.Margin = Padding.Empty;
+    }
+
+    /// <summary>
+    /// Nhiều dòng: xuống dòng theo bề rộng đặt ở <see cref="SetWrapWidth"/>, cao
+    /// đúng theo chữ (đo lại mỗi khi đổi chữ). Không dùng Label.AutoSize: nhãn
+    /// AutoSize nằm vắt qua các cột % bị TableLayoutPanel đo ở bề rộng gần 0 —
+    /// mỗi ký tự một dòng — và khối chứa nó cao lên hàng nghìn px.
+    /// </summary>
+    private void StyleWrapping(Label label)
     {
         label.Font = AppTheme.Fonts.Hint;
         label.ForeColor = AppTheme.Colors.TextMuted;
-        label.AutoEllipsis = true;
-        pnlCard.Controls.Add(label);
+        label.AutoSize = false;
+        // Bám đỉnh: khi khối bị kéo cao theo khối bên cạnh, chữ không trôi xuống giữa khoảng trống.
+        label.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+        label.Margin = new Padding(0, S(6), 0, 0);
+        label.TextChanged += (_, _) => FitWrappedHeight(label);
+    }
+
+    private void SetWrapWidth(Label label, int width)
+    {
+        _wrapWidths[label] = Math.Max(1, width - label.Margin.Horizontal);
+        FitWrappedHeight(label);
+    }
+
+    private void FitWrappedHeight(Label label)
+    {
+        if (!_wrapWidths.TryGetValue(label, out int width))
+            return;
+        int height = TextRenderer.MeasureText(label.Text.Length == 0 ? " " : label.Text, label.Font,
+            new Size(width, int.MaxValue), TextFormatFlags.WordBreak | TextFormatFlags.NoPrefix).Height;
+        if (label.Height != height)
+            label.Height = height;
     }
 
     private void StyleTextBox(RoundedTextBox box, string placeholder)
     {
-        box.Height = 40;
+        box.Height = S(ControlHeight);
+        box.Anchor = AnchorStyles.Left | AnchorStyles.Right;
+        box.Margin = Padding.Empty;
         box.ContainerColor = AppTheme.Colors.SurfaceElevated;
         box.PlaceholderText = placeholder;
-        pnlCard.Controls.Add(box);
     }
 
-    private void StyleFileButton(RoundedButton button, string text, IconGlyphs.Kind icon, Action onClick)
+    private void StyleNumber(NumericUpDown box, decimal min, decimal max, int decimals, decimal increment)
+    {
+        box.Minimum = min;
+        box.Maximum = max;
+        box.DecimalPlaces = decimals;
+        box.Increment = increment;
+        box.BorderStyle = BorderStyle.FixedSingle;
+        box.Font = AppTheme.Fonts.Body;
+        box.TextAlign = HorizontalAlignment.Right;
+        box.ValueChanged += (_, _) => OnPageSettingsChanged();
+    }
+
+    private static void StyleFileButton(RoundedButton button, string text, IconGlyphs.Kind icon, Action onClick)
     {
         button.Text = text;
         button.Icon = icon;
         button.Variant = ButtonVariant.Outline;
         button.ContainerColor = AppTheme.Colors.SurfaceElevated;
         button.Click += (_, _) => onClick();
-        pnlCard.Controls.Add(button);
     }
 
-    private void StyleAction(RoundedButton button, string text, IconGlyphs.Kind icon, ButtonVariant variant, Action onClick)
+    private static void StyleAction(RoundedButton button, string text, IconGlyphs.Kind icon, ButtonVariant variant, Action onClick)
     {
         button.Text = text;
         button.Icon = icon;
         button.Variant = variant;
         button.ContainerColor = AppTheme.Colors.SurfaceElevated;
         button.Click += (_, _) => onClick();
-        pnlCard.Controls.Add(button);
     }
     #endregion
 }

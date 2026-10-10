@@ -225,6 +225,17 @@ public class RoundedButton : Button
         }
     }
 
+    /// <summary>
+    /// Chiều rộng cần để hiện đủ chữ (và icon) không bị cắt "...", cộng
+    /// <paramref name="sidePadding"/> mỗi bên — dùng khi xếp bố cục thay vì đặt cứng độ rộng.
+    /// </summary>
+    public int GetContentWidth(int sidePadding)
+    {
+        int text = TextRenderer.MeasureText(Text, Font, new Size(int.MaxValue, int.MaxValue),
+            TextFormatFlags.NoPadding | TextFormatFlags.SingleLine).Width;
+        return text + (Icon.HasValue ? IconSize + IconTextGap : 0) + sidePadding * 2;
+    }
+
     private void DrawIconAndText(Graphics g)
     {
         Size textSize = TextRenderer.MeasureText(

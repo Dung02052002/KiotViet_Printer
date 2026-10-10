@@ -29,6 +29,11 @@
     </ItemGroup>
   </Target>
 
+  <!-- Test bố cục màn hình Phiếu xuất kho nạp file không qua hộp thoại (WarehouseExportView.LoadFilesAsync). -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="KiotVietLabelPrinter.Tests" />
+  </ItemGroup>
+
   <!-- Project test nằm trong thư mục con: không biên dịch code test vào app. -->
   <ItemGroup>
     <Compile Remove="tests\**" />
