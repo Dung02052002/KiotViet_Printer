@@ -226,6 +226,13 @@ public sealed class ExcelSession : IDisposable
 /// </summary>
 public static class ExcelAutomation
 {
+    // Tiến trình Excel của các phiên đang chạy. Luồng STA là luồng nền nên khi
+    // app thoát giữa chừng (người dùng xác nhận thoát lúc đang xem trước / in)
+    // nó bị cắt ngang trước khi kịp Quit — dừng các tiến trình này lúc thoát để
+    // không để EXCEL.EXE chạy ngầm.
+    private static readonly HashSet<int> ActiveProcessIds = new();
+    private static int _exitHookInstalled;
+
     public static Task<T> RunAsync<T>(Func<ExcelSession, T> work, TimeSpan timeout, string operation,
         WarehouseErrorKind failureKind)
     {
@@ -233,17 +240,23 @@ public static class ExcelAutomation
             throw new WarehouseException(WarehouseErrorKind.ExcelNotAvailable,
                 $"Máy này chưa cài Microsoft Excel nên không {operation} được.");
 
+        if (Interlocked.Exchange(ref _exitHookInstalled, 1) == 0)
+            AppDomain.CurrentDomain.ProcessExit += (_, _) => StopActiveSessions();
+
         TaskCompletionSource<T> completion = new(TaskCreationOptions.RunContinuationsAsynchronously);
         int sessionPid = 0;
 
         Thread thread = new(() =>
         {
+            int registeredPid = 0;
             try
             {
                 T result;
                 using (ExcelSession session = ExcelSession.Start())
                 {
                     Volatile.Write(ref sessionPid, session.ProcessId);
+                    registeredPid = session.ProcessId;
+                    Register(registeredPid);
                     result = work(session);
                 }
 
@@ -260,6 +273,18 @@ public static class ExcelAutomation
                 completion.TrySetException(new WarehouseException(failureKind,
                     $"Microsoft Excel báo lỗi khi {operation}.\n\nHãy thử lại; nếu vẫn lỗi, mở file phiếu bằng Excel để kiểm tra.", ex));
             }
+            catch (Exception ex)
+            {
+                // Lỗi khác (IO, đối số...) không được lọt ra khỏi luồng riêng này:
+                // exception chưa bắt ở luồng nền làm sập cả ứng dụng, còn người gọi
+                // thì chờ tới hết thời gian chờ mà không biết lỗi gì.
+                completion.TrySetException(new WarehouseException(failureKind,
+                    $"Không {operation} được: {ex.Message}\n\nHãy thử lại; nếu vẫn lỗi, mở file phiếu bằng Excel để kiểm tra.", ex));
+            }
+            finally
+            {
+                Unregister(registeredPid);
+            }
         })
         {
             IsBackground = true,
@@ -269,6 +294,34 @@ public static class ExcelAutomation
         thread.Start();
 
         return WithTimeout(completion.Task, timeout, operation, () => Volatile.Read(ref sessionPid));
+    }
+
+    private static void Register(int processId)
+    {
+        if (processId <= 0)
+            return;
+        lock (ActiveProcessIds)
+            ActiveProcessIds.Add(processId);
+    }
+
+    private static void Unregister(int processId)
+    {
+        if (processId <= 0)
+            return;
+        lock (ActiveProcessIds)
+            ActiveProcessIds.Remove(processId);
+    }
+
+    private static void StopActiveSessions()
+    {
+        int[] pids;
+        lock (ActiveProcessIds)
+            pids = ActiveProcessIds.ToArray();
+
+        // Chỉ các tiến trình Excel riêng do app tạo; EnsureProcessExited còn kiểm tra
+        // tên tiến trình nên không bao giờ dừng nhầm Excel người dùng tự mở.
+        foreach (int pid in pids)
+            ExcelSession.EnsureProcessExited(pid, TimeSpan.Zero);
     }
 
     private static async Task<T> WithTimeout<T>(Task<T> task, TimeSpan timeout, string operation, Func<int> pid)
