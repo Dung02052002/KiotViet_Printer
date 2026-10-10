@@ -286,6 +286,7 @@ public class WarehouseExportView : UserControl
 
         pnlScroll.ClientSizeChanged += (_, _) => ApplyResponsiveLayout();
         tlpFooter.SizeChanged += (_, _) => ApplyResponsiveLayout();
+        RouteWheelToPage();
 
         ResumeLayout(true);
         ApplyResponsiveLayout();
@@ -848,6 +849,48 @@ public class WarehouseExportView : UserControl
             tlpActions.SetCellPosition(actions[i], new TableLayoutPanelCellPosition(column, row));
         }
         tlpActions.ResumeLayout(true);
+    }
+
+    /// <summary>
+    /// Lăn chuột trên ô chọn / ô số khi chúng chưa được bấm vào: cuộn trang,
+    /// KHÔNG đổi giá trị. Nếu không, cuộn trang lướt qua sẽ âm thầm đổi máy
+    /// in, font, khổ giấy, lề... (và làm bản đã xuất thành bản cũ). Lăn trên
+    /// bảng đã cuộn tới đầu/cuối thì cuộn tiếp trang thay vì đứng yên.
+    /// </summary>
+    private void RouteWheelToPage()
+    {
+        foreach (Control control in new Control[]
+                 {
+                     cboPrinter, cboScope, cboFont, nudFontSize, cboPageMode, cboPaper, cboOrientation, cboScaleMode, nudScale,
+                     nudMarginLeft, nudMarginRight, nudMarginTop, nudMarginBottom
+                 })
+        {
+            control.MouseWheel += (_, e) =>
+            {
+                bool active = control is ComboBox combo ? combo.DroppedDown : control.ContainsFocus;
+                if (active || e is not HandledMouseEventArgs handled)
+                    return;
+                handled.Handled = true;
+                pnlScroll.ScrollByWheel(e.Delta);
+            };
+        }
+
+        dgvRows.MouseWheel += (_, e) =>
+        {
+            if (GridCanScroll(e.Delta) || e is not HandledMouseEventArgs handled)
+                return;
+            handled.Handled = true;
+            pnlScroll.ScrollByWheel(e.Delta);
+        };
+    }
+
+    private bool GridCanScroll(int delta)
+    {
+        if (dgvRows.RowCount == 0 || dgvRows.FirstDisplayedScrollingRowIndex < 0)
+            return false;
+        if (delta > 0)
+            return dgvRows.FirstDisplayedScrollingRowIndex > 0;
+        return dgvRows.FirstDisplayedScrollingRowIndex + dgvRows.DisplayedRowCount(false) < dgvRows.RowCount;
     }
     #endregion
 

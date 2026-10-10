@@ -91,6 +91,36 @@ public class WarehouseExportViewLayoutTests : IDisposable
         });
     }
 
+    /// <summary>
+    /// Lăn chuột để cuộn trang mà con trỏ lướt qua một ô chọn (chưa bấm vào ô
+    /// đó): trang cuộn, giá trị ô KHÔNG đổi — không âm thầm đổi phạm vi font /
+    /// máy in / khổ giấy.
+    /// </summary>
+    [Fact]
+    public void MouseWheelOverClosedCombo_ScrollsPage_DoesNotChangeSelection()
+    {
+        RunInMessageLoop(1300, 640, async (form, view) =>
+        {
+            ComboBox scope = Visible(view).OfType<ComboBox>().Single(c => c.Items.Contains("Chỉ áp dụng cho tên hàng hóa"));
+            ScrollableControl scroll = (ScrollableControl)Grid(view).Parent!.Parent!.Parent!;
+            int selected = scope.SelectedIndex;
+            int scrolledBefore = scroll.AutoScrollPosition.Y;
+
+            Point center = scope.PointToScreen(new Point(scope.Width / 2, scope.Height / 2));
+            const int wmMouseWheel = 0x020A;
+            nint wParam = unchecked((nint)(uint)((-120 & 0xFFFF) << 16));
+            nint lParam = (center.Y << 16) | (center.X & 0xFFFF);
+            SendMessage(scope.Handle, wmMouseWheel, wParam, lParam);
+            await Settle();
+
+            Assert.Equal(selected, scope.SelectedIndex);
+            Assert.True(scroll.AutoScrollPosition.Y < scrolledBefore, "Lăn chuột trên ô chọn phải cuộn trang");
+        });
+    }
+
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    private static extern nint SendMessage(nint hWnd, int msg, nint wParam, nint lParam);
+
     private static void AssertLayout(WarehouseExportView view)
     {
         List<string> problems = new();
