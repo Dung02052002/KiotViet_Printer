@@ -434,10 +434,16 @@ public sealed class FormWarehousePrintPreview : Form
         {
             image = await Task.Run(() => _renderer.Render(pageIndex, PageDpi));
         }
+        catch (ObjectDisposedException) when (IsDisposed || Disposing)
+        {
+            // Cửa sổ đã đóng trong lúc đang dựng trang: không còn gì để hiển thị.
+            return;
+        }
         catch (WarehouseException ex)
         {
             WarehouseLog.Error($"Dựng trang {pageIndex + 1} của {_preview.PdfPath}", ex);
-            MessageBox.Show(this, ex.Message, Text, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            if (!IsDisposed && version == _renderVersion)
+                MessageBox.Show(this, ex.Message, Text, MessageBoxButtons.OK, MessageBoxIcon.Warning);
             return;
         }
 
@@ -521,7 +527,23 @@ public sealed class FormWarehousePrintPreview : Form
             UpdateNavigation();
 
             int index = i;
-            Bitmap thumb = await Task.Run(() => _renderer.Render(index, dpi));
+            Bitmap thumb;
+            try
+            {
+                thumb = await Task.Run(() => _renderer.Render(index, dpi));
+            }
+            catch (ObjectDisposedException) when (IsDisposed || Disposing)
+            {
+                return;
+            }
+            catch (WarehouseException ex)
+            {
+                // Một trang thu nhỏ lỗi: ghi log, để khung trống kèm chữ báo, vẫn dựng các trang khác.
+                WarehouseLog.Error($"Dựng ảnh thu nhỏ trang {pageNumber} của {_preview.PdfPath}", ex);
+                caption.Text = $"Trang {pageNumber} — lỗi hiển thị";
+                continue;
+            }
+
             if (IsDisposed)
             {
                 thumb.Dispose();
