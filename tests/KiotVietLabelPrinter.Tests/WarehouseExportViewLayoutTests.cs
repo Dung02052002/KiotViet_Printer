@@ -1,4 +1,3 @@
-using System.Runtime.ExceptionServices;
 using KiotVietLabelPrinter.Infrastructure.Storage;
 using KiotVietLabelPrinter.UI;
 using KiotVietLabelPrinter.Views;
@@ -13,6 +12,7 @@ namespace KiotVietLabelPrinter.Tests;
 /// luôn nhìn thấy, chữ trên nút không bị cắt. Chạy trên DPI hiện tại của máy
 /// (các mức 125% / 150% cần đổi scaling của Windows rồi chạy lại).
 /// </summary>
+[Collection(WarehouseViewTestHost.Collection)]
 public class WarehouseExportViewLayoutTests : IDisposable
 {
     private readonly string _dir = Path.Combine(Path.GetTempPath(), "kv-wh-layout-" + Guid.NewGuid().ToString("N"));
@@ -221,8 +221,7 @@ public class WarehouseExportViewLayoutTests : IDisposable
 
     private static string Shorten(string text) => text.Length > 30 ? text[..30] + "…" : text;
 
-    /// <summary>Cho vòng lặp thông điệp xử lý xong các lần dàn trang / vẽ đang chờ.</summary>
-    private static Task Settle() => Task.Delay(120);
+    private static Task Settle() => WarehouseViewTestHost.Settle();
 
     /// <summary>Ảnh chụp để xem bằng mắt khi cần: đặt biến môi trường WAREHOUSE_LAYOUT_SHOTS = thư mục lưu.</summary>
     private static void SaveScreenshot(Control view, string name)
@@ -236,52 +235,8 @@ public class WarehouseExportViewLayoutTests : IDisposable
         bitmap.Save(Path.Combine(folder, name + ".png"));
     }
 
-    /// <summary>
-    /// Chạy kịch bản trong một vòng lặp thông điệp thật (Application.Run) trên
-    /// luồng STA — giống hệt app: các await của màn hình quay về đúng luồng giao
-    /// diện. (Bơm thông điệp bằng DoEvents ngoài Application.Run thì không có
-    /// SynchronizationContext của WinForms, phần sau await chạy nhầm sang luồng
-    /// khác và test hỏng ngẫu nhiên.)
-    /// </summary>
-    private void RunInMessageLoop(int width, int height, Func<Form, WarehouseExportView, Task> scenario)
-    {
-        Exception? error = null;
-        Thread thread = new(() =>
-        {
-            using Form form = new()
-            {
-                StartPosition = FormStartPosition.Manual,
-                Location = new Point(0, 0),
-                FormBorderStyle = FormBorderStyle.None,
-                ShowInTaskbar = false,
-                ClientSize = new Size(width, height),
-                BackColor = AppTheme.Colors.Background
-            };
-            WarehouseExportView view = new(new WarehouseSettingsStore(Path.Combine(_dir, $"settings-{Guid.NewGuid():N}.json")));
-            form.Controls.Add(view);
-            form.Shown += async (_, _) =>
-            {
-                try
-                {
-                    await Settle();
-                    await scenario(form, view);
-                }
-                catch (Exception ex)
-                {
-                    error = ex;
-                }
-                finally
-                {
-                    form.Close();
-                }
-            };
-            Application.Run(form);
-        });
-        thread.SetApartmentState(ApartmentState.STA);
-        thread.Start();
-        if (!thread.Join(TimeSpan.FromMinutes(2)))
-            throw new TimeoutException("Kịch bản bố cục không kết thúc sau 2 phút.");
-        if (error != null)
-            ExceptionDispatchInfo.Capture(error).Throw();
-    }
+    private void RunInMessageLoop(int width, int height, Func<Form, WarehouseExportView, Task> scenario) =>
+        WarehouseViewTestHost.Run(width, height,
+            () => new WarehouseExportView(new WarehouseSettingsStore(Path.Combine(_dir, $"settings-{Guid.NewGuid():N}.json"))),
+            scenario);
 }

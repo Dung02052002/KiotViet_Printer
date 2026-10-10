@@ -167,6 +167,7 @@ public partial class WarehouseExcelReader
         EnsureDataRegionIsSimple(sheet, dataFirst, dataLast, columns);
 
         (int codeRow, int codeCol, string label, string currentCode) = FindTicketCodeCell(sheet, headerFirst);
+        (int dateRow, int dateCol, string dateText) = FindDocumentDateCell(sheet, headerFirst);
 
         ICell? nameCell = sheet.GetRow(dataFirst)?.GetCell(nameHeader.Col);
         IFont font = workbook.GetFontAt(nameCell?.CellStyle?.FontIndex ?? 0);
@@ -179,6 +180,9 @@ public partial class WarehouseExcelReader
             TicketCodeColumn = codeCol,
             TicketCodeLabel = label,
             TemplateTicketCode = currentCode,
+            DocumentDateRow = dateRow,
+            DocumentDateColumn = dateCol,
+            DocumentDateText = dateText,
             HeaderFirstRow = headerFirst,
             HeaderLastRow = headerLast,
             NameColumn = nameHeader.Col,
@@ -260,6 +264,40 @@ public partial class WarehouseExcelReader
                 "File mẫu có nhiều ô dạng \"Số : ...\" (" +
                 string.Join(", ", found.Select(f => new CellReference(f.Row, f.Col).FormatAsString())) +
                 ") — không xác định được ô nào là số phiếu.");
+
+        return found[0];
+    }
+
+    /// <summary>
+    /// Ô ngày lập phiếu: chữ dạng "Ngày 22 tháng 9 năm 2026" nằm phía trên
+    /// bảng hàng. Phải có đúng một ô như vậy — không đoán địa chỉ ô.
+    /// </summary>
+    private static (int Row, int Col, string Text) FindDocumentDateCell(ISheet sheet, int headerFirstRow)
+    {
+        List<(int Row, int Col, string Text)> found = new();
+        for (int r = 0; r < headerFirstRow; r++)
+        {
+            IRow? row = sheet.GetRow(r);
+            if (row == null)
+                continue;
+
+            foreach (ICell cell in row)
+            {
+                if (cell.CellType == CellType.String && WarehouseDocumentDateService.IsDateText(cell.StringCellValue))
+                    found.Add((r, cell.ColumnIndex, cell.StringCellValue));
+            }
+        }
+
+        if (found.Count == 0)
+            throw new WarehouseException(WarehouseErrorKind.TemplateStructure,
+                "Không tìm thấy ô ngày lập phiếu (dạng \"Ngày ... tháng ... năm ...\") phía trên bảng hàng hóa trong file mẫu.\n\n" +
+                "Hãy kiểm tra file mẫu có dòng \"Ngày ... tháng ... năm ...\" dưới tiêu đề PHIẾU XUẤT KHO (ô chữ, không phải công thức).");
+
+        if (found.Count > 1)
+            throw new WarehouseException(WarehouseErrorKind.TemplateStructure,
+                "File mẫu có nhiều ô dạng \"Ngày ... tháng ... năm ...\" (" +
+                string.Join(", ", found.Select(f => new CellReference(f.Row, f.Col).FormatAsString())) +
+                ") — không xác định được ô nào là ngày lập phiếu.");
 
         return found[0];
     }

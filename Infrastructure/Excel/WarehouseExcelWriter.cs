@@ -9,11 +9,11 @@ namespace KiotVietLabelPrinter.Infrastructure.Excel;
 
 /// <summary>
 /// Ghi phiếu xuất kho bằng cách SỬA MỘT BẢN SAO của chính workbook mẫu (không
-/// dựng workbook mới): chỉ đổi giá trị ô số phiếu + 4 cột của các dòng hàng,
-/// thêm/bớt dòng hàng khi số sản phẩm khác mẫu, và (chỉ khi người dùng chọn)
-/// đổi font/cỡ chữ trong phạm vi đã chọn, đổi các mục thiết lập trang in đã
-/// chọn. Mọi thứ khác — tiêu đề, người nhận, ngày, chữ ký, ô gộp, độ rộng
-/// cột, các mục thiết lập trang in không đổi — giữ nguyên.
+/// dựng workbook mới): chỉ đổi giá trị ô số phiếu, ô ngày lập phiếu + 4 cột
+/// của các dòng hàng, thêm/bớt dòng hàng khi số sản phẩm khác mẫu, và (chỉ
+/// khi người dùng chọn) đổi font/cỡ chữ trong phạm vi đã chọn, đổi các mục
+/// thiết lập trang in đã chọn. Mọi thứ khác — tiêu đề, người nhận, chữ ký, ô
+/// gộp, độ rộng cột, các mục thiết lập trang in không đổi — giữ nguyên.
 ///
 /// Quy trình an toàn: file mẫu chỉ được ĐỌC → sửa trong bộ nhớ → ghi ra file
 /// tạm cạnh file đích → MỞ LẠI file tạm và so với mẫu → chỉ khi khớp mới đổi
@@ -58,6 +58,7 @@ public class WarehouseExcelWriter
 
                 rowDelta = ResizeDataRegion(workbook, sheet, layout, request.Rows.Count);
                 WriteTicketCode(sheet, layout, request.TicketCode);
+                WriteDocumentDate(sheet, layout, request.DocumentDate);
                 WriteRows(sheet, layout, request.Rows);
                 WarehouseFontApplier.Apply(workbook, sheet, layout, request.Rows.Count, request.Font);
                 WarehousePageSetupAccess.Apply(sheet, request.Page);
@@ -218,6 +219,17 @@ public class WarehouseExcelWriter
     {
         ICell cell = sheet.GetRow(layout.TicketCodeRow).GetCell(layout.TicketCodeColumn);
         cell.SetCellValue(layout.TicketCodeLabel + ticketCode);
+    }
+
+    /// <summary>
+    /// Ô ngày là ô CHỮ ("Ngày 22 tháng 9 năm 2026") nên ghi lại thành chữ theo
+    /// đúng khuôn của mẫu — ghi giá trị ngày của Excel vào đây sẽ thay cả câu
+    /// bằng một con số / định dạng khác mẫu. Chỉ đổi giá trị, style giữ nguyên.
+    /// </summary>
+    private static void WriteDocumentDate(ISheet sheet, WarehouseTemplateLayout layout, DateTime date)
+    {
+        ICell cell = sheet.GetRow(layout.DocumentDateRow).GetCell(layout.DocumentDateColumn);
+        cell.SetCellValue(WarehouseDocumentDateService.Compose(layout.DocumentDateText, date));
     }
 
     private static void WriteRows(ISheet sheet, WarehouseTemplateLayout layout, IReadOnlyList<WarehouseProductRow> rows)

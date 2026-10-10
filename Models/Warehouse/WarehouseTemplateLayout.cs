@@ -24,6 +24,16 @@ public sealed class WarehouseTemplateLayout
     /// <summary>Mã phiếu đang có trong file mẫu (chỉ để hiển thị).</summary>
     public required string TemplateTicketCode { get; init; }
 
+    /// <summary>Ô ngày lập phiếu, ví dụ "Ngày  22  tháng   9     năm 2026" (ô chữ, không phải ô kiểu ngày).</summary>
+    public required int DocumentDateRow { get; init; }
+    public required int DocumentDateColumn { get; init; }
+
+    /// <summary>
+    /// Chữ nguyên văn của ô ngày trong file mẫu — khuôn để ghi ngày mới (giữ
+    /// nguyên chữ và khoảng trắng, chỉ thay số), xem WarehouseDocumentDateService.
+    /// </summary>
+    public required string DocumentDateText { get; init; }
+
     public required int HeaderFirstRow { get; init; }
     public required int HeaderLastRow { get; init; }
 

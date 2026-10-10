@@ -11,7 +11,7 @@ public enum WarehouseExportState
     /// <summary>File đúng là bản vừa xuất từ dữ liệu / thiết lập đang hiển thị — xem trước và in được.</summary>
     Current,
 
-    /// <summary>Dữ liệu, mã phiếu, font, thiết lập in, file nguồn hoặc thư mục output đã đổi sau lần xuất.</summary>
+    /// <summary>Dữ liệu, mã phiếu, ngày lập phiếu, font, thiết lập in, file nguồn hoặc thư mục output đã đổi sau lần xuất.</summary>
     Stale,
 
     /// <summary>File kết quả không còn trên đĩa.</summary>
@@ -84,7 +84,7 @@ public sealed class WarehouseExportTracker
     {
         WarehouseExportState.None => "Chưa có file phiếu. Hãy bấm XUẤT PHIẾU EXCEL trước.",
         WarehouseExportState.Stale =>
-            "Dữ liệu, mã phiếu, font, thiết lập in hoặc thư mục output đã thay đổi sau lần xuất trước — bản đã xuất là bản CŨ.\n\n" +
+            "Dữ liệu, mã phiếu, ngày lập phiếu, font, thiết lập in hoặc thư mục output đã thay đổi sau lần xuất trước — bản đã xuất là bản CŨ.\n\n" +
             "Hãy bấm XUẤT PHIẾU EXCEL lại.",
         WarehouseExportState.Missing => $"File phiếu không còn tồn tại:\n{Last?.OutputPath}\n\nHãy xuất lại.",
         WarehouseExportState.ModifiedExternally =>

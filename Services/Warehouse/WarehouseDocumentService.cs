@@ -61,14 +61,17 @@ public class WarehouseDocumentService
     /// được nhưng nên xem lại.
     /// </summary>
     public WarehouseValidationReport Validate(
-        string ticketInput, string prefix, WarehouseDocument? document, string outputFolder, WarehouseFontSettings font,
-        WarehousePageSettings? page = null)
+        string ticketInput, string prefix, DateTime documentDate, WarehouseDocument? document, string outputFolder,
+        WarehouseFontSettings font, WarehousePageSettings? page = null)
     {
         WarehouseValidationReport report = new();
 
         TicketCodeResult code = WarehouseTicketCodeService.Normalize(ticketInput, prefix);
         if (!code.IsValid)
             report.Errors.Add(code.Error!);
+
+        if (WarehouseDocumentDateService.Validate(documentDate) is { } dateError)
+            report.Errors.Add(dateError);
 
         if (document == null)
         {

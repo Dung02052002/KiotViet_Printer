@@ -7,6 +7,7 @@ using Xunit;
 namespace KiotVietLabelPrinter.Tests;
 
 /// <summary>Cửa sổ xem trước bản in: tài liệu rỗng và đóng cửa sổ giữa lúc đang dựng trang.</summary>
+[Collection(WarehouseViewTestHost.Collection)]
 public class WarehousePrintPreviewFormTests
 {
     private static WarehousePrintPreview PreviewOf(string pdfPath, int pages) => new()

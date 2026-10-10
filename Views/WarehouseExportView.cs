@@ -49,6 +49,19 @@ public class WarehouseExportView : UserControl
     private readonly WarehouseExportSettings _settings;
     private readonly WarehouseExportTracker _export = new();
 
+    /// <summary>"Hôm nay" theo giờ ĐỊA PHƯƠNG của máy (DateTime.Today, không dùng UTC — tối ở Việt Nam UTC vẫn là hôm trước).</summary>
+    private readonly Func<DateTime> _today;
+
+    /// <summary>
+    /// Người dùng đã chủ động chọn một ngày lập phiếu khác hôm nay. Chưa chọn
+    /// thì ngày trên màn hình là "mặc định" và đi theo ngày của máy (mở lại màn
+    /// hình sang ngày mới là ngày mới); đã chọn thì giữ nguyên suốt phiên làm
+    /// việc — không tự đổi khi nạp lại dữ liệu, kiểm tra, sửa bảng, xuất, xem
+    /// trước. Không lưu vào thiết lập: lần chạy sau luôn về ngày hôm đó.
+    /// </summary>
+    private bool _documentDateChosen;
+    private bool _settingDocumentDate;
+
     private WarehouseTemplateLayout? _layout;
     private WarehouseDocument? _document;
 
@@ -68,6 +81,9 @@ public class WarehouseExportView : UserControl
 
     /// <summary>Đang xuất / in — FormMain hỏi lại trước khi đóng app.</summary>
     public bool IsBusy => _busy;
+
+    /// <summary>Tình trạng file đã xuất (cho test).</summary>
+    internal WarehouseExportTracker ExportTracker => _export;
 
     /// <summary>
     /// Vùng cuộn duy nhất của màn hình. Lúc đang bận (khóa các ô nhập) hoặc
@@ -126,6 +142,8 @@ public class WarehouseExportView : UserControl
     private readonly RoundedTextBox txtPrefix = new();
     private readonly Label lblTicketCode = new();
     private readonly RoundedTextBox txtTicketCode = new();
+    private readonly Label lblDocumentDate = new();
+    private readonly DateTimePicker dtpDocumentDate = new();
     private readonly Label lblFullCode = new();
     private readonly Label lblDataState = new();
 
@@ -212,10 +230,16 @@ public class WarehouseExportView : UserControl
     {
     }
 
-    public WarehouseExportView(WarehouseSettingsStore settingsStore)
+    public WarehouseExportView(WarehouseSettingsStore settingsStore) : this(settingsStore, () => DateTime.Today)
+    {
+    }
+
+    /// <param name="today">Nguồn "hôm nay" — test thay để giả lập sang ngày mới.</param>
+    internal WarehouseExportView(WarehouseSettingsStore settingsStore, Func<DateTime> today)
     {
         Dock = DockStyle.Fill;
         _settingsStore = settingsStore;
+        _today = today;
         pnlScroll = new ScrollPanel(() => _busy || _fillingGrid);
         _settings = _settingsStore.Load();
 
@@ -225,12 +249,15 @@ public class WarehouseExportView : UserControl
     }
 
     /// <summary>
-    /// Gọi mỗi khi FormMain mở màn hình: hiện cảnh báo đọc thiết lập (nếu có)
-    /// đúng một lần và nạp lại danh sách máy in (máy in có thể vừa bị gỡ / thêm
-    /// trong lúc màn hình đang ẩn).
+    /// Gọi mỗi khi FormMain mở màn hình: cập nhật ngày lập phiếu mặc định theo
+    /// ngày hiện tại, hiện cảnh báo đọc thiết lập (nếu có) đúng một lần và nạp
+    /// lại danh sách máy in (máy in có thể vừa bị gỡ / thêm trong lúc màn hình
+    /// đang ẩn).
     /// </summary>
     public void OnShown()
     {
+        RefreshDefaultDocumentDate();
+
         if (_settingsStore.LoadWarning is { } warning)
         {
             MessageBox.Show(warning, Title, MessageBoxButtons.OK, MessageBoxIcon.Warning);
@@ -380,13 +407,24 @@ public class WarehouseExportView : UserControl
         txtTicketCode.TextChanged += (_, _) => OnTicketInputChanged();
         txtTicketCode.Margin = new Padding(0, 0, S(ColumnGap * 2), 0);
 
+        StyleCaption(lblDocumentDate, "Ngày lập phiếu");
+        dtpDocumentDate.Format = DateTimePickerFormat.Custom;
+        dtpDocumentDate.CustomFormat = WarehouseDocumentDateService.DisplayFormat;
+        dtpDocumentDate.MinDate = WarehouseDocumentDateService.MinDate;
+        dtpDocumentDate.MaxDate = WarehouseDocumentDateService.MaxDate;
+        dtpDocumentDate.Font = AppTheme.Fonts.Body;
+        dtpDocumentDate.Anchor = AnchorStyles.Left | AnchorStyles.Right;
+        dtpDocumentDate.Margin = new Padding(0, 0, S(ColumnGap * 2), 0);
+        SetDocumentDate(_today());
+        dtpDocumentDate.ValueChanged += (_, _) => OnDocumentDateChanged();
+
         StyleOneLine(lblFullCode, AppTheme.Fonts.BodyBold, AppTheme.Colors.TextPrimary);
         StyleOneLine(lblDataState, AppTheme.Fonts.Hint, AppTheme.Colors.TextSecondary);
 
-        // [Tiền tố] [Mã phiếu] [Mã hoàn chỉnh + trạng thái]
-        return Stack(lblTicketTitle, Grid([Fixed(96 + ColumnGap), Fixed(260 + ColumnGap * 2), Percent(100)],
-            lblPrefix, lblTicketCode, null,
-            txtPrefix, txtTicketCode, Stack(lblFullCode, lblDataState)));
+        // [Tiền tố] [Mã phiếu] [Ngày lập phiếu] [Mã hoàn chỉnh + trạng thái]
+        return Stack(lblTicketTitle, Grid([Fixed(96 + ColumnGap), Fixed(200 + ColumnGap * 2), Fixed(150 + ColumnGap * 2), Percent(100)],
+            lblPrefix, lblTicketCode, lblDocumentDate, null,
+            txtPrefix, txtTicketCode, dtpDocumentDate, Stack(lblFullCode, lblDataState)));
     }
 
     private Control BuildFilesSection()
@@ -861,8 +899,8 @@ public class WarehouseExportView : UserControl
     {
         foreach (Control control in new Control[]
                  {
-                     cboPrinter, cboScope, cboFont, nudFontSize, cboPageMode, cboPaper, cboOrientation, cboScaleMode, nudScale,
-                     nudMarginLeft, nudMarginRight, nudMarginTop, nudMarginBottom
+                     dtpDocumentDate, cboPrinter, cboScope, cboFont, nudFontSize, cboPageMode, cboPaper, cboOrientation, cboScaleMode,
+                     nudScale, nudMarginLeft, nudMarginRight, nudMarginTop, nudMarginBottom
                  })
         {
             control.MouseWheel += (_, e) =>
@@ -960,6 +998,56 @@ public class WarehouseExportView : UserControl
 
     private void OnTicketInputChanged()
     {
+        _export.MarkStale();
+        UpdateState();
+    }
+    #endregion
+
+    #region Ngày lập phiếu
+    /// <summary>Ngày lập phiếu đang chọn (chỉ phần ngày) — giá trị DUY NHẤT được đưa vào kiểm tra và file xuất.</summary>
+    internal DateTime SelectedDocumentDate => dtpDocumentDate.Value.Date;
+
+    private void SetDocumentDate(DateTime date)
+    {
+        _settingDocumentDate = true;
+        try
+        {
+            // Đồng hồ máy sai lệch quá xa (ngoài giới hạn của ô chọn) thì đưa về mốc gần nhất thay vì ném lỗi.
+            dtpDocumentDate.Value = date.Date < dtpDocumentDate.MinDate ? dtpDocumentDate.MinDate
+                : date.Date > dtpDocumentDate.MaxDate ? dtpDocumentDate.MaxDate
+                : date.Date;
+        }
+        finally
+        {
+            _settingDocumentDate = false;
+        }
+    }
+
+    private void OnDocumentDateChanged()
+    {
+        if (_settingDocumentDate)
+            return;
+
+        // Chọn lại đúng hôm nay = quay về mặc định (sang ngày mới lại đi theo ngày mới).
+        _documentDateChosen = SelectedDocumentDate != _today().Date;
+        _export.MarkStale();
+        UpdateState();
+    }
+
+    /// <summary>
+    /// Ngày mặc định đi theo ngày hiện tại của máy: màn hình giữ nguyên khi
+    /// chuyển qua lại trong FormMain, nên mỗi lần mở lại (hoặc xoá dữ liệu để
+    /// làm phiếu mới) mà đã sang ngày mới thì đổi sang ngày mới. Ngày người dùng
+    /// đã chọn thì không bao giờ bị thay.
+    /// </summary>
+    private void RefreshDefaultDocumentDate()
+    {
+        DateTime today = _today().Date;
+        if (_documentDateChosen || SelectedDocumentDate == today)
+            return;
+
+        SetDocumentDate(today);
+        // Bản đã xuất (nếu có) mang ngày cũ — không được in nữa.
         _export.MarkStale();
         UpdateState();
     }
@@ -1574,8 +1662,8 @@ public class WarehouseExportView : UserControl
 
     #region Kiểm tra / xuất / in
     private WarehouseValidationReport BuildReport() =>
-        _documentService.Validate(txtTicketCode.Text, txtPrefix.Text, _document, txtOutput.Text.Trim(), CurrentFontSettings(),
-            CurrentPageSettings());
+        _documentService.Validate(txtTicketCode.Text, txtPrefix.Text, SelectedDocumentDate, _document, txtOutput.Text.Trim(),
+            CurrentFontSettings(), CurrentPageSettings());
 
     private void ValidateAndShow()
     {
@@ -1656,6 +1744,7 @@ public class WarehouseExportView : UserControl
             TemplatePath = document.TemplatePath,
             OutputPath = output,
             TicketCode = code,
+            DocumentDate = SelectedDocumentDate,
             Rows = document.Rows,
             Font = CurrentFontSettings(),
             Page = CurrentPageSettings(),
@@ -1668,7 +1757,7 @@ public class WarehouseExportView : UserControl
             SetBusy(true, $"Đang xuất phiếu {code}...");
             result = await Task.Run(() => _documentService.Export(request));
             _export.Record(result);
-            WarehouseLog.Info($"Xuất phiếu {code}: {result.OutputPath} ({result.RowCount} dòng, chênh {result.RowDelta}), " +
+            WarehouseLog.Info($"Xuất phiếu {code} ngày {request.DocumentDate:dd/MM/yyyy}: {result.OutputPath} ({result.RowCount} dòng, chênh {result.RowDelta}), " +
                               $"font={request.Font.Scope}, thiết lập in: {request.Page.Describe()}");
         }
         catch (WarehouseException ex)
@@ -1922,7 +2011,7 @@ public class WarehouseExportView : UserControl
     private void ClearData()
     {
         if ((_document != null || txtTicketCode.Text.Length > 0) &&
-            MessageBox.Show("Xóa mã phiếu, file hàng hóa và bảng xem trước?\n\n(File mẫu, thư mục output, máy in và font vẫn được giữ.)",
+            MessageBox.Show("Xóa mã phiếu, file hàng hóa và bảng xem trước?\n\n(File mẫu, ngày lập phiếu, thư mục output, máy in và font vẫn được giữ.)",
                 Title, MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button2) != DialogResult.Yes)
             return;
 
@@ -1931,6 +2020,7 @@ public class WarehouseExportView : UserControl
         txtGoods.Text = "";
         _document = null;
         _export.Reset();
+        RefreshDefaultDocumentDate();
         FillGrid();
         lblStatus.Text = "Đã xóa dữ liệu phiếu.";
     }
@@ -1975,7 +2065,8 @@ public class WarehouseExportView : UserControl
         lblTemplateInfo.Text = _layout == null
             ? (txtTemplate.Text.Length == 0 ? "File gốc chỉ được đọc, không bao giờ bị sửa." : "File mẫu chưa hợp lệ — chọn lại file.")
             : $"Sheet \"{_layout.SheetName}\" · ô số phiếu {new CellReference(_layout.TicketCodeRow, _layout.TicketCodeColumn).FormatAsString()} " +
-              $"({_layout.TicketCodeLabel}{_layout.TemplateTicketCode}) · bảng hàng từ dòng {_layout.DataFirstRow + 1}, " +
+              $"({_layout.TicketCodeLabel}{_layout.TemplateTicketCode}) · ô ngày " +
+              $"{new CellReference(_layout.DocumentDateRow, _layout.DocumentDateColumn).FormatAsString()} · bảng hàng từ dòng {_layout.DataFirstRow + 1}, " +
               $"{_layout.DataRowCount} dòng mẫu · {_layout.NameFontName} {_layout.NameFontSize:0.#}pt";
         lblTemplateInfo.ForeColor = _layout == null && txtTemplate.Text.Length > 0 ? AppTheme.Colors.Danger : AppTheme.Colors.TextMuted;
 
@@ -2039,6 +2130,7 @@ public class WarehouseExportView : UserControl
         cboScope.Enabled = idle;
         txtPrefix.Enabled = idle;
         txtTicketCode.Enabled = idle;
+        dtpDocumentDate.Enabled = idle;
         dgvRows.ReadOnly = !idle;
         btnValidate.Enabled = idle;
         btnPreview.Enabled = idle && txtTemplate.Text.Length > 0 && txtGoods.Text.Length > 0;

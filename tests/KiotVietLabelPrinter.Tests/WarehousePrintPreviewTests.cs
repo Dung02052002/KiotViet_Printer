@@ -31,6 +31,7 @@ internal static class WarehouseRows
             TemplatePath = template,
             OutputPath = output,
             TicketCode = "XK23609",
+            DocumentDate = new DateTime(2026, 10, 10),
             Rows = Make(count, longName),
             Page = page ?? WarehousePageSettings.KeepTemplate(),
             Font = font ?? WarehouseFontSettings.KeepTemplate()

@@ -219,6 +219,7 @@ internal static class WarehouseExportVerifier
             {
                 ISheet sheet = workbook.GetSheetAt(o.SheetIndex);
                 VerifyLayout(o, t, n, request, problems, checks);
+                VerifyDocumentDate(sheet, o, t, request.DocumentDate, problems, checks);
                 VerifyRows(sheet, o, request.Rows, problems, checks);
                 VerifyUntouchedCells(workbook, sheet, expected, request, delta, problems, checks);
                 VerifyDataFormatting(workbook, sheet, expected, request, problems, checks);
@@ -257,6 +258,29 @@ internal static class WarehouseExportVerifier
             checks.Add($"Bảng hàng có đúng {n} dòng (mẫu có {t.DataRowCount} dòng), bắt đầu từ dòng {o.DataFirstRow + 1}.");
     }
 
+    /// <summary>
+    /// Ô ngày lập phiếu: đúng vị trí như mẫu, chữ đúng nguyên văn (kể cả khoảng
+    /// trắng căn lề của mẫu) và đọc ngược lại ra đúng ngày đã chọn — tránh mọi
+    /// kiểu đảo ngày / tháng hay ghi nhầm ngày hôm nay.
+    /// </summary>
+    private static void VerifyDocumentDate(ISheet sheet, WarehouseTemplateLayout o, WarehouseTemplateLayout t, DateTime date,
+        List<string> problems, List<string> checks)
+    {
+        string address = new CellReference(t.DocumentDateRow, t.DocumentDateColumn).FormatAsString();
+        if (o.DocumentDateRow != t.DocumentDateRow || o.DocumentDateColumn != t.DocumentDateColumn)
+        {
+            problems.Add($"Ô ngày lập phiếu không còn ở đúng vị trí như mẫu ({address}).");
+            return;
+        }
+
+        ICell cell = sheet.GetRow(o.DocumentDateRow).GetCell(o.DocumentDateColumn);
+        string want = WarehouseDocumentDateService.Compose(t.DocumentDateText, date);
+        if (cell.StringCellValue != want || WarehouseDocumentDateService.TryRead(cell.StringCellValue) != date.Date)
+            problems.Add($"Ô ngày lập phiếu {address} là \"{cell.StringCellValue}\", mong đợi \"{want}\" ({date:dd/MM/yyyy}).");
+        else
+            checks.Add($"Ngày lập phiếu: \"{VietnameseText.CollapseSpaces(want)}\" ({date:dd/MM/yyyy}) tại {address}.");
+    }
+
     private static void VerifyRows(ISheet sheet, WarehouseTemplateLayout o, IReadOnlyList<WarehouseProductRow> rows,
         List<string> problems, List<string> checks)
     {
@@ -288,8 +312,9 @@ internal static class WarehouseExportVerifier
     }
 
     /// <summary>
-    /// Mọi ô NGOÀI vùng dòng hàng (tiêu đề, người nhận, ngày, chữ ký...) phải
-    /// giữ nguyên chữ + định dạng; phần dưới bảng so tại vị trí đã dời. Không
+    /// Mọi ô NGOÀI vùng dòng hàng (tiêu đề, người nhận, chữ ký...) phải
+    /// giữ nguyên chữ + định dạng (ô số phiếu, ô ngày lập phiếu: chỉ chữ được
+    /// đổi đúng giá trị mới); phần dưới bảng so tại vị trí đã dời. Không
     /// được có ô nào ngoài vùng hàng bị ghi thêm.
     /// </summary>
     private static void VerifyUntouchedCells(IWorkbook workbook, ISheet sheet, TemplateSnapshot expected,
@@ -318,7 +343,9 @@ internal static class WarehouseExportVerifier
             CellSig got = SnapshotReader.Cell(workbook, cell);
             string wantText = r == t.TicketCodeRow && c == t.TicketCodeColumn
                 ? VietnameseText.CollapseSpaces(t.TicketCodeLabel + request.TicketCode)
-                : want.Text;
+                : r == t.DocumentDateRow && c == t.DocumentDateColumn
+                    ? VietnameseText.CollapseSpaces(WarehouseDocumentDateService.Compose(t.DocumentDateText, request.DocumentDate))
+                    : want.Text;
 
             if (got.Text != wantText)
                 problems.Add($"Ô {address} bị đổi nội dung: \"{Short(got.Text)}\" (mẫu: \"{Short(wantText)}\").");
@@ -347,8 +374,8 @@ internal static class WarehouseExportVerifier
         }
 
         if (problems.Count == before)
-            checks.Add($"{compared} ô ngoài bảng hàng (tiêu đề, người nhận, ngày, chữ ký...) giữ nguyên nội dung và định dạng; " +
-                       "chỉ ô số phiếu đổi giá trị.");
+            checks.Add($"{compared} ô ngoài bảng hàng (tiêu đề, người nhận, chữ ký...) giữ nguyên nội dung và định dạng; " +
+                       "chỉ ô số phiếu và ô ngày lập phiếu đổi giá trị.");
     }
 
     /// <summary>Định dạng (viền, căn lề, xuống dòng, định dạng số, nền) của các dòng hàng phải giống dòng hàng mẫu.</summary>

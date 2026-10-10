@@ -241,6 +241,9 @@ public class WarehouseExcelTests
     private readonly WarehouseExcelReader _reader = new();
     private readonly WarehouseExcelWriter _writer = new();
 
+    // Ngày cố định (khác ngày trong file mẫu 22/09/2026) — test không phụ thuộc ngày chạy.
+    private static readonly DateTime DocumentDate = new(2026, 10, 10);
+
     private static List<WarehouseProductRow> Rows(int count) =>
         Enumerable.Range(1, count).Select(i => new WarehouseProductRow
         {
@@ -260,6 +263,7 @@ public class WarehouseExcelTests
             TemplatePath = template,
             OutputPath = output,
             TicketCode = code,
+            DocumentDate = DocumentDate,
             Rows = Rows(count),
             Font = font ?? WarehouseFontSettings.KeepTemplate(),
             OverwriteExisting = overwrite
@@ -373,7 +377,8 @@ public class WarehouseExcelTests
         using IWorkbook wb = Open(output);
         ISheet s = wb.GetSheetAt(0);
         Assert.Equal("Số : XK23609", Text(s, "B5"));
-        Assert.Equal("Ngày  22  tháng   9     năm 2026", Text(s, "B4"));
+        // Ngày lập phiếu thay bằng ngày đã chọn, khoảng trắng căn lề của mẫu giữ nguyên.
+        Assert.Equal("Ngày  10  tháng   10     năm 2026", Text(s, "B4"));
         Assert.Equal("Kính mắt Pucini mẫu 1", Text(s, "A14"));
         Assert.Equal("Cái", Text(s, "B14"));
         Assert.Equal("1", Text(s, "C14"));
@@ -627,21 +632,21 @@ public class WarehouseDocumentServiceTests
         WarehouseDocumentService service = new();
 
         WarehouseDocument doc = service.Load(template, goods);
-        WarehouseValidationReport report = service.Validate("23609", "XK", doc, Path.Combine(dir, "out"), WarehouseFontSettings.KeepTemplate());
+        WarehouseValidationReport report = service.Validate("23609", "XK", new DateTime(2026, 10, 10), doc, Path.Combine(dir, "out"), WarehouseFontSettings.KeepTemplate());
         Assert.False(report.CanExport);
         Assert.Contains(report.Errors, e => e.Contains("SP2") && e.Contains("lớn hơn 0"));
 
         doc.Rows[1].RequestedQuantity = 10;
         doc.Rows[1].ActualQuantity = 10;
         WarehouseProductNameService.Revalidate(doc.Rows[1]);
-        report = service.Validate("23609", "XK", doc, Path.Combine(dir, "out"), WarehouseFontSettings.KeepTemplate());
+        report = service.Validate("23609", "XK", new DateTime(2026, 10, 10), doc, Path.Combine(dir, "out"), WarehouseFontSettings.KeepTemplate());
         Assert.True(report.CanExport, string.Join("\n", report.Errors));
 
         string output = WarehouseDocumentService.BuildOutputPath(Path.Combine(dir, "out"), "XK23609", doc.Layout.FileExtension);
         Assert.EndsWith(Path.Combine("out", "XK23609.xlsx"), output);
         WarehouseExportResult result = service.Export(new WarehouseExportRequest
         {
-            TemplatePath = template, OutputPath = output, TicketCode = "XK23609", Rows = doc.Rows
+            TemplatePath = template, OutputPath = output, TicketCode = "XK23609", DocumentDate = new DateTime(2026, 10, 10), Rows = doc.Rows
         });
 
         using IWorkbook wb = WarehouseExcelReader.OpenWorkbook(result.OutputPath, "test");
@@ -653,7 +658,7 @@ public class WarehouseDocumentServiceTests
     [Fact]
     public void Validate_ReportsMissingFontAndBadSize()
     {
-        WarehouseValidationReport report = new WarehouseDocumentService().Validate("1", "XK", null, "", new WarehouseFontSettings
+        WarehouseValidationReport report = new WarehouseDocumentService().Validate("1", "XK", new DateTime(2026, 10, 10), null, "", new WarehouseFontSettings
         {
             Scope = WarehouseFontApplyScope.ProductNameOnly, FontFamily = "Font Không Tồn Tại 123", FontSize = 50
         });
@@ -746,6 +751,7 @@ public class WarehouseSettingsAndPrinterTests
             TemplatePath = template,
             OutputPath = output,
             TicketCode = "XK-PRINT",
+            DocumentDate = new DateTime(2026, 10, 10),
             Rows = [new WarehouseProductRow { SourceRowNumber = 2, TicketName = "Giày nữ", Unit = "Đôi", RequestedQuantity = 4, ActualQuantity = 4 }]
         });
 
