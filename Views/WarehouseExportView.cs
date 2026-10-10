@@ -1307,10 +1307,22 @@ public class WarehouseExportView : UserControl
             WarehouseLog.Error($"Không tạo được font xem trước {family}", ex);
         }
 
+        Font desired = font ?? AppTheme.Fonts.Body;
         Font? old = _previewFont;
-        _previewFont = font;
-        lblFontPreview.Font = font ?? AppTheme.Fonts.Body;
-        old?.Dispose();
+        lblFontPreview.Font = desired;
+        if (ReferenceEquals(lblFontPreview.Font, desired))
+        {
+            _previewFont = font;
+            if (old != null && !ReferenceEquals(old, desired))
+                old.Dispose();
+        }
+        else
+        {
+            // Control.Font bỏ qua font "bằng" font đang dùng (cùng họ/cỡ/kiểu) và giữ
+            // nguyên đối tượng cũ — khi đó phải giữ font cũ, bỏ font mới. Dispose font
+            // cũ ở đây sẽ để ô mẫu chữ cầm một font đã giải phóng ("Parameter is not valid").
+            font?.Dispose();
+        }
 
         if (keep)
         {
