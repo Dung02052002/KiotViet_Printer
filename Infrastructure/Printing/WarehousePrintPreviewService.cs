@@ -1,4 +1,5 @@
 using System.Globalization;
+using KiotVietLabelPrinter.Infrastructure.Diagnostics;
 using KiotVietLabelPrinter.Infrastructure.Excel;
 using KiotVietLabelPrinter.Infrastructure.Fonts;
 using KiotVietLabelPrinter.Models.Warehouse;
@@ -563,24 +564,8 @@ public class WarehousePrintPreviewService
     #endregion
 
     /// <summary>Xoá các file PDF xem trước cũ còn sót (vd app bị tắt ngang) — giữ file của hôm nay.</summary>
-    public static void CleanupOldPreviews(string folder)
-    {
-        if (!Directory.Exists(folder))
-            return;
-
-        foreach (string file in Directory.EnumerateFiles(folder, "*.pdf"))
-        {
-            try
-            {
-                if (File.GetLastWriteTimeUtc(file) < DateTime.UtcNow.AddDays(-1))
-                    File.Delete(file);
-            }
-            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-            {
-                System.Diagnostics.Debug.WriteLine($"Không xoá được file xem trước cũ {file}: {ex.Message}");
-            }
-        }
-    }
+    public static void CleanupOldPreviews(string folder) =>
+        FileRetention.DeleteOlderThan(folder, "*.pdf", TimeSpan.FromDays(1));
 
     private static void DeletePreviewFile(string pdfPath)
     {

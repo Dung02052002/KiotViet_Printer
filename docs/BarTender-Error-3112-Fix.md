@@ -66,6 +66,11 @@ Trước **mỗi** `Process.Start`, ghi vào `logs/bartender-command.log`:
 [...] NAMED SUBSTRINGS    : (không có)
 ```
 
+File log quá 5 MB thì được chuyển sang `bartender-command.log.old` (giữ một bản
+cũ) và bắt đầu file mới. XML lệnh in `debug_xml/print_*.xml` (một file cho mỗi
+lần in qua `/XMLScript=`) được tự xoá sau 7 ngày; `debug_xml/last_print_debug.xml`
+luôn là lệnh gần nhất.
+
 ### 4. Phiên bản + chẩn đoán khởi động
 
 - `AppInfo` — version (`<Version>` trong `.csproj`), build timestamp (nhúng lúc

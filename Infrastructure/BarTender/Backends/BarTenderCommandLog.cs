@@ -1,3 +1,5 @@
+using KiotVietLabelPrinter.Infrastructure.Diagnostics;
+
 namespace KiotVietLabelPrinter.Infrastructure.BarTender.Backends;
 
 /// <summary>
@@ -9,6 +11,9 @@ namespace KiotVietLabelPrinter.Infrastructure.BarTender.Backends;
 /// </summary>
 public static class BarTenderCommandLog
 {
+    // Quá cỡ này thì chuyển sang bartender-command.log.old, bắt đầu file mới.
+    private const long MaxLogBytes = 5 * 1024 * 1024;
+
     private static readonly object WriteLock = new();
 
     public static string LogFilePath =>
@@ -25,6 +30,7 @@ public static class BarTenderCommandLog
 
             lock (WriteLock)
             {
+                FileRetention.RotateIfLarger(LogFilePath, MaxLogBytes);
                 File.AppendAllText(LogFilePath, line);
             }
         }
@@ -64,6 +70,7 @@ public static class BarTenderCommandLog
 
             lock (WriteLock)
             {
+                FileRetention.RotateIfLarger(LogFilePath, MaxLogBytes);
                 File.AppendAllText(LogFilePath, block);
             }
         }

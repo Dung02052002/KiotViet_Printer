@@ -1,4 +1,5 @@
 using System.Text;
+using KiotVietLabelPrinter.Infrastructure.Diagnostics;
 
 namespace KiotVietLabelPrinter.Infrastructure.BarTender.Backends;
 
@@ -58,9 +59,13 @@ public static class PrintXmlBuilder
         return sb.ToString();
     }
 
+    /// <summary>XML lệnh in cũ hơn chừng này bị xoá (mỗi mã tem kính in ra một file).</summary>
+    private static readonly TimeSpan DebugXmlRetention = TimeSpan.FromDays(7);
+
     /// <summary>
     /// Dựng XML rồi ghi ra &lt;app&gt;\debug_xml\print_&lt;timestamp&gt;.xml, trả về đường
     /// dẫn file. Cũng ghi đè debug_xml\last_print_debug.xml để tiện xem nhanh.
+    /// File print_*.xml quá <see cref="DebugXmlRetention"/> được dọn mỗi lần ghi.
     /// </summary>
     public static string WriteXmlNearApp(
         string btwFile,
@@ -89,6 +94,8 @@ public static class PrintXmlBuilder
             Path.Combine(debugFolder, "last_print_debug.xml"),
             xml,
             new UTF8Encoding(false));
+
+        FileRetention.DeleteOlderThan(debugFolder, "print_*.xml", DebugXmlRetention);
 
         return xmlPath;
     }
