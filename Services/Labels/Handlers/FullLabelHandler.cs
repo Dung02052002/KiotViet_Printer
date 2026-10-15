@@ -4,6 +4,10 @@ using KiotVietLabelPrinter.Models;
 
 namespace KiotVietLabelPrinter.Services.Labels.Handlers;
 
+/// <summary>
+/// Tem đầy đủ: chép nguyên dữ liệu file nguồn sang file data, có thể ghi đè
+/// giá bán / tên hàng theo lựa chọn trên màn hình in (không đụng file nguồn).
+/// </summary>
 public class FullLabelHandler : ILabelHandler
 {
     private readonly ExcelService _excelService = new();
@@ -16,25 +20,7 @@ public class FullLabelHandler : ILabelHandler
         LabelDefinition label,
         string employeeCode)
     {
-        List<PreviewRow> rows = new();
-
-        foreach (ProductRow item in products)
-        {
-            rows.Add(new PreviewRow
-            {
-                ProductCode = item.ProductCode,
-                ProductName = item.ProductName,
-                ProductNameWithAttr = item.ProductNameWithAttr,
-                ParsedBarcodeCode = item.ProductCode,
-                FinalBarcodeCode = item.ProductCode,
-                Quantity = item.Quantity,
-                Price = item.Price,
-                IsFullLabel = true,
-                IsBarcodeLabel = false
-            });
-        }
-
-        return rows;
+        return LabelHandlerSupport.BuildPlainPreview(products);
     }
 
     public void PrepareDataAndPrint(
@@ -44,14 +30,7 @@ public class FullLabelHandler : ILabelHandler
         PriceOverride? priceOverride = null,
         Dictionary<string, string>? nameOverrides = null)
     {
-        if (string.IsNullOrWhiteSpace(label.SourceExcelFile) || !File.Exists(label.SourceExcelFile))
-            throw new Exception($"Không tìm thấy file Excel nguồn:\n{label.SourceExcelFile}");
-
-        if (string.IsNullOrWhiteSpace(label.DataFilePath) || !File.Exists(label.DataFilePath))
-            throw new Exception($"Không tìm thấy file data tem:\n{label.DataFilePath}");
-
-        if (string.IsNullOrWhiteSpace(label.TemplatePath) || !File.Exists(label.TemplatePath))
-            throw new Exception($"Không tìm thấy file template BarTender:\n{label.TemplatePath}");
+        LabelHandlerSupport.EnsureFilesExist(label, "file data tem");
 
         _excelService.WriteGenericLabelData(
             label.SourceExcelFile,

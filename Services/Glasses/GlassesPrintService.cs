@@ -11,7 +11,7 @@ public class GlassesPrintService
     private static readonly SemaphoreSlim PrintSequenceGate = new(1, 1);
 
     private readonly GlassesExcelService _excelService = new();
-    private readonly GlassesBarTenderService  _barTenderService = new();
+    private readonly GlassesBarTenderService _barTenderService = new();
 
     public void Print(
         List<ProductRow> products,
@@ -101,63 +101,56 @@ public class GlassesPrintService
         }
     }
 
+    // Ghi file data + gọi BarTender cho MỘT mã là một khối không được xen
+    // ngang. LabelService.PrintLock đã chặn hai lệnh in chồng nhau; cổng này
+    // giữ đúng bất biến đó cả khi service được gọi từ nơi khác.
     private void PrintSingle(
-    ProductRow product,
-    LabelDefinition label,
-    string colorCode)
-{
-    PrintSequenceGate.Wait();
-
-    try
+        ProductRow product,
+        LabelDefinition label,
+        string colorCode)
     {
-    GlassesDocument document =
-        GlassesDocumentBuilder.Build(
-            product,
-            colorCode);
+        PrintSequenceGate.Wait();
 
-    // File data (.xls) GIỮ NGUYÊN dữ liệu gốc từ Excel import — KHÔNG
-    // ghi đè Mã hàng / Mã vạch bằng mã đã parse. Mã đã parse
-    // (BaseCode/BarcodeCode) chỉ được dùng để encode hình mã vạch và
-    // gửi qua GLASSES_INFO cho BarTender, không đụng vào cột dữ liệu
-    // gốc trong file data.
+        try
+        {
+            GlassesDocument document =
+                GlassesDocumentBuilder.Build(
+                    product,
+                    colorCode);
 
-    // KHÔNG đụng vào ProductNameWithAttr (cột F) — đây là text thuộc
-    // tính hiển thị riêng bên phải tem VÀ cũng là nguồn để parser cắt
-    // mã, ghi đè nó sẽ vừa phá parse vừa phá nội dung hiển thị đó.
-    //
-    // File data (.xls) GIỮ NGUYÊN 100% — không ghi thêm cột nào khác,
-    // không đụng Description. Khối GLASSES_INFO (KÍNH MÁT / Mã hàng /
-    // Nhập từ / Đ/c / Thông số kỹ thuật / Mã vạch...) được gửi thẳng
-    // qua Print XML Script dưới dạng Named Sub-String "GLASSES_INFO"
-    // (đã quét parser và thay sẵn 2 dòng "Mã hàng"/"Mã vạch" bằng mã
-    // ĐÃ PARSE) — không cần ghi ra file data nữa.
-    //
-    // KHÔNG được in tiếp khi ghi file data thất bại: file data lúc đó vẫn
-    // chứa số lượng / tên / giá của MÃ TRƯỚC, BarTender sẽ in tem lẫn dữ
-    // liệu (barcode mã này + số lượng/tên mã khác) mà không báo lỗi gì.
-    // Để lỗi ném ra → vòng in nhiều mã đưa mã này vào danh sách "in thiếu".
-    try
-    {
-        _excelService.WriteSingleProduct(
-            document.Product,
-            label.DataFilePath);
-    }
-    catch (IOException ex)
-    {
-        throw new Exception(
-            "Không ghi được file data tem kính (file đang bị chương trình " +
-            "khác mở/khoá) — đã bỏ qua mã này để tránh in sai dữ liệu.\n" +
-            $"File: {label.DataFilePath}\nChi tiết: {ex.Message}",
-            ex);
-    }
+            // File data chỉ nhận dữ liệu GỐC của mã này từ Excel import (mã
+            // hàng, mã vạch, tên, thuộc tính, số lượng, giá) — không ghi mã đã
+            // parse vào, và không đụng cột F (Tên hàng thuộc tính: vừa là chữ
+            // hiển thị trên tem vừa là nguồn để parser cắt mã). Mã đã parse,
+            // mã vạch và khối thông tin kính đi riêng qua Named Sub-String
+            // (GlassesBarTenderService).
+            //
+            // KHÔNG được in tiếp khi ghi file data thất bại: file data lúc đó vẫn
+            // chứa số lượng / tên / giá của MÃ TRƯỚC, BarTender sẽ in tem lẫn dữ
+            // liệu (barcode mã này + số lượng/tên mã khác) mà không báo lỗi gì.
+            // Để lỗi ném ra → vòng in nhiều mã đưa mã này vào danh sách "in thiếu".
+            try
+            {
+                _excelService.WriteSingleProduct(
+                    document.Product,
+                    label.DataFilePath);
+            }
+            catch (IOException ex)
+            {
+                throw new Exception(
+                    "Không ghi được file data tem kính (file đang bị chương trình " +
+                    "khác mở/khoá) — đã bỏ qua mã này để tránh in sai dữ liệu.\n" +
+                    $"File: {label.DataFilePath}\nChi tiết: {ex.Message}",
+                    ex);
+            }
 
-    _barTenderService.Print(
-        label,
-        document);
+            _barTenderService.Print(
+                label,
+                document);
+        }
+        finally
+        {
+            PrintSequenceGate.Release();
+        }
     }
-    finally
-    {
-        PrintSequenceGate.Release();
-    }
-}
 }

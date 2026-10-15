@@ -1,4 +1,3 @@
-using System.Text.RegularExpressions;
 using KiotVietLabelPrinter.Models;
 
 namespace KiotVietLabelPrinter.Services.Glasses;
@@ -27,8 +26,8 @@ public static class GlassesInfoBuilder
         string baseCode,
         string colorCode)
     {
-        baseCode = baseCode?.Trim().ToUpper() ?? "";
-        colorCode = colorCode?.Trim().ToUpper() ?? "";
+        baseCode = baseCode?.Trim().ToUpperInvariant() ?? "";
+        colorCode = colorCode?.Trim().ToUpperInvariant() ?? "";
 
         if (string.IsNullOrWhiteSpace(baseCode))
             return "";
@@ -52,7 +51,6 @@ public static class GlassesInfoBuilder
     // Chuỗi GLASSES_INFO (runtime, không ghi vào file data)
     //---------------------------------------------------------
     public static string BuildInfo(
-        ProductRow product,
         string baseCode,
         string barcode)
     {
@@ -90,7 +88,7 @@ public static class GlassesInfoBuilder
         return string.Join(
             Environment.NewLine,
             [
-                       GlassesTitle,
+                GlassesTitle,
                 $"Mã hàng:{baseCode}",
                 "Nhập từ: Công ty CP XNK Trung Quốc Đại Dương.",
                 "Đ/c: Số 321, đ.Trường Chinh,P.Khương Trung, Q.Thanh Xuân,TP Hà Nội,Việt Nam",
@@ -99,34 +97,31 @@ public static class GlassesInfoBuilder
             ]);
     }
 
-   private static string[] BuildLeftColumnLines(
-    string baseCode,
-    string barcode)
-{
-    return
-    [
-        $"Mã hàng: {baseCode}",
-        "Nhập từ: Công ty CP XNK Trung Quốc Đại Dương",
-        "Đ/c: Số 321, d.Trường Chinh, P.Khương Trung,",
-        "Q.Thanh Xuân, TP Hà Nội, Việt Nam",
-        "Thông số kỹ thuật: 16*16*7",
-        $"Mã vạch: {barcode}"
-    ];
-}
+    private static string[] BuildLeftColumnLines(
+        string baseCode,
+        string barcode)
+    {
+        return
+        [
+            $"Mã hàng: {baseCode}",
+            "Nhập từ: Công ty CP XNK Trung Quốc Đại Dương",
+            "Đ/c: Số 321, d.Trường Chinh, P.Khương Trung,",
+            "Q.Thanh Xuân, TP Hà Nội, Việt Nam",
+            "Thông số kỹ thuật: 16*16*7",
+            $"Mã vạch: {barcode}"
+        ];
+    }
 
     private static string NormalizeColorCode(string colorCode)
     {
         if (string.IsNullOrWhiteSpace(colorCode))
             return "";
 
-        colorCode = colorCode.Trim().ToUpper();
+        colorCode = colorCode.Trim().ToUpperInvariant();
 
         // Hỗ trợ nhập nhanh "1" thành "-1" theo thói quen nhập mã màu.
-        if (!colorCode.StartsWith("-") &&
-            Regex.IsMatch(colorCode, @"^[0-9]+$"))
-        {
+        if (colorCode.All(char.IsAsciiDigit))
             return $"-{colorCode}";
-        }
 
         return colorCode;
     }
@@ -161,7 +156,6 @@ public static class GlassesInfoBuilder
 
         result.GlassesInfo =
             BuildInfo(
-                product,
                 baseCode,
                 result.BarcodeCode);
 

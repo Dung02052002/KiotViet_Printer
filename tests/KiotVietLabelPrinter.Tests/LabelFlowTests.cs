@@ -59,16 +59,6 @@ public class LabelFlowTests
         }, member: $"{nameof(Handler_BuildPreview)}_{handlerType}");
     }
 
-    [Fact]
-    public void PreviewService_BuildPreviewRows()
-    {
-        Snapshot.Match(new
-        {
-            WithEmployee = new PreviewService().BuildPreviewRows(TestData.ProductsFromSamples(), true, false, " NV7 "),
-            NoEmployee = new PreviewService().BuildPreviewRows(TestData.ProductsFromSamples(), false, true, "")
-        });
-    }
-
     [Theory]
     [InlineData("FULL")]
     [InlineData("BARCODE")]
@@ -81,6 +71,29 @@ public class LabelFlowTests
         List<PreviewRow> rows = new LabelService().BuildPreview(source, labelCode, "NV7");
 
         Snapshot.Match(rows, member: $"{nameof(LabelService_BuildPreview_FromKiotVietExcel)}_{labelCode}");
+    }
+
+    // Thiếu file thì báo đúng file nào — trước khi đụng tới file data hay BarTender.
+    [Theory]
+    [InlineData("FULL", "file data tem:")]
+    [InlineData("GENERIC", "file data tem:")]
+    [InlineData("BARCODE", "file data tem mã vạch:")]
+    public void Handler_MissingFiles_NamesTheMissingFile(string handlerType, string dataRole)
+    {
+        string dir = TestData.NewTempDir();
+        string source = TestData.CreateKiotVietSource(dir);
+        string data = TestData.CreateBarTenderDataTemplate(dir, "data.xls");
+        ILabelHandler handler = new LabelHandlerFactory().GetHandler(handlerType);
+
+        string Fail(string src, string dat, string tpl) => Assert.ThrowsAny<Exception>(() =>
+            handler.PrepareDataAndPrint([], new LabelDefinition { SourceExcelFile = src, DataFilePath = dat, TemplatePath = tpl }, "")).Message;
+
+        Assert.StartsWith("Không tìm thấy file Excel nguồn:", Fail("", data, source));
+        Assert.StartsWith($"Không tìm thấy {dataRole}", Fail(source, Path.Combine(dir, "khong-co.xls"), source));
+        Assert.StartsWith("Không tìm thấy file template BarTender:", Fail(source, data, Path.Combine(dir, "khong-co.btw")));
+
+        // Kiểm tra thất bại thì file data không bị ghi (chỉ còn dòng tiêu đề).
+        Assert.Single(TestData.ReadAllCells(data));
     }
 
     // File Excel nguồn là dữ liệu của MỘT lần xem trước/in — không được ghi

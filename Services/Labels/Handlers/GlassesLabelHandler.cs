@@ -3,6 +3,10 @@ using KiotVietLabelPrinter.Services.Glasses;
 
 namespace KiotVietLabelPrinter.Services.Labels.Handlers;
 
+/// <summary>
+/// Tem kính: ô "mã nhân viên" trên màn hình in được dùng làm MÃ MÀU — mã vạch
+/// = mã parse từ tên hàng + mã màu (xem GlassesInfoBuilder.BuildBarcode).
+/// </summary>
 public class GlassesLabelHandler : ILabelHandler
 {
     private readonly GlassesPrintService _printService = new();
@@ -15,38 +19,26 @@ public class GlassesLabelHandler : ILabelHandler
         string employeeCode)
     {
         string colorCode = employeeCode;
-
+        GlassesParser parser = new();
         List<PreviewRow> rows = new();
 
         foreach (ProductRow item in products)
-{
-    GlassesParser parser = new();
+        {
+            string baseCode = parser.Parse(item).BaseCode;
 
-var parse = parser.Parse(item);
-
-string baseCode = parse.BaseCode;
-
-string barcode =
-    GlassesInfoBuilder.BuildBarcode(
-        baseCode,
-        colorCode);
-
-rows.Add(new PreviewRow
-{
-    ProductCode = item.ProductCode,
-    ProductName = item.ProductName,
-    ProductNameWithAttr = item.ProductNameWithAttr,
-
-    ParsedBarcodeCode = baseCode,
-    FinalBarcodeCode = barcode,
-
-    Quantity = item.Quantity,
-    Price = item.Price,
-
-    IsFullLabel = false,
-    IsBarcodeLabel = true
-});
-}
+            rows.Add(new PreviewRow
+            {
+                ProductCode = item.ProductCode,
+                ProductName = item.ProductName,
+                ProductNameWithAttr = item.ProductNameWithAttr,
+                ParsedBarcodeCode = baseCode,
+                FinalBarcodeCode = GlassesInfoBuilder.BuildBarcode(baseCode, colorCode),
+                Quantity = item.Quantity,
+                Price = item.Price,
+                IsFullLabel = false,
+                IsBarcodeLabel = true
+            });
+        }
 
         return rows;
     }
@@ -58,25 +50,10 @@ rows.Add(new PreviewRow
         PriceOverride? priceOverride = null,
         Dictionary<string, string>? nameOverrides = null)
     {
-        string colorCode = employeeCode;
-
-        if (string.IsNullOrWhiteSpace(label.DataFilePath))
-            throw new Exception("Chưa cấu hình file Data.");
-
-        if (string.IsNullOrWhiteSpace(label.TemplatePath))
-            throw new Exception("Chưa cấu hình file BarTender.");
-
-        if (!File.Exists(label.DataFilePath))
-            throw new Exception(
-                $"Không tìm thấy file Data:\n{label.DataFilePath}");
-
-        if (!File.Exists(label.TemplatePath))
-            throw new Exception(
-                $"Không tìm thấy file BarTender:\n{label.TemplatePath}");
-
+        // Kiểm tra file data / template do GlassesPrintService.Print đảm nhận.
         _printService.Print(
             products,
             label,
-            colorCode);
+            colorCode: employeeCode);
     }
 }
