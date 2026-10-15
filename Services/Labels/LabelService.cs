@@ -36,10 +36,7 @@ public class LabelService
     {
         List<ProductRow> products = ReadProducts(sourceExcelFile);
 
-        LabelDefinition label = _catalogService.GetByCode(labelCode);
-
-        // GÁN FILE NGUỒN VÀO LABEL
-        label.SourceExcelFile = sourceExcelFile;
+        LabelDefinition label = _catalogService.GetByCode(labelCode).ForSource(sourceExcelFile);
 
         var handler = _handlerFactory.GetHandler(label.HandlerType);
 
@@ -91,10 +88,7 @@ public class LabelService
 
             products = ReadProducts(sourceExcelFile);
 
-            label = _catalogService.GetByCode(labelCode);
-
-            // GÁN FILE NGUỒN VÀO LABEL
-            label.SourceExcelFile = sourceExcelFile;
+            label = _catalogService.GetByCode(labelCode).ForSource(sourceExcelFile);
 
             var handler = _handlerFactory.GetHandler(label.HandlerType);
 

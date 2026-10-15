@@ -83,6 +83,22 @@ public class LabelFlowTests
         Snapshot.Match(rows, member: $"{nameof(LabelService_BuildPreview_FromKiotVietExcel)}_{labelCode}");
     }
 
+    // File Excel nguồn là dữ liệu của MỘT lần xem trước/in — không được ghi
+    // lên cấu hình tem dùng chung (sẽ bị lưu vào config.json ở lần Save sau,
+    // và bị sửa chéo giữa các luồng).
+    [Fact]
+    public void LabelService_DoesNotWriteSourceFileIntoSharedConfig()
+    {
+        string source = TestData.CreateKiotVietSource(TestData.NewTempDir());
+
+        new LabelService().BuildPreview(source, "FULL", "");
+
+        LabelDefinition shared = new LabelCatalogService().GetByCode("FULL");
+        Assert.Equal("", shared.SourceExcelFile);
+        Assert.DoesNotContain("SourceExcelFile",
+            Newtonsoft.Json.JsonConvert.SerializeObject(KiotVietLabelPrinter.Infrastructure.Storage.ConfigService.Instance.Config));
+    }
+
     [Fact]
     public void LabelService_ReadProducts_Errors()
     {
