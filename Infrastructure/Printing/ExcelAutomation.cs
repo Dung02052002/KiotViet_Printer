@@ -330,7 +330,11 @@ public static class ExcelAutomation
             return await task;
 
         // Excel không phản hồi: dừng tiến trình của phiên (luồng STA sẽ tự kết
-        // thúc vì lời gọi COM đang chờ trả lỗi).
+        // thúc vì lời gọi COM đang chờ trả lỗi). Lỗi đó tới SAU khi đã báo hết
+        // giờ và không còn ai chờ — quan sát nó để không bị ghi thành lỗi
+        // "TASK chưa xử lý" trong log app-errors.
+        _ = task.ContinueWith(t => _ = t.Exception, CancellationToken.None,
+            TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
         ExcelSession.EnsureProcessExited(pid(), TimeSpan.Zero);
         throw new WarehouseException(WarehouseErrorKind.ExcelTimeout,
             $"Microsoft Excel không phản hồi sau {timeout.TotalSeconds:0} giây khi {operation} — đã dừng phiên Excel này.\n\n" +

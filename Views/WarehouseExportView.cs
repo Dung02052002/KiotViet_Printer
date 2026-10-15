@@ -2037,7 +2037,7 @@ public class WarehouseExportView : UserControl
         try
         {
             string? file = _export.Last is { } last && File.Exists(last.OutputPath) ? last.OutputPath : null;
-            Process.Start(new ProcessStartInfo("explorer.exe", file != null ? $"/select,\"{file}\"" : $"\"{folder}\"") { UseShellExecute = true });
+            Process.Start(new ProcessStartInfo("explorer.exe", file != null ? $"/select,\"{file}\"" : $"\"{folder}\"") { UseShellExecute = true })?.Dispose();
         }
         catch (System.ComponentModel.Win32Exception ex)
         {

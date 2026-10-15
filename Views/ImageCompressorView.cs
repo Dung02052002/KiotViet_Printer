@@ -1001,7 +1001,7 @@ public class ImageCompressorView : UserControl
             {
                 FileName = folder,
                 UseShellExecute = true
-            });
+            })?.Dispose();
         }
         catch (Exception ex)
         {

@@ -14,6 +14,25 @@ public class ExcelAndXmlTests
         Snapshot.Match(new ExcelService().ReadProducts(source));
     }
 
+    // Đọc xong phải trả file ngay: handle còn giữ (dù FileShare.ReadWrite)
+    // khiến Excel không lưu đè / người dùng không xoá, đổi tên được file nguồn
+    // cho tới khi GC chạy.
+    [Fact]
+    public void ExcelService_ReleasesFileHandles_AfterReadAndWrite()
+    {
+        string dir = TestData.NewTempDir();
+        string source = TestData.CreateKiotVietSource(dir);
+        string target = TestData.CreateBarTenderDataTemplate(dir, "data.xls");
+        ExcelService service = new();
+
+        service.ReadProducts(source);
+        service.ReadTextTable(source);
+        service.WriteBarcodeLikeData(source, target, "NV1");
+
+        using (new FileStream(source, FileMode.Open, FileAccess.ReadWrite, FileShare.None)) { }
+        using (new FileStream(target, FileMode.Open, FileAccess.ReadWrite, FileShare.None)) { }
+    }
+
     [Fact]
     public void ReadTextTable_FromKiotVietExport()
     {

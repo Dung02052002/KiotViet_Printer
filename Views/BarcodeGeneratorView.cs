@@ -1357,7 +1357,7 @@ public class BarcodeGeneratorView : UserControl
         try
         {
             Directory.CreateDirectory(txtOutputFolder.Text);
-            Process.Start(new ProcessStartInfo("explorer.exe", $"\"{txtOutputFolder.Text}\"") { UseShellExecute = true });
+            Process.Start(new ProcessStartInfo("explorer.exe", $"\"{txtOutputFolder.Text}\"") { UseShellExecute = true })?.Dispose();
         }
         catch (Exception ex)
         {

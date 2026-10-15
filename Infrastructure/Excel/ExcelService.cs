@@ -259,7 +259,8 @@ public class ExcelService
                 $"Không đọc được file Excel.\n" +
                 $"File: {Path.GetFileName(filePath)}\n" +
                 $"Đường dẫn: {filePath}\n" +
-                $"Chi tiết: {ex.Message}");
+                $"Chi tiết: {ex.Message}",
+                ex);
         }
     }
 

@@ -1429,7 +1429,7 @@ public class BackgroundRemoverView : UserControl
             {
                 FileName = folder,
                 UseShellExecute = true
-            });
+            })?.Dispose();
         }
         catch (Exception ex)
         {
