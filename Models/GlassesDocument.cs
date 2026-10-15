@@ -1,4 +1,9 @@
-using KiotVietLabelPrinter.Models;
+namespace KiotVietLabelPrinter.Models;
+
+/// <summary>
+/// Dữ liệu một tem kính đã dựng sẵn: mã đã parse, mã vạch (mã + mã màu) và
+/// các khối chữ gửi cho BarTender qua Named Sub-String.
+/// </summary>
 public class GlassesDocument
 {
     public ProductRow Product { get; set; } = null!;

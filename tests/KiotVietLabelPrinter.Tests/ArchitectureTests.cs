@@ -67,8 +67,9 @@ public class ArchitectureTests
                 string rel = Path.GetDirectoryName(Path.GetRelativePath(RepoRoot(), file))!;
                 string expected = "KiotVietLabelPrinter." + rel.Replace(Path.DirectorySeparatorChar, '.');
                 Match m = Regex.Match(File.ReadAllText(file), @"^namespace\s+([\w.]+)\s*;", RegexOptions.Multiline);
-                if (m.Success && m.Groups[1].Value != expected)
-                    wrong.Add($"{Path.GetRelativePath(RepoRoot(), file)}: {m.Groups[1].Value} (mong đợi {expected})");
+                // Thiếu khai báo namespace = lớp rơi vào global namespace — cũng là sai.
+                if (!m.Success || m.Groups[1].Value != expected)
+                    wrong.Add($"{Path.GetRelativePath(RepoRoot(), file)}: {(m.Success ? m.Groups[1].Value : "(không có namespace)")} (mong đợi {expected})");
             }
         }
 
