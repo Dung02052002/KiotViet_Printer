@@ -1,5 +1,5 @@
 using System.Runtime.ExceptionServices;
-using KiotVietLabelPrinter.Forms;
+using KiotVietLabelPrinter.Forms.Warehouse;
 using KiotVietLabelPrinter.Models.Warehouse;
 using KiotVietLabelPrinter.Services.Warehouse;
 using Xunit;

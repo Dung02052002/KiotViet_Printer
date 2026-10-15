@@ -1,4 +1,5 @@
-using KiotVietLabelPrinter.Models;
+using KiotVietLabelPrinter.Models.Glasses;
+using KiotVietLabelPrinter.Models.Labels;
 
 namespace KiotVietLabelPrinter.Infrastructure.BarTender;
 

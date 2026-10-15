@@ -1,6 +1,7 @@
 using System.Text;
 using KiotVietLabelPrinter.Infrastructure.Diagnostics;
 using KiotVietLabelPrinter.Infrastructure.Storage;
+using KiotVietLabelPrinter.Models.Labels;
 using KiotVietLabelPrinter.Models;
 
 namespace KiotVietLabelPrinter.Infrastructure.BarTender;

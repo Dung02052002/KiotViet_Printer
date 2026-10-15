@@ -1,4 +1,5 @@
 using KiotVietLabelPrinter.Infrastructure.Storage;
+using KiotVietLabelPrinter.Models.Labels;
 using KiotVietLabelPrinter.Models;
 using KiotVietLabelPrinter.Services.ImageTools;
 using KiotVietLabelPrinter.Services.Labels;

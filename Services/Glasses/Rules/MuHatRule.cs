@@ -1,5 +1,5 @@
 using System.Text.RegularExpressions;
-using KiotVietLabelPrinter.Models;
+using KiotVietLabelPrinter.Models.Glasses;
 using KiotVietLabelPrinter.Services.Glasses.Lexer;
 
 namespace KiotVietLabelPrinter.Services.Glasses.Rules;

@@ -1,6 +1,6 @@
-using System.Text;
 using System.Text.RegularExpressions;
-using KiotVietLabelPrinter.Models;
+using System.Text;
+using KiotVietLabelPrinter.Models.Barcodes;
 
 namespace KiotVietLabelPrinter.Services.Barcodes;
 

@@ -1,4 +1,5 @@
 using System.Runtime.ExceptionServices;
+using KiotVietLabelPrinter.UI.Theme;
 using KiotVietLabelPrinter.UI;
 using KiotVietLabelPrinter.Views;
 using Xunit;

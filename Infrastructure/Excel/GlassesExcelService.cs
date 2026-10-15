@@ -1,4 +1,4 @@
-using KiotVietLabelPrinter.Models;
+using KiotVietLabelPrinter.Models.Labels;
 using NPOI.SS.UserModel;
 
 namespace KiotVietLabelPrinter.Infrastructure.Excel;

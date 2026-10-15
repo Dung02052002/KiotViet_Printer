@@ -1,4 +1,5 @@
 using KiotVietLabelPrinter.Infrastructure.Storage;
+using KiotVietLabelPrinter.UI.Controls;
 using KiotVietLabelPrinter.UI;
 using KiotVietLabelPrinter.Views;
 using Xunit;

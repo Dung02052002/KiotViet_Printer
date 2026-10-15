@@ -1,6 +1,7 @@
 using KiotVietLabelPrinter.Infrastructure.BarTender;
 using KiotVietLabelPrinter.Infrastructure.Excel;
-using KiotVietLabelPrinter.Models;
+using KiotVietLabelPrinter.Models.Barcodes;
+using KiotVietLabelPrinter.Models.Labels;
 using KiotVietLabelPrinter.Services.Barcodes;
 
 namespace KiotVietLabelPrinter.Services.Labels.Handlers;

@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json;
 using KiotVietLabelPrinter.Models;
+using KiotVietLabelPrinter.Models.Labels;
 
 namespace KiotVietLabelPrinter.Infrastructure.Storage;
 

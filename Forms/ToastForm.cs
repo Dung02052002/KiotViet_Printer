@@ -1,4 +1,6 @@
 using System.Drawing.Drawing2D;
+using KiotVietLabelPrinter.UI.Controls;
+using KiotVietLabelPrinter.UI.Theme;
 using KiotVietLabelPrinter.UI;
 
 namespace KiotVietLabelPrinter.Forms;

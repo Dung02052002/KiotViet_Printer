@@ -3,7 +3,10 @@ using System.Drawing.Printing;
 using KiotVietLabelPrinter.Infrastructure.BarTender;
 using KiotVietLabelPrinter.Infrastructure.Diagnostics;
 using KiotVietLabelPrinter.Infrastructure.Storage;
+using KiotVietLabelPrinter.Models.Labels;
 using KiotVietLabelPrinter.Models;
+using KiotVietLabelPrinter.UI.Controls;
+using KiotVietLabelPrinter.UI.Theme;
 using KiotVietLabelPrinter.UI;
 
 namespace KiotVietLabelPrinter.Forms;

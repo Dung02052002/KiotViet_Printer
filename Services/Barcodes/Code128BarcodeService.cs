@@ -2,7 +2,7 @@ using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.Drawing.Text;
 using System.Runtime.InteropServices;
-using KiotVietLabelPrinter.Models;
+using KiotVietLabelPrinter.Models.Barcodes;
 using ZXing.Common;
 using ZXing.OneD;
 

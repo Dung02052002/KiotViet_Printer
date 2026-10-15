@@ -1,5 +1,5 @@
-using KiotVietLabelPrinter.Models;
-using KiotVietLabelPrinter.Services.Glasses.Tests;
+using KiotVietLabelPrinter.Models.Labels;
+using KiotVietLabelPrinter.Services.Glasses.Samples;
 using NPOI.HSSF.UserModel;
 using NPOI.SS.UserModel;
 using NPOI.XSSF.UserModel;

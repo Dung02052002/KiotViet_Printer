@@ -2,7 +2,7 @@ using KiotVietLabelPrinter.Infrastructure.BarTender.Backends;
 using KiotVietLabelPrinter.Infrastructure.Diagnostics;
 using KiotVietLabelPrinter.Infrastructure.Excel;
 using KiotVietLabelPrinter.Infrastructure.Storage;
-using KiotVietLabelPrinter.Models;
+using KiotVietLabelPrinter.Models.Labels;
 
 namespace KiotVietLabelPrinter.Services.Labels;
 

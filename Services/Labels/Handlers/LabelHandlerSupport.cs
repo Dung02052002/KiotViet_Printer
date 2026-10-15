@@ -1,4 +1,4 @@
-using KiotVietLabelPrinter.Models;
+using KiotVietLabelPrinter.Models.Labels;
 
 namespace KiotVietLabelPrinter.Services.Labels.Handlers;
 

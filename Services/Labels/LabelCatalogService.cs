@@ -1,5 +1,5 @@
 using KiotVietLabelPrinter.Infrastructure.Storage;
-using KiotVietLabelPrinter.Models;
+using KiotVietLabelPrinter.Models.Labels;
 
 namespace KiotVietLabelPrinter.Services.Labels;
 

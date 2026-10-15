@@ -135,7 +135,7 @@ giữ nguyên zoom/pan để so cùng một vùng biên:
 Mask hiển thị là **đúng alpha truyền cho `CompositeOnWhite`**, không phải bản dựng lại.
 
 Zoom **Fit / 100% / 200% / 400%**, con lăn chuột zoom tự do quanh con trỏ, kéo chuột trái để pan,
-nháy đúp đổi nhanh Fit ↔ 100% (`UI/ZoomPanImageView.cs`). Ô caro vẽ ở tọa độ **màn hình** nên
+nháy đúp đổi nhanh Fit ↔ 100% (`UI/Controls/ZoomPanImageView.cs`). Ô caro vẽ ở tọa độ **màn hình** nên
 không phóng to theo ảnh — vùng bán trong suốt lộ rõ ở mọi mức zoom.
 
 Sau mỗi ảnh, mask + cutout ghi ra `%TEMP%\KiotVietLabelPrinter\bg-preview\<session>\<item-id>_{mask,cutout}.png`

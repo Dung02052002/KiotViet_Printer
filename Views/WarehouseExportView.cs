@@ -1,12 +1,14 @@
 using System.Diagnostics;
 using System.Globalization;
-using KiotVietLabelPrinter.Forms;
+using KiotVietLabelPrinter.Forms.Warehouse;
 using KiotVietLabelPrinter.Infrastructure.Diagnostics;
 using KiotVietLabelPrinter.Infrastructure.Fonts;
 using KiotVietLabelPrinter.Infrastructure.Printing;
 using KiotVietLabelPrinter.Infrastructure.Storage;
 using KiotVietLabelPrinter.Models.Warehouse;
 using KiotVietLabelPrinter.Services.Warehouse;
+using KiotVietLabelPrinter.UI.Controls;
+using KiotVietLabelPrinter.UI.Theme;
 using KiotVietLabelPrinter.UI;
 using NPOI.SS.Util;
 

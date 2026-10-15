@@ -1,6 +1,6 @@
 using KiotVietLabelPrinter.Infrastructure.BarTender.Backends;
 using KiotVietLabelPrinter.Infrastructure.Excel;
-using KiotVietLabelPrinter.Models;
+using KiotVietLabelPrinter.Models.Labels;
 using Xunit;
 
 namespace KiotVietLabelPrinter.Tests;

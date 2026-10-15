@@ -1,7 +1,7 @@
 using System.Globalization;
-using NPOI.SS.UserModel;
-using KiotVietLabelPrinter.Models;
+using KiotVietLabelPrinter.Models.Labels;
 using KiotVietLabelPrinter.Services.Barcodes;
+using NPOI.SS.UserModel;
 
 namespace KiotVietLabelPrinter.Infrastructure.Excel;
 

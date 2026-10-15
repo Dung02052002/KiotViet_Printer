@@ -1,7 +1,8 @@
 using KiotVietLabelPrinter.Infrastructure.BarTender;
 using KiotVietLabelPrinter.Infrastructure.Excel;
 using KiotVietLabelPrinter.Infrastructure.Storage;
-using KiotVietLabelPrinter.Models;
+using KiotVietLabelPrinter.Models.Glasses;
+using KiotVietLabelPrinter.Models.Labels;
 using KiotVietLabelPrinter.Services.Labels;
 
 namespace KiotVietLabelPrinter.Services.Glasses;

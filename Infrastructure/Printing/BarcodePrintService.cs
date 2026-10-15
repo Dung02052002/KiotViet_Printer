@@ -1,6 +1,6 @@
 using System.Drawing.Drawing2D;
 using System.Drawing.Printing;
-using KiotVietLabelPrinter.Models;
+using KiotVietLabelPrinter.Models.Barcodes;
 using KiotVietLabelPrinter.Services.Barcodes;
 
 namespace KiotVietLabelPrinter.Infrastructure.Printing;

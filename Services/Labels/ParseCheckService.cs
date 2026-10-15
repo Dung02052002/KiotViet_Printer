@@ -1,5 +1,5 @@
 using System.Text.RegularExpressions;
-using KiotVietLabelPrinter.Models;
+using KiotVietLabelPrinter.Models.Labels;
 using KiotVietLabelPrinter.Services.Barcodes;
 
 namespace KiotVietLabelPrinter.Services.Labels;

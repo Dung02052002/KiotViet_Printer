@@ -1,3 +1,5 @@
+using KiotVietLabelPrinter.Models.Labels;
+
 namespace KiotVietLabelPrinter.Models;
 
 public class AppConfig

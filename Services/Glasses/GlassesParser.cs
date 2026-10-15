@@ -1,7 +1,8 @@
 using System.Diagnostics;
-using System.Text;
 using System.Text.RegularExpressions;
-using KiotVietLabelPrinter.Models;
+using System.Text;
+using KiotVietLabelPrinter.Models.Glasses;
+using KiotVietLabelPrinter.Models.Labels;
 using KiotVietLabelPrinter.Services.Barcodes;
 using KiotVietLabelPrinter.Services.Glasses.Lexer;
 using KiotVietLabelPrinter.Services.Glasses.Rules;

@@ -1,9 +1,10 @@
-using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
+using System.Drawing;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
-using KiotVietLabelPrinter.Models;
+using KiotVietLabelPrinter.Models.Barcodes;
+using KiotVietLabelPrinter.Models.ImageTools;
 using KiotVietLabelPrinter.Services.Barcodes;
 using KiotVietLabelPrinter.Services.ImageTools;
 using Xunit;

@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
-using KiotVietLabelPrinter.Models;
+using KiotVietLabelPrinter.Models.ImageTools;
 using SkiaSharp;
 
 namespace KiotVietLabelPrinter.Services.ImageTools;

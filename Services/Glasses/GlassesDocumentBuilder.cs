@@ -1,4 +1,6 @@
-using KiotVietLabelPrinter.Models;
+using KiotVietLabelPrinter.Models.Barcodes;
+using KiotVietLabelPrinter.Models.Glasses;
+using KiotVietLabelPrinter.Models.Labels;
 
 namespace KiotVietLabelPrinter.Services.Glasses;
 
