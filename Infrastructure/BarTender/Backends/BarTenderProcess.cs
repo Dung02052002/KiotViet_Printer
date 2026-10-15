@@ -35,6 +35,12 @@ internal static class BarTenderProcess
         if (process == null)
             throw new Exception("Không thể gửi lệnh in tới BarTender.");
 
+        // Đọc stdout/stderr NGAY từ đầu, song song với việc chờ: nếu chỉ đọc
+        // sau WaitForExit thì khi BarTender ghi đầy bộ đệm pipe (~4 KB) nó bị
+        // chặn ở lệnh ghi, không bao giờ thoát → bị coi là treo và bị kill.
+        Task<string> stdOutTask = process.StandardOutput.ReadToEndAsync();
+        Task<string> stdErrTask = process.StandardError.ReadToEndAsync();
+
         bool exited = process.WaitForExit(primaryTimeoutMs);
 
         // Khi BarTender đã mở sẵn, tiến trình handoff có thể thoát chậm.
@@ -56,10 +62,16 @@ internal static class BarTenderProcess
             return new RunResult(false, -1, string.Empty, string.Empty);
         }
 
-        string stdOut = process.StandardOutput.ReadToEnd();
-        string stdErr = process.StandardError.ReadToEnd();
+        // Tiến trình đã thoát: chờ đọc nốt phần output còn trong pipe. Có giới
+        // hạn — tiến trình con (nếu có) kế thừa pipe sẽ giữ nó mở mãi.
+        // WhenAny không ném lỗi khi một luồng đọc bị lỗi (khác Task.WaitAll).
+        Task.WhenAny(Task.WhenAll(stdOutTask, stdErrTask), Task.Delay(5000)).Wait();
 
-        return new RunResult(true, process.ExitCode, stdOut, stdErr);
+        return new RunResult(
+            true,
+            process.ExitCode,
+            stdOutTask.IsCompletedSuccessfully ? stdOutTask.Result : string.Empty,
+            stdErrTask.IsCompletedSuccessfully ? stdErrTask.Result : string.Empty);
     }
 
     public static ProcessStartInfo BuildPsi(string bartenderExe)
@@ -78,7 +90,12 @@ internal static class BarTenderProcess
     public static bool IsBarTenderRunning(string bartenderExe)
     {
         string processName = Path.GetFileNameWithoutExtension(bartenderExe);
-        return Process.GetProcessesByName(processName).Length > 0;
+        Process[] processes = Process.GetProcessesByName(processName);
+
+        foreach (Process p in processes)
+            p.Dispose();
+
+        return processes.Length > 0;
     }
 
     //---------------------------------------------------------
