@@ -33,9 +33,13 @@ public static partial class VietnameseText
         return sb.ToString().Normalize(NormalizationForm.FormC);
     }
 
-    /// <summary>Chữ có dấu tiếng Việt nào không (ngoài bảng chữ ASCII).</summary>
+    /// <summary>
+    /// Chữ có dấu tiếng Việt nào không (ngoài bảng chữ ASCII). Xét trên dạng
+    /// NFC: ở dạng tổ hợp (NFD) dấu là ký tự rời không phải chữ cái, tên có
+    /// dấu sẽ bị nhầm là tên không dấu.
+    /// </summary>
     public static bool HasDiacritics(string? text) =>
-        !string.IsNullOrEmpty(text) && text.Any(c => c > 127 && char.IsLetter(c));
+        !string.IsNullOrEmpty(text) && text.Normalize(NormalizationForm.FormC).Any(c => c > 127 && char.IsLetter(c));
 
     /// <summary>
     /// Tách thành các "từ" (chuỗi chữ/số liền nhau) — để khớp từ khóa theo

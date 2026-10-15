@@ -1,3 +1,4 @@
+using System.Text;
 using KiotVietLabelPrinter.Models.Warehouse;
 
 namespace KiotVietLabelPrinter.Services.Warehouse;
@@ -29,8 +30,9 @@ public class WarehouseProductNameService
     public static string NormalizeCode(string? code) =>
         VietnameseText.CollapseSpaces(code).ToUpperInvariant();
 
+    // NFC: cùng một tên ở dạng dấu rời (NFD) không được tính là "tên khác".
     private static string NormalizeName(string? name) =>
-        VietnameseText.CollapseSpaces(name).ToUpperInvariant();
+        VietnameseText.CollapseSpaces(name).Normalize(NormalizationForm.FormC).ToUpperInvariant();
 
     public List<WarehouseProductRow> BuildRows(WarehouseGoodsFile goods)
     {

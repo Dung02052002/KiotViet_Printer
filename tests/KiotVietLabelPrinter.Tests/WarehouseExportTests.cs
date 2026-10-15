@@ -166,6 +166,19 @@ public class WarehouseUnitTests
         Assert.Equal(WarehouseUnitService.PairUnit, _units.Detect(decomposed).Unit);
     }
 
+    // Tên NFD (dấu rời) phải được coi là tên CÓ dấu như bản NFC — trước đây
+    // bị hiểu là tên không dấu nên "Túi giấy"/"Giày nữ" bị gắn cảnh báo mơ hồ.
+    [Theory]
+    [InlineData("Giày nữ")]
+    [InlineData("Túi giấy")]
+    [InlineData("Dép lê nam")]
+    public void DecomposedUnicode_DetectsSameAsComposed(string name)
+    {
+        UnitDetection composed = _units.Detect(name);
+        UnitDetection decomposed = _units.Detect(name.Normalize(System.Text.NormalizationForm.FormD));
+        Assert.Equal(composed, decomposed);
+    }
+
     [Fact]
     public void Keyword_MustMatchWholeWord()
     {
@@ -237,6 +250,17 @@ public class WarehouseProductNameTests
         Assert.All(rows, r => Assert.Contains(r.Messages, m => m.Contains("2, 5") && m.Contains("tên khác nhau")));
         Assert.Equal("Giày nữ màu đen", rows[0].TicketName);
         Assert.Equal("Giày nữ màu trắng", rows[1].TicketName);
+    }
+
+    // Cùng một tên nhưng một dòng dạng NFD (dấu rời) không phải "tên khác nhau".
+    [Fact]
+    public void DuplicateCode_SameNameInDecomposedForm_IsNotAConflict()
+    {
+        List<WarehouseProductRow> rows = new WarehouseProductNameService().BuildRows(Goods(
+            L(2, "SP001", "Giày nữ", 4),
+            L(3, "SP001", "Giày nữ".Normalize(System.Text.NormalizationForm.FormD), 1)));
+
+        Assert.All(rows, r => Assert.Equal(WarehouseRowStatus.Warning, r.Status));
     }
 
     [Fact]
