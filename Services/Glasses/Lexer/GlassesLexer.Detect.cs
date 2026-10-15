@@ -46,7 +46,8 @@ public static partial class GlassesLexer
 
     private static TokenType DetectType(string value)
     {
-        value = value.Trim().ToUpper();
+        // Invariant: kết quả phân loại không được phụ thuộc cài đặt vùng của máy.
+        value = value.Trim().ToUpperInvariant();
 
         if (value == "-")
             return TokenType.Separator;
@@ -65,10 +66,11 @@ public static partial class GlassesLexer
         // KEYWORD
         //-----------------------------------------------------
 
+        // Token không bao giờ chứa khoảng trắng (Lexer cắt ở đó) nên "MÃ SP"
+        // được nhận ra qua token "MÃ"; "MÃSP" là cách viết liền.
         if (value is
             "MÃ"
             or "MÃSP"
-            or "MÃ SP"
             or "MS"
             or "CODE")
             return TokenType.Keyword;
@@ -102,17 +104,16 @@ public static partial class GlassesLexer
             return TokenType.Color;
 
         //-----------------------------------------------------
+        // BRAND
+        //-----------------------------------------------------
+
+        if (BrandDictionary.Contains(value))
+            return TokenType.Brand;
+
+        //-----------------------------------------------------
         // PURE NUMBER
         // 2113
         //-----------------------------------------------------
-
-        //----------------------------------------------------
-
-        if (BrandDictionary.Contains(value))
-    return TokenType.Brand;
-
-        //----------------------------------------------------
-        //----------------------------------------------------
 
         if (PureNumberRegex.IsMatch(value))
             return TokenType.Code;

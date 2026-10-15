@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Text;
 using System.Text.RegularExpressions;
 using KiotVietLabelPrinter.Models;
 using KiotVietLabelPrinter.Services.Barcodes;
@@ -44,6 +45,9 @@ public class GlassesParser
         // ApplyProductCodeFallback lo (dùng Mã hàng gốc KiotViet nếu có,
         // không thì để trống).
     ];
+
+    /// <summary>Thứ tự rule thực tế — để test giữ bất biến Priority tăng dần.</summary>
+    internal static IReadOnlyList<IGlassesRule> Rules => _rules;
 
     // FirstCodeRule là rule tin cậy thấp nhất còn lại (chỉ đoán mã số/
     // chữ đầu tiên gặp trong tên, không có ngữ cảnh MK/mã/model đi kèm).
@@ -129,8 +133,11 @@ public class GlassesParser
         //-----------------------------------------------------
         // Normalize
         //-----------------------------------------------------
+        // NFC: KiotViet/Excel đôi khi trả tiếng Việt dạng tổ hợp (NFD, "Ã" =
+        // "A" + dấu rời) — không chuẩn hoá thì từ khoá "MÃ" không khớp và
+        // rule khác nhặt nhầm mã (VD "Kính 52 mã 208K" ra "52").
 
-        text = text.Trim();
+        text = text.Normalize(NormalizationForm.FormC).Trim();
 
         result.NormalizedText = text;
 

@@ -21,7 +21,7 @@ public static class BrandDictionary
         "POLAROID"
     ];
 
-    // Caller (GlassesLexer.DetectType) đã ToUpper() trước khi gọi — không cần
+    // Caller (GlassesLexer.DetectType) đã ToUpperInvariant() trước khi gọi — không cần
     // làm lại (tránh cấp phát thêm 1 string mỗi lần gọi trên hot path parse).
     public static bool Contains(string value)
     {

@@ -14,7 +14,7 @@ public class GlassesParserResult
     public string OriginalText { get; set; } = "";
 
     /// <summary>
-    /// Chuỗi sau Normalize.
+    /// Chuỗi sau Normalize (NFC + trim) — Start/End của token tính theo chuỗi này.
     /// </summary>
     public string NormalizedText { get; set; } = "";
 
@@ -75,19 +75,5 @@ public class GlassesParserResult
     {
         if (!string.IsNullOrWhiteSpace(trace))
             RuleTrace.Add(trace);
-    }
-
-    //---------------------------------------------------------
-
-    public void Clear()
-    {
-        BaseCode = "";
-        RuleName = "";
-
-        Tokens.Clear();
-        RuleTrace.Clear();
-        Logs.Clear();
-
-        Elapsed = TimeSpan.Zero;
     }
 }

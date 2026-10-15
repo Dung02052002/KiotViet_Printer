@@ -16,27 +16,6 @@ public abstract class RuleBase : IGlassesRule
         IReadOnlyList<GlassesToken> tokens);
 
     //---------------------------------------------------------
-    // Previous Meaningful
-    //---------------------------------------------------------
-
-    protected static GlassesToken? PreviousMeaningful(
-        IReadOnlyList<GlassesToken> tokens,
-        int index)
-    {
-        for (int i = index - 1; i >= 0; i--)
-        {
-            GlassesToken token = tokens[i];
-
-            if (Ignore(token))
-                continue;
-
-            return token;
-        }
-
-        return null;
-    }
-
-    //---------------------------------------------------------
     // Next Meaningful
     //---------------------------------------------------------
 
@@ -114,15 +93,6 @@ public abstract class RuleBase : IGlassesRule
                (token != null &&
                 token.Type == TokenType.Word &&
                 CurrencyLikeCode.IsMatch(token.Text));
-    }
-
-    //---------------------------------------------------------
-
-    protected static bool IsMk(
-        GlassesToken? token)
-    {
-        return token != null &&
-               token.Type == TokenType.Mk;
     }
 
     //---------------------------------------------------------

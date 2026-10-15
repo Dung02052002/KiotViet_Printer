@@ -1,3 +1,4 @@
+using System.Text;
 using System.Text.RegularExpressions;
 using KiotVietLabelPrinter.Models;
 
@@ -87,6 +88,10 @@ public static class BarcodeParser
             result.AttributeText = "";
             return result;
         }
+
+        // Từ khoá có dấu ("mã", "nữ"...) chỉ khớp chữ dựng sẵn (NFC); tên dạng
+        // tổ hợp (NFD) từ KiotViet/Excel phải chuẩn hoá trước khi dò.
+        text = text.Normalize(NormalizationForm.FormC);
 
         // Thắt lưng: cắt thẳng mã từ Tên hàng, giữ nguyên văn (xem
         // BeltCodeExtractor) — không để keyword "nam"/"nữ" bên dưới nhặt

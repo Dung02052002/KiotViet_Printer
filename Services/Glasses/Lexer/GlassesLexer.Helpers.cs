@@ -3,15 +3,6 @@ namespace KiotVietLabelPrinter.Services.Glasses.Lexer;
 public static partial class GlassesLexer
 {
     //---------------------------------------------------------
-    // WhiteSpace
-    //---------------------------------------------------------
-
-    private static bool IsWhiteSpace(char c)
-    {
-        return char.IsWhiteSpace(c);
-    }
-
-    //---------------------------------------------------------
     // Separator
     // Có tạo Token
     //---------------------------------------------------------
@@ -24,18 +15,6 @@ public static partial class GlassesLexer
             or ','
             or ';'
             or ':';
-    }
-
-    //---------------------------------------------------------
-    // Delimiter
-    // Chỉ cắt token
-    //---------------------------------------------------------
-
-    private static bool IsDelimiter(char c)
-    {
-        return c is
-            '-'
-            or '+';
     }
 
     //---------------------------------------------------------
@@ -89,17 +68,6 @@ public static partial class GlassesLexer
             return false;
 
         return true;
-    }
-
-    //---------------------------------------------------------
-    // Token Char
-    //---------------------------------------------------------
-
-    private static bool IsTokenChar(char c)
-    {
-        return char.IsLetterOrDigit(c)
-            || c == '/'
-            || c == '_';
     }
 
     //---------------------------------------------------------

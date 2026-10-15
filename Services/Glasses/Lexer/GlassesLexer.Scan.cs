@@ -1,5 +1,3 @@
-using KiotVietLabelPrinter.Services.Glasses.Debug;
-
 namespace KiotVietLabelPrinter.Services.Glasses.Lexer;
 
 public static partial class GlassesLexer
@@ -41,9 +39,7 @@ public static partial class GlassesLexer
                     Text = c.ToString(),
                     // DetectType() của một ký tự phân cách đơn lẻ như "(",",",
                     // ";",":" không rơi vào nhánh riêng nào nên luôn trả về Word
-                    // mặc định — gán đúng type cuối cùng này ngay từ lúc tạo để
-                    // GlassesLexer.Scan khỏi phải gọi lại DetectType cho toàn bộ
-                    // token (xem vòng lặp DetectType ở đó).
+                    // mặc định — gán thẳng type đó, không cần gọi DetectType.
                     Type = TokenType.Word,
                     Start = i,
                     End = i
@@ -93,15 +89,5 @@ public static partial class GlassesLexer
         }
 
         Flush(builder, tokens, text.Length);
-
-        //-------------------------------------------------
-        // Debug
-        //-------------------------------------------------
-
-        foreach (GlassesToken token in tokens)
-        {
-            GlassesDebug.Info(
-                $"{token.Type,-10} {token.Text}");
-        }
     }
 }
