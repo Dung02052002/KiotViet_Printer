@@ -42,6 +42,14 @@ public sealed class BackgroundRemovalService : IDisposable
     private InferenceDevice? _loadedDevice;
     private BgModelId? _segmentationModel;
 
+    // Số ảnh đang chạy inference ngoài _sessionLock. Session ONNX là bộ nhớ
+    // native: dispose nó khi InferenceSession.Run đang chạy ở luồng khác gây
+    // access violation (0xC0000005) làm tắt hẳn app, không exception handler
+    // nào bắt được. Vì vậy chỉ giải phóng session khi không còn ảnh nào chạy;
+    // Dispose giữa chừng được hoãn tới lúc ảnh cuối cùng chạy xong.
+    private int _activeRuns;
+    private bool _disposeRequested;
+
     public string ModelCacheDir => _store.CacheDir;
 
     public string ActiveProviderDescription { get; private set; } = "Chưa tải model";
@@ -73,8 +81,13 @@ public sealed class BackgroundRemovalService : IDisposable
     {
         lock (_sessionLock)
         {
+            ObjectDisposedException.ThrowIf(_disposeRequested, this);
+
             if (_loadedDevice != device)
             {
+                if (_activeRuns > 0)
+                    throw new InvalidOperationException(
+                        "Đang xử lý ảnh — chờ xong (hoặc bấm Dừng) rồi mới đổi CPU/GPU.");
                 DisposeSessions();
                 _loadedDevice = device;
             }
@@ -126,6 +139,7 @@ public sealed class BackgroundRemovalService : IDisposable
         bool inspect,
         CancellationToken token)
     {
+        bool counted = false;
         try
         {
             EnsureLoaded(mode, device);
@@ -135,9 +149,17 @@ public sealed class BackgroundRemovalService : IDisposable
             OnnxModelSession? matting = null;
             lock (_sessionLock)
             {
+                // Nạp xong và giữ chỗ trong cùng một lần khoá: giữa hai bước
+                // này không ai được dispose session mà ảnh sắp dùng.
+                ObjectDisposedException.ThrowIf(_disposeRequested, this);
+                if (_loadedDevice != device)
+                    throw new InvalidOperationException("Thiết bị xử lý vừa bị đổi — hãy chạy lại.");
+
                 segmenter = _sessions[_segmentationModel!.Value];
                 if (mode.NeedsMattingModel())
                     matting = _sessions[BgModelId.BiRefNetMatting];
+                _activeRuns++;
+                counted = true;
             }
 
             BgRemovalPipeline pipeline = new(segmenter, matting);
@@ -170,6 +192,18 @@ public sealed class BackgroundRemovalService : IDisposable
                 $"Lỗi xử lý {Path.GetFileName(sourcePath)}: {ex.GetType().Name}: {ex.Message}");
             return new BackgroundRemovalResult { Success = false, ErrorMessage = ex.Message };
         }
+        finally
+        {
+            if (counted)
+            {
+                lock (_sessionLock)
+                {
+                    _activeRuns--;
+                    if (_activeRuns == 0 && _disposeRequested)
+                        DisposeSessions();
+                }
+            }
+        }
     }
 
     private void DisposeSessions()
@@ -183,6 +217,10 @@ public sealed class BackgroundRemovalService : IDisposable
     public void Dispose()
     {
         lock (_sessionLock)
-            DisposeSessions();
+        {
+            _disposeRequested = true;
+            if (_activeRuns == 0)
+                DisposeSessions();
+        }
     }
 }
