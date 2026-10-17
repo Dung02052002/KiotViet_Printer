@@ -53,8 +53,8 @@ internal static class Program
         StartupLog.Begin();
         StartupLog.Stage("Main");
 
-        // Ten mutex phai khop voi AppMutex trong installer.iss de Inno Setup
-        // co the phat hien va dong app dang chay truoc khi cai/ghi de.
+        // Bộ cài (installer.iss) không dựa vào mutex này: nó tìm tiến trình
+        // theo tên .exe rồi tắt hẳn trước khi cài — kể cả tiến trình bị treo.
         using var mutex = new Mutex(true, "KiotVietLabelPrinterProV2Mutex", out bool isNewInstance);
 
         ApplicationConfiguration.Initialize();
