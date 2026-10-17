@@ -71,6 +71,39 @@ public static partial class WarehouseTicketCodeService
         return TicketCodeResult.Success(code);
     }
 
+    /// <summary>Tiền tố mã phiếu chuyển hàng của KiotViet ("TRF023522").</summary>
+    public const string TransferPrefix = "TRF";
+
+    /// <summary>
+    /// Mã phiếu xuất kho lấy từ mã phiếu chuyển: thay tiền tố "TRF" bằng tiền
+    /// tố phiếu xuất, GIỮ NGUYÊN phần số kể cả số 0 ở đầu
+    /// ("TRF023522" → "XK023522"). Mã không bắt đầu bằng "TRF" thì báo lỗi —
+    /// không đoán.
+    /// </summary>
+    public static TicketCodeResult FromTransferCode(string? transferCode, string? prefix = DefaultPrefix)
+    {
+        string text = VietnameseText.CollapseSpaces(transferCode);
+        string pre = (prefix ?? "").Trim();
+
+        if (text.Length == 0)
+            return TicketCodeResult.Failure("Dòng hàng không có mã chuyển hàng — không biết thuộc phiếu nào.");
+
+        if (pre.Length > 0 && !AllowedChars().IsMatch(pre))
+            return TicketCodeResult.Failure($"Tiền tố \"{pre}\" chỉ được gồm chữ cái không dấu, số, '-', '_' hoặc '.'.");
+
+        if (!text.StartsWith(TransferPrefix, StringComparison.OrdinalIgnoreCase))
+            return TicketCodeResult.Failure($"Mã chuyển hàng \"{text}\" không bắt đầu bằng {TransferPrefix} — không đổi được sang mã phiếu xuất.");
+
+        string body = text[TransferPrefix.Length..];
+        if (body.Length == 0)
+            return TicketCodeResult.Failure($"Mã chuyển hàng \"{text}\" thiếu phần số phiếu.");
+
+        if (!AllowedChars().IsMatch(body))
+            return TicketCodeResult.Failure($"Mã chuyển hàng \"{text}\" có ký tự không dùng được làm tên file.");
+
+        return TicketCodeResult.Success(pre + body);
+    }
+
     /// <summary>Chuẩn hóa MỘT mã (không chứa dấu phẩy, đã cắt khoảng trắng hai đầu).</summary>
     private static TicketCodeResult NormalizeSingle(string text, string prefix)
     {

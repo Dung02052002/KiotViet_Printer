@@ -30,6 +30,12 @@ public partial class WarehouseExcelReader
     private static readonly string[] GoodsNameHeaders = ["ten hang", "ten hang hoa", "ten san pham"];
     private static readonly string[] GoodsUnitHeaders = ["don vi tinh", "dvt", "don vi"];
 
+    // File "Danh sách chi tiết chuyển hàng" (nhiều phiếu chuyển trong một file):
+    // mỗi dòng hàng mang mã phiếu chuyển của nó.
+    private static readonly string[] GoodsTransferCodeHeaders = ["ma chuyen hang", "ma phieu chuyen"];
+    private static readonly string[] GoodsTransferNoteHeaders = ["ghi chu chuyen"];
+    private static readonly string[] GoodsTransferDestinationHeaders = ["toi chi nhanh"];
+
     // Thứ tự ưu tiên: cột số lượng XUẤT/CHUYỂN đứng trước "Số lượng" chung.
     // So khớp nguyên văn — để "Số lượng nhận" không bao giờ bị lấy nhầm.
     private static readonly string[] GoodsQuantityHeaders =
@@ -343,13 +349,17 @@ public partial class WarehouseExcelReader
                     continue;
                 }
 
+                GoodsColumns columns = new(code, name, FindColumn(row, GoodsUnitHeaders), quantity,
+                    FindColumn(row, GoodsTransferCodeHeaders), FindColumn(row, GoodsTransferNoteHeaders),
+                    FindColumn(row, GoodsTransferDestinationHeaders));
                 return new WarehouseGoodsFile
                 {
                     SheetName = sheet.SheetName,
                     HeaderRowNumber = r + 1,
                     HasCodeColumn = code >= 0,
+                    HasTransferColumn = columns.TransferCode >= 0,
                     QuantityColumnHeader = quantityHeader,
-                    Lines = ReadGoodsLines(sheet, r + 1, code, name, FindColumn(row, GoodsUnitHeaders), quantity)
+                    Lines = ReadGoodsLines(sheet, r + 1, columns)
                 };
             }
         }
@@ -360,10 +370,16 @@ public partial class WarehouseExcelReader
             "ví dụ file \"Chi tiết chuyển hàng\" xuất từ KiotViet.");
     }
 
-    private static List<WarehouseGoodsLine> ReadGoodsLines(ISheet sheet, int firstRow, int codeCol, int nameCol, int unitCol, int qtyCol)
+    /// <summary>Vị trí các cột của file hàng hóa (-1 = không có cột đó).</summary>
+    private readonly record struct GoodsColumns(
+        int Code, int Name, int Unit, int Quantity, int TransferCode, int TransferNote, int TransferDestination);
+
+    private static List<WarehouseGoodsLine> ReadGoodsLines(ISheet sheet, int firstRow, GoodsColumns columns)
     {
         DataFormatter formatter = new(CultureInfo.InvariantCulture);
         List<WarehouseGoodsLine> lines = new();
+
+        string Text(IRow row, int col) => col >= 0 ? CellText(row.GetCell(col), formatter) : "";
 
         for (int r = firstRow; r <= sheet.LastRowNum; r++)
         {
@@ -371,9 +387,9 @@ public partial class WarehouseExcelReader
             if (row == null)
                 continue;
 
-            string code = codeCol >= 0 ? CellText(row.GetCell(codeCol), formatter) : "";
-            string name = CellText(row.GetCell(nameCol), formatter);
-            string qtyText = CellText(row.GetCell(qtyCol), formatter);
+            string code = Text(row, columns.Code);
+            string name = Text(row, columns.Name);
+            string qtyText = Text(row, columns.Quantity);
 
             // Dòng trống (hoặc chỉ có đơn vị/giá) không phải một dòng hàng.
             if (code.Length == 0 && name.Length == 0 && qtyText.Length == 0)
@@ -384,9 +400,12 @@ public partial class WarehouseExcelReader
                 SourceRowNumber = r + 1,
                 ProductCode = code,
                 ProductName = name,
-                SourceUnit = unitCol >= 0 ? CellText(row.GetCell(unitCol), formatter) : "",
+                SourceUnit = Text(row, columns.Unit),
                 QuantityText = qtyText,
-                Quantity = ReadQuantity(row.GetCell(qtyCol), qtyText)
+                Quantity = ReadQuantity(row.GetCell(columns.Quantity), qtyText),
+                TransferCode = Text(row, columns.TransferCode),
+                TransferNote = Text(row, columns.TransferNote),
+                TransferDestination = Text(row, columns.TransferDestination)
             });
         }
 

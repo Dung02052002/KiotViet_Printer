@@ -49,6 +49,71 @@ public class WarehouseDocumentService
         };
     }
 
+    /// <summary>
+    /// File hàng hóa là danh sách chi tiết NHIỀU phiếu chuyển (cột "Mã chuyển
+    /// hàng" có từ 2 mã trở lên): tách thành từng phiếu, mỗi phiếu đối chiếu
+    /// riêng (mã hàng lặp ở hai phiếu khác nhau không bị coi là trùng). Các
+    /// phiếu xếp theo mã tăng dần; dòng thiếu mã chuyển gom thành một phiếu
+    /// riêng ở cuối — phiếu đó không xuất được (mã phiếu báo lỗi).
+    /// Trả về null nếu file chỉ có một phiếu (dùng luồng một phiếu như cũ).
+    /// </summary>
+    public List<WarehouseBatchTicket>? SplitByTransfer(WarehouseDocument document)
+    {
+        if (!document.Goods.HasTransferColumn)
+            return null;
+
+        List<IGrouping<string, WarehouseGoodsLine>> groups = document.Goods.Lines
+            .GroupBy(l => NormalizeTransferCode(l.TransferCode))
+            .OrderBy(g => g.Key.Length == 0)
+            .ThenBy(g => g.Key, StringComparer.Ordinal)
+            .ToList();
+        if (groups.Count < 2)
+            return null;
+
+        return groups.Select(g =>
+        {
+            List<WarehouseGoodsLine> lines = g.ToList();
+            WarehouseGoodsFile goods = new()
+            {
+                SheetName = document.Goods.SheetName,
+                HeaderRowNumber = document.Goods.HeaderRowNumber,
+                HasCodeColumn = document.Goods.HasCodeColumn,
+                HasTransferColumn = true,
+                QuantityColumnHeader = document.Goods.QuantityColumnHeader,
+                Lines = lines
+            };
+            return new WarehouseBatchTicket
+            {
+                TransferCode = VietnameseText.CollapseSpaces(lines[0].TransferCode),
+                Note = FirstNonEmpty(lines.Select(l => l.TransferNote)),
+                Destination = FirstNonEmpty(lines.Select(l => l.TransferDestination)),
+                Document = new WarehouseDocument
+                {
+                    TemplatePath = document.TemplatePath,
+                    Layout = document.Layout,
+                    GoodsPath = document.GoodsPath,
+                    Goods = goods,
+                    Rows = _nameService.BuildRows(goods)
+                }
+            };
+        }).ToList();
+    }
+
+    /// <summary>Mã chuyển của file chỉ có MỘT phiếu chuyển (để điền sẵn ô mã phiếu); null nếu không có / có nhiều mã.</summary>
+    public static string? SingleTransferCode(WarehouseGoodsFile goods)
+    {
+        if (!goods.HasTransferColumn)
+            return null;
+
+        List<string> codes = goods.Lines.Select(l => NormalizeTransferCode(l.TransferCode)).Distinct().ToList();
+        return codes is [{ Length: > 0 }] ? VietnameseText.CollapseSpaces(goods.Lines[0].TransferCode) : null;
+    }
+
+    private static string NormalizeTransferCode(string code) => VietnameseText.CollapseSpaces(code).ToUpperInvariant();
+
+    private static string FirstNonEmpty(IEnumerable<string> values) =>
+        values.Select(VietnameseText.CollapseSpaces).FirstOrDefault(v => v.Length > 0) ?? "";
+
     /// <summary>Tên file kết quả: mã phiếu + đuôi của file mẫu (mẫu .xls thì kết quả .xls).</summary>
     public static string BuildOutputPath(string outputFolder, string ticketCode, string templateExtension)
     {
@@ -62,11 +127,16 @@ public class WarehouseDocumentService
     /// </summary>
     public WarehouseValidationReport Validate(
         string ticketInput, string prefix, DateTime documentDate, WarehouseDocument? document, string outputFolder,
+        WarehouseFontSettings font, WarehousePageSettings? page = null) =>
+        Validate(WarehouseTicketCodeService.Normalize(ticketInput, prefix), documentDate, document, outputFolder, font, page);
+
+    /// <summary>Như trên, với mã phiếu đã chuẩn hóa sẵn (vd lấy từ mã chuyển hàng ở chế độ nhiều phiếu).</summary>
+    public WarehouseValidationReport Validate(
+        TicketCodeResult code, DateTime documentDate, WarehouseDocument? document, string outputFolder,
         WarehouseFontSettings font, WarehousePageSettings? page = null)
     {
         WarehouseValidationReport report = new();
 
-        TicketCodeResult code = WarehouseTicketCodeService.Normalize(ticketInput, prefix);
         if (!code.IsValid)
             report.Errors.Add(code.Error!);
 

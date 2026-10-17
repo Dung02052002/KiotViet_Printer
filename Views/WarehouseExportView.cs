@@ -49,7 +49,40 @@ public class WarehouseExportView : UserControl
     private readonly InstalledFontService _fontService = new();
     private readonly WarehouseSettingsStore _settingsStore;
     private readonly WarehouseExportSettings _settings;
-    private readonly WarehouseExportTracker _export = new();
+    private readonly WarehouseExportTracker _singleExport = new();
+
+    /// <summary>
+    /// Chế độ NHIỀU PHIẾU: file hàng hóa là danh sách chi tiết nhiều phiếu
+    /// chuyển (cột "Mã chuyển hàng"). Mỗi phiếu xuất ra một file riêng, mã
+    /// phiếu lấy từ mã chuyển (TRF023522 → XK023522). Bảng xem trước hiện phiếu
+    /// đang chọn (<see cref="_batchTicket"/>) và <see cref="_document"/> chính
+    /// là phiếu đó, nên sửa bảng / kiểm tra / xuất của phiếu dùng chung code
+    /// với chế độ một phiếu. null = chế độ một phiếu như cũ.
+    /// </summary>
+    private List<WarehouseBatchTicket>? _batch;
+    private WarehouseBatchTicket? _batchTicket;
+    private bool _fillingBatch;
+
+    private bool BatchMode => _batch != null;
+
+    /// <summary>Tình trạng file đã xuất của phiếu đang hiển thị.</summary>
+    private WarehouseExportTracker CurrentExport => _batchTicket?.Export ?? _singleExport;
+
+    private IEnumerable<WarehouseExportTracker> AllExports =>
+        _batch == null ? [_singleExport] : _batch.Select(t => t.Export);
+
+    /// <summary>Một thay đổi chung (mã, ngày, font, thiết lập in, thư mục, file nguồn): mọi bản đã xuất thành bản cũ.</summary>
+    private void MarkAllStale()
+    {
+        foreach (WarehouseExportTracker export in AllExports)
+            export.MarkStale();
+    }
+
+    private void ForgetAllPreviews()
+    {
+        foreach (WarehouseExportTracker export in AllExports)
+            export.ForgetPreview();
+    }
 
     /// <summary>"Hôm nay" theo giờ ĐỊA PHƯƠNG của máy (DateTime.Today, không dùng UTC — tối ở Việt Nam UTC vẫn là hôm trước).</summary>
     private readonly Func<DateTime> _today;
@@ -95,7 +128,7 @@ public class WarehouseExportView : UserControl
     public bool IsBusy => _busy;
 
     /// <summary>Tình trạng file đã xuất (cho test).</summary>
-    internal WarehouseExportTracker ExportTracker => _export;
+    internal WarehouseExportTracker ExportTracker => CurrentExport;
 
     /// <summary>
     /// Vùng cuộn duy nhất của màn hình. Lúc đang bận (khóa các ô nhập) hoặc
@@ -214,6 +247,9 @@ public class WarehouseExportView : UserControl
 
     // Xem trước
     private readonly Label lblPreviewTitle = new();
+    private readonly TableLayoutPanel pnlBatch = NewTable(1);
+    private readonly Label lblBatchTicket = new();
+    private readonly ComboBox cboBatchTicket = new();
     private readonly Label lblSummary = new();
     private readonly SmoothDataGridView dgvRows = new();
 
@@ -297,7 +333,7 @@ public class WarehouseExportView : UserControl
             _settings.PrinterName = printer;
             _printerState = PrinterState.Unknown;
             // Bản xem trước phân trang theo máy in cũ — không còn đại diện cho bản sẽ in.
-            _export.ForgetPreview();
+            ForgetAllPreviews();
         }
 
         UpdateState();
@@ -666,9 +702,20 @@ public class WarehouseExportView : UserControl
         StyleOverline(lblPreviewTitle, "XEM TRƯỚC DỮ LIỆU  (SỬA ĐƯỢC TÊN HÀNG MỚI, ĐƠN VỊ, SỐ LƯỢNG)");
         section.Controls.Add(lblPreviewTitle, 0, 0);
 
+        // Chế độ nhiều phiếu: chọn phiếu đang xem / sửa. Ẩn ở chế độ một phiếu.
+        StyleCaption(lblBatchTicket, "Phiếu đang xem (file có nhiều phiếu chuyển — mỗi phiếu xuất ra một file riêng)");
+        cboBatchTicket.DropDownStyle = ComboBoxStyle.DropDownList;
+        AppTheme.StyleComboBox(cboBatchTicket);
+        cboBatchTicket.Anchor = AnchorStyles.Left | AnchorStyles.Right;
+        cboBatchTicket.Margin = new Padding(0, 0, 0, S(10));
+        cboBatchTicket.SelectedIndexChanged += (_, _) => OnBatchTicketSelected();
+        AddRows(pnlBatch, lblBatchTicket, cboBatchTicket);
+        pnlBatch.Visible = false;
+        section.Controls.Add(pnlBatch, 0, 1);
+
         StyleOneLine(lblSummary, AppTheme.Fonts.BodyBold, AppTheme.Colors.TextSecondary);
         lblSummary.Margin = new Padding(0, 0, 0, S(6));
-        section.Controls.Add(lblSummary, 0, 1);
+        section.Controls.Add(lblSummary, 0, 2);
 
         dgvRows.AllowUserToAddRows = false;
         dgvRows.AllowUserToDeleteRows = false;
@@ -735,7 +782,7 @@ public class WarehouseExportView : UserControl
         // Chiều cao bảng do GridHeight() quyết định — không để hàng của bảng kéo giãn.
         dgvRows.Anchor = AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Top;
         dgvRows.Margin = Padding.Empty;
-        section.Controls.Add(dgvRows, 0, 2);
+        section.Controls.Add(dgvRows, 0, 3);
         return section;
     }
 
@@ -853,7 +900,8 @@ public class WarehouseExportView : UserControl
     /// </summary>
     private int GridHeight()
     {
-        int above = lblPreviewTitle.Height + lblPreviewTitle.Margin.Vertical + lblSummary.Height + lblSummary.Margin.Vertical;
+        int above = lblPreviewTitle.Height + lblPreviewTitle.Margin.Vertical + lblSummary.Height + lblSummary.Margin.Vertical +
+                    (pnlBatch.Visible ? pnlBatch.PreferredSize.Height + pnlBatch.Margin.Vertical : 0);
         int available = pnlScroll.ClientSize.Height - tlpContent.Padding.Vertical - above;
         int minimum = dgvRows.ColumnHeadersHeight + dgvRows.RowTemplate.MinimumHeight * MinVisibleGridRows + S(2);
         return Math.Max(minimum, available);
@@ -930,7 +978,7 @@ public class WarehouseExportView : UserControl
     {
         foreach (Control control in new Control[]
                  {
-                     dtpDocumentDate, cboScope, cboFont, nudFontSize, cboPageMode, cboPaper, cboOrientation, cboScaleMode,
+                     dtpDocumentDate, cboBatchTicket, cboScope, cboFont, nudFontSize, cboPageMode, cboPaper, cboOrientation, cboScaleMode,
                      nudScale, nudMarginLeft, nudMarginRight, nudMarginTop, nudMarginBottom
                  })
         {
@@ -1024,13 +1072,160 @@ public class WarehouseExportView : UserControl
     #endregion
 
     #region Mã phiếu
-    private TicketCodeResult CurrentTicketCode => WarehouseTicketCodeService.Normalize(txtTicketCode.Text, txtPrefix.Text);
+    /// <summary>Mã phiếu đang hiển thị: chế độ nhiều phiếu lấy từ mã chuyển hàng của phiếu đang chọn.</summary>
+    private TicketCodeResult CurrentTicketCode => _batchTicket != null
+        ? _batchTicket.TicketCode(txtPrefix.Text)
+        : WarehouseTicketCodeService.Normalize(txtTicketCode.Text, txtPrefix.Text);
 
     private void OnTicketInputChanged()
     {
-        _export.MarkStale();
+        MarkAllStale();
         UpdateState();
     }
+    #endregion
+
+    #region Nhiều phiếu
+    /// <summary>
+    /// Vào / thoát chế độ nhiều phiếu. <paramref name="batch"/> = null: chế độ
+    /// một phiếu với <paramref name="single"/>. Mọi trạng thái xuất cũ bị bỏ
+    /// (dữ liệu vừa được đọc lại).
+    /// </summary>
+    private void SetDocuments(WarehouseDocument? single, List<WarehouseBatchTicket>? batch)
+    {
+        _singleExport.Reset();
+        _batch = batch;
+        _batchTicket = batch?[0];
+        _document = _batchTicket?.Document ?? single;
+
+        _fillingBatch = true;
+        try
+        {
+            cboBatchTicket.Items.Clear();
+            if (batch != null)
+            {
+                foreach (WarehouseBatchTicket ticket in batch)
+                    cboBatchTicket.Items.Add(DescribeBatchTicket(ticket));
+                cboBatchTicket.SelectedIndex = 0;
+            }
+        }
+        finally
+        {
+            _fillingBatch = false;
+        }
+
+        if (pnlBatch.Visible != BatchMode)
+        {
+            pnlBatch.Visible = BatchMode;
+            ApplyResponsiveLayout();
+        }
+    }
+
+    private void OnBatchTicketSelected()
+    {
+        if (_fillingBatch || _batch == null)
+            return;
+
+        int index = cboBatchTicket.SelectedIndex;
+        if (index < 0 || index >= _batch.Count || _batch[index] == _batchTicket)
+            return;
+
+        // Ô đang sửa dở thuộc phiếu cũ — ghi nhận vào phiếu cũ trước khi đổi bảng.
+        dgvRows.EndEdit();
+        _batchTicket = _batch[index];
+        _document = _batchTicket.Document;
+        FillGrid();
+    }
+
+    private void SelectBatchTicket(WarehouseBatchTicket ticket)
+    {
+        int index = _batch?.IndexOf(ticket) ?? -1;
+        if (index >= 0)
+            cboBatchTicket.SelectedIndex = index;
+    }
+
+    /// <summary>Dòng hiển thị của một phiếu trong ô chọn phiếu: mã · ghi chú · số dòng · tình trạng.</summary>
+    private string DescribeBatchTicket(WarehouseBatchTicket ticket)
+    {
+        TicketCodeResult code = ticket.TicketCode(txtPrefix.Text);
+        string name = TicketTag(ticket);
+        string note = ticket.Note.Length > 0 ? $" · {ticket.Note}" : "";
+        string rows = $" · {ticket.Document.Rows.Count} dòng, SL {ticket.TotalQuantity:0.###}";
+
+        WarehouseExportState state = ticket.Export.Check();
+        string status = !code.IsValid || ticket.Document.ErrorCount > 0
+            ? $"✗ {(code.IsValid ? $"{ticket.Document.ErrorCount} dòng lỗi" : "mã phiếu lỗi")}"
+            : state == WarehouseExportState.Current
+                ? ticket.Export.WasPreviewed ? "✓ đã xuất, đã xem trước" : "đã xuất, CHƯA xem trước"
+                : state == WarehouseExportState.None ? "chưa xuất" : "cần xuất lại";
+        return $"{name}{note}{rows} — {status}";
+    }
+
+    /// <summary>Cập nhật chữ của các phiếu trong ô chọn (chỉ dòng nào đổi).</summary>
+    private void RefreshBatchItems()
+    {
+        if (_batch == null)
+            return;
+
+        _fillingBatch = true;
+        try
+        {
+            int selected = cboBatchTicket.SelectedIndex;
+            for (int i = 0; i < _batch.Count && i < cboBatchTicket.Items.Count; i++)
+            {
+                string text = DescribeBatchTicket(_batch[i]);
+                if (!string.Equals(cboBatchTicket.Items[i] as string, text, StringComparison.Ordinal))
+                    cboBatchTicket.Items[i] = text;
+            }
+            if (cboBatchTicket.SelectedIndex != selected)
+                cboBatchTicket.SelectedIndex = selected;
+        }
+        finally
+        {
+            _fillingBatch = false;
+        }
+    }
+
+    /// <summary>Kiểm tra một phiếu của chế độ nhiều phiếu (mã lấy từ mã chuyển hàng).</summary>
+    private WarehouseValidationReport BuildReport(WarehouseBatchTicket ticket) =>
+        _documentService.Validate(ticket.TicketCode(txtPrefix.Text), SelectedDocumentDate, ticket.Document, txtOutput.Text.Trim(),
+            CurrentFontSettings(), CurrentPageSettings());
+
+    /// <summary>Gộp kết quả kiểm tra của mọi phiếu; mỗi lỗi / cảnh báo ghi rõ thuộc phiếu nào.</summary>
+    private (WarehouseValidationReport Combined, List<(WarehouseBatchTicket Ticket, WarehouseValidationReport Report)> Each) BuildBatchReport()
+    {
+        List<(WarehouseBatchTicket Ticket, WarehouseValidationReport Report)> each =
+            _batch!.Select(t => (t, BuildReport(t))).ToList();
+
+        WarehouseValidationReport combined = new();
+        Merge(r => r.Errors, combined.Errors);
+        Merge(r => r.Warnings, combined.Warnings);
+        return (combined, each);
+
+        // Thông báo có ở MỌI phiếu (ngày, font, thư mục, thiết lập in...) là lỗi chung — ghi một
+        // lần; còn lại ghi kèm mã phiếu để biết phải sửa phiếu nào.
+        void Merge(Func<WarehouseValidationReport, List<string>> pick, List<string> target)
+        {
+            foreach ((WarehouseBatchTicket ticket, WarehouseValidationReport report) in each)
+            {
+                foreach (string message in pick(report))
+                {
+                    string text = each.All(e => pick(e.Report).Contains(message)) ? message : $"[{TicketTag(ticket)}] {message}";
+                    if (!target.Contains(text))
+                        target.Add(text);
+                }
+            }
+        }
+    }
+
+    private string TicketTag(WarehouseBatchTicket ticket)
+    {
+        TicketCodeResult code = ticket.TicketCode(txtPrefix.Text);
+        return code.IsValid ? code.Code! : ticket.TransferCode.Length > 0 ? ticket.TransferCode : "thiếu mã chuyển hàng";
+    }
+
+    /// <summary>Phiếu đầu tiên đã xuất (bản hiện hành) mà chưa được xem trước bản in.</summary>
+    private WarehouseBatchTicket? NextUnpreviewedTicket() =>
+        _batch?.FirstOrDefault(t => !(t.Export.Check() == WarehouseExportState.Current && t.Export.WasPreviewed));
     #endregion
 
     #region Ngày lập phiếu
@@ -1060,7 +1255,7 @@ public class WarehouseExportView : UserControl
 
         // Chọn lại đúng hôm nay = quay về mặc định (sang ngày mới lại đi theo ngày mới).
         _documentDateChosen = SelectedDocumentDate != _today().Date;
-        _export.MarkStale();
+        MarkAllStale();
         UpdateState();
     }
 
@@ -1078,7 +1273,7 @@ public class WarehouseExportView : UserControl
 
         SetDocumentDate(today);
         // Bản đã xuất (nếu có) mang ngày cũ — không được in nữa.
-        _export.MarkStale();
+        MarkAllStale();
         UpdateState();
     }
     #endregion
@@ -1129,7 +1324,7 @@ public class WarehouseExportView : UserControl
 
         txtOutput.Text = dialog.SelectedPath;
         SaveSettings();
-        _export.MarkStale();
+        MarkAllStale();
         UpdateState();
     }
 
@@ -1151,8 +1346,8 @@ public class WarehouseExportView : UserControl
         txtTemplate.Text = path;
         _layout = null;
         _templatePage = null;
-        _document = null;
-        _export.MarkStale();
+        MarkAllStale();
+        SetDocuments(null, null);
         FillGrid();
 
         try
@@ -1219,14 +1414,25 @@ public class WarehouseExportView : UserControl
         }
 
         dgvRows.CancelEdit();
-        _document = null;
-        _export.MarkStale();
+        MarkAllStale();
+        SetDocuments(null, null);
         string? pageNote = null;
         try
         {
             SetBusy(true, "Đang đọc và đối chiếu dữ liệu...");
-            _document = await Task.Run(() => _documentService.Load(template, goods));
-            _layout = _document.Layout;
+            (WarehouseDocument loaded, List<WarehouseBatchTicket>? batch) = await Task.Run(() =>
+            {
+                WarehouseDocument document = _documentService.Load(template, goods);
+                return (document, _documentService.SplitByTransfer(document));
+            });
+            SetDocuments(loaded, batch);
+            _layout = loaded.Layout;
+
+            // File chỉ có MỘT phiếu chuyển: điền sẵn mã phiếu từ mã chuyển hàng (không đè mã người dùng đã gõ).
+            if (batch == null && txtTicketCode.Text.Trim().Length == 0 &&
+                WarehouseDocumentService.SingleTransferCode(loaded.Goods) is { } transfer &&
+                WarehouseTicketCodeService.FromTransferCode(transfer, "") is { IsValid: true } body)
+                txtTicketCode.Text = body.Code!;
 
             // File mẫu vừa được đọc lại; nếu thiết lập in của nó đã khác lần đọc trước
             // (mẫu bị sửa bên ngoài) thì phần "chỉ đổi mục khác mẫu" đang so với số
@@ -1253,9 +1459,12 @@ public class WarehouseExportView : UserControl
         finally
         {
             FillGrid();
-            SetBusy(false, _document != null
-                ? $"Đã đọc {_document.Rows.Count} dòng hàng từ {Path.GetFileName(goods)}." + pageNote
-                : "Chưa đọc được dữ liệu.");
+            SetBusy(false, _batch != null
+                ? $"Đã đọc {_batch.Count} phiếu chuyển ({_batch.Sum(t => t.Document.Rows.Count)} dòng hàng) từ {Path.GetFileName(goods)} — " +
+                  "mỗi phiếu sẽ xuất ra một file riêng." + pageNote
+                : _document != null
+                    ? $"Đã đọc {_document.Rows.Count} dòng hàng từ {Path.GetFileName(goods)}." + pageNote
+                    : "Chưa đọc được dữ liệu.");
         }
     }
 
@@ -1356,7 +1565,8 @@ public class WarehouseExportView : UserControl
 
         WarehouseProductNameService.Revalidate(item);
         PaintRow(gridRow, item);
-        _export.MarkStale();
+        // Chỉ phiếu đang hiển thị đổi dữ liệu — các phiếu khác (chế độ nhiều phiếu) vẫn giữ bản đã xuất.
+        CurrentExport.MarkStale();
         UpdateState();
     }
 
@@ -1560,7 +1770,7 @@ public class WarehouseExportView : UserControl
         if (_loadingUi)
             return;
 
-        _export.MarkStale();
+        MarkAllStale();
         UpdatePageInfo();
         UpdateState();
     }
@@ -1634,7 +1844,7 @@ public class WarehouseExportView : UserControl
 
         _templatePage = layout.Page;
         FillPageControls(layout.Page, keepTemplate: false);
-        _export.MarkStale();
+        MarkAllStale();
         UpdateState();
     }
 
@@ -1644,7 +1854,7 @@ public class WarehouseExportView : UserControl
             return;
 
         FillPageControls(_templatePage, keepTemplate: true);
-        _export.MarkStale();
+        MarkAllStale();
         UpdateState();
         lblStatus.Text = "Đã khôi phục thiết lập in của file mẫu.";
     }
@@ -1668,7 +1878,7 @@ public class WarehouseExportView : UserControl
 
         SaveSettings();
         UpdateFontPreview();
-        _export.MarkStale();
+        MarkAllStale();
         UpdateState();
     }
 
@@ -1742,6 +1952,12 @@ public class WarehouseExportView : UserControl
     private void ValidateAndShow()
     {
         dgvRows.EndEdit();
+        if (BatchMode)
+        {
+            ValidateBatchAndShow();
+            return;
+        }
+
         WarehouseValidationReport report = BuildReport();
         string exists = report.ExistingOutputPath != null
             ? $"\n\nLưu ý: file {Path.GetFileName(report.ExistingOutputPath)} đã có trong thư mục output — khi xuất sẽ hỏi trước khi ghi đè."
@@ -1756,6 +1972,128 @@ public class WarehouseExportView : UserControl
 
         MessageBox.Show(FormatReport(report) + exists, Title, MessageBoxButtons.OK,
             report.CanExport ? MessageBoxIcon.Information : MessageBoxIcon.Warning);
+    }
+
+    private void ValidateBatchAndShow()
+    {
+        (WarehouseValidationReport report, var each) = BuildBatchReport();
+        List<string> existing = each.Where(e => e.Report.ExistingOutputPath != null)
+            .Select(e => Path.GetFileName(e.Report.ExistingOutputPath!)).ToList();
+        string exists = existing.Count > 0
+            ? $"\n\nLưu ý: {existing.Count} file đã có trong thư mục output ({string.Join(", ", existing)}) — khi xuất sẽ hỏi trước khi ghi đè."
+            : "";
+        RefreshBatchItems();
+
+        if (report.CanExport && report.Warnings.Count == 0)
+        {
+            MessageBox.Show($"Dữ liệu hợp lệ — {_batch!.Count} phiếu, {_batch.Sum(t => t.Document.Rows.Count)} dòng hàng, sẵn sàng xuất {_batch.Count} file:\n" +
+                            string.Join("\n", _batch.Select(t => "  • " + TicketTag(t))) + exists,
+                Title, MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
+        }
+
+        MessageBox.Show(FormatReport(report) + exists, Title, MessageBoxButtons.OK,
+            report.CanExport ? MessageBoxIcon.Information : MessageBoxIcon.Warning);
+    }
+
+    /// <summary>
+    /// Chế độ nhiều phiếu: kiểm tra TẤT CẢ phiếu trước (một phiếu lỗi thì không
+    /// xuất phiếu nào), hỏi ghi đè một lần cho mọi file đã có, rồi xuất lần
+    /// lượt — mỗi phiếu một file, mỗi file được mở lại kiểm tra như khi xuất lẻ.
+    /// </summary>
+    private async Task ExportBatchAsync()
+    {
+        List<WarehouseBatchTicket> batch = _batch!;
+        (WarehouseValidationReport report, var each) = BuildBatchReport();
+        if (!report.CanExport)
+        {
+            MessageBox.Show(FormatReport(report) + "\n\nChưa xuất phiếu nào — chọn phiếu có lỗi ở ô \"Phiếu đang xem\" để sửa.",
+                Title, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            RefreshBatchItems();
+            return;
+        }
+
+        if (report.Warnings.Count > 0 &&
+            MessageBox.Show(FormatReport(report) + $"\n\nVẫn xuất {batch.Count} phiếu?", Title, MessageBoxButtons.YesNo,
+                MessageBoxIcon.Question, MessageBoxDefaultButton.Button2) != DialogResult.Yes)
+            return;
+
+        string folder = txtOutput.Text.Trim();
+        HashSet<string> overwrite = each.Where(e => e.Report.ExistingOutputPath != null)
+            .Select(e => Path.GetFullPath(e.Report.ExistingOutputPath!)).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        if (overwrite.Count > 0 &&
+            MessageBox.Show($"{overwrite.Count} file đã có trong thư mục output:\n{string.Join("\n", overwrite.Select(f => "  • " + Path.GetFileName(f)))}\n\nGhi đè các file này?",
+                Title, MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) != DialogResult.Yes)
+            return;
+
+        // Ngày / font / thiết lập in chốt MỘT lần cho cả lô.
+        DateTime date = SelectedDocumentDate;
+        WarehouseFontSettings font = CurrentFontSettings();
+        WarehousePageSettings page = CurrentPageSettings();
+        string prefix = txtPrefix.Text;
+
+        List<(string Code, WarehouseExportResult Result)> done = new();
+        List<string> failed = new();
+        try
+        {
+            SetBusy(true, $"Đang xuất {batch.Count} phiếu...");
+            for (int i = 0; i < batch.Count; i++)
+            {
+                WarehouseBatchTicket ticket = batch[i];
+                string code = ticket.TicketCode(prefix).Code!;
+                string output = WarehouseDocumentService.BuildOutputPath(folder, code, ticket.Document.Layout.FileExtension);
+                lblStatus.Text = $"Đang xuất phiếu {i + 1}/{batch.Count}: {code}...";
+
+                WarehouseExportRequest request = new()
+                {
+                    TemplatePath = ticket.Document.TemplatePath,
+                    OutputPath = output,
+                    TicketCode = code,
+                    DocumentDate = date,
+                    Rows = ticket.Document.Rows,
+                    Font = font,
+                    Page = page,
+                    // Chỉ ghi đè file người dùng vừa đồng ý; file mới xuất hiện sau đó thì Export báo lỗi.
+                    OverwriteExisting = overwrite.Contains(Path.GetFullPath(output))
+                };
+
+                try
+                {
+                    WarehouseExportResult result = await Task.Run(() => _documentService.Export(request));
+                    ticket.Export.Record(result);
+                    done.Add((code, result));
+                    WarehouseLog.Info($"Xuất phiếu (lô {i + 1}/{batch.Count}) {code} từ {ticket.TransferCode} ngày {date:dd/MM/yyyy}: {result.OutputPath} " +
+                                      $"({result.RowCount} dòng, chênh {result.RowDelta}), font={font.Scope}, thiết lập in: {page.Describe()}");
+                }
+                catch (WarehouseException ex)
+                {
+                    WarehouseLog.Error($"Xuất phiếu (lô) {code} → {output}", ex);
+                    failed.Add($"{code}: {ex.Message}");
+                }
+                catch (Exception ex)
+                {
+                    WarehouseLog.Error($"Lỗi ngoài dự kiến khi xuất phiếu (lô) {code} → {output}", ex);
+                    failed.Add($"{code}: lỗi ngoài dự kiến — {ex.Message}");
+                }
+            }
+        }
+        finally
+        {
+            SetBusy(false, failed.Count == 0
+                ? $"Đã xuất và kiểm tra lại {done.Count} phiếu vào {folder}."
+                : $"Đã xuất {done.Count}/{batch.Count} phiếu — {failed.Count} phiếu lỗi.");
+            RefreshBatchItems();
+        }
+
+        string message = done.Count > 0
+            ? $"Đã xuất {done.Count}/{batch.Count} phiếu (mỗi phiếu một file, đã mở lại từng file để kiểm tra):\n" +
+              string.Join("\n", done.Select(d => $"  ✓ {Path.GetFileName(d.Result.OutputPath)} — {d.Result.RowCount} dòng hàng"))
+            : "Chưa xuất được phiếu nào.";
+        if (failed.Count > 0)
+            message += "\n\nKHÔNG XUẤT ĐƯỢC:\n" + string.Join("\n", failed.Select(f => "  ✗ " + f));
+        if (done.Count > 0)
+            message += "\n\nBước tiếp theo: XEM TRƯỚC BẢN IN — phải xem trước đủ tất cả phiếu rồi mới in được.";
+        MessageBox.Show(message, Title, MessageBoxButtons.OK, failed.Count > 0 ? MessageBoxIcon.Warning : MessageBoxIcon.Information);
     }
 
     private static string FormatReport(WarehouseValidationReport report, int max = 12)
@@ -1788,6 +2126,12 @@ public class WarehouseExportView : UserControl
             return;
 
         dgvRows.EndEdit();
+        if (BatchMode)
+        {
+            await ExportBatchAsync();
+            return;
+        }
+
         WarehouseValidationReport report = BuildReport();
         if (!report.CanExport)
         {
@@ -1830,7 +2174,7 @@ public class WarehouseExportView : UserControl
         {
             SetBusy(true, $"Đang xuất phiếu {code}...");
             result = await Task.Run(() => _documentService.Export(request));
-            _export.Record(result);
+            CurrentExport.Record(result);
             WarehouseLog.Info($"Xuất phiếu {code} ngày {request.DocumentDate:dd/MM/yyyy}: {result.OutputPath} ({result.RowCount} dòng, chênh {result.RowDelta}), " +
                               $"font={request.Font.Scope}, thiết lập in: {request.Page.Describe()}");
         }
@@ -1866,8 +2210,8 @@ public class WarehouseExportView : UserControl
     /// </summary>
     private bool IsExportCurrent(out string reason)
     {
-        WarehouseExportState state = _export.Check();
-        reason = _export.Describe(state);
+        WarehouseExportState state = CurrentExport.Check();
+        reason = CurrentExport.Describe(state);
         return state == WarehouseExportState.Current;
     }
 
@@ -1888,16 +2232,40 @@ public class WarehouseExportView : UserControl
     /// </summary>
     private async Task PrintPreviewAsync()
     {
+        // Chế độ nhiều phiếu: xem xong một phiếu thì mời xem tiếp phiếu chưa xem,
+        // tới khi đủ tất cả — chỉ khi đó mới in được.
+        while (await PreviewCurrentAsync() && _batch != null && !IsDisposed)
+        {
+            WarehouseBatchTicket? next = NextUnpreviewedTicket();
+            if (next == null)
+            {
+                MessageBox.Show($"Đã xem trước đủ {_batch.Count} phiếu. Bấm IN PHIẾU để in tất cả.", Title,
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            int remaining = _batch.Count(t => !(t.Export.Check() == WarehouseExportState.Current && t.Export.WasPreviewed));
+            if (MessageBox.Show($"Còn {remaining} phiếu chưa xem trước bản in.\n\nXem tiếp phiếu {TicketTag(next)}?", Title,
+                    MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes)
+                return;
+
+            SelectBatchTicket(next);
+        }
+    }
+
+    /// <summary>Xem trước bản in của phiếu đang hiển thị. true = đã mở cửa sổ xem trước.</summary>
+    private async Task<bool> PreviewCurrentAsync()
+    {
         if (_busy)
-            return;
+            return false;
 
         // Ô đang sửa dở trong bảng được ghi nhận trước — nếu nó đổi dữ liệu thì bản đã xuất thành bản cũ.
         dgvRows.EndEdit();
         if (!IsExportCurrent(out string reason))
         {
-            MessageBox.Show(reason, Title, MessageBoxButtons.OK, MessageBoxIcon.Information);
+            MessageBox.Show(BatchMode ? $"Phiếu {TicketTag(_batchTicket!)}: {reason}" : reason, Title, MessageBoxButtons.OK, MessageBoxIcon.Information);
             UpdateState();
-            return;
+            return false;
         }
 
         if (!WarehousePrinterService.IsExcelAvailable())
@@ -1905,10 +2273,10 @@ public class WarehouseExportView : UserControl
             MessageBox.Show("Xem trước bản in cần Microsoft Excel (dùng chính Excel để phân trang giống khi in), " +
                             "nhưng máy này chưa cài Excel.\n\nFile phiếu đã xuất vẫn mở được bằng phần mềm bảng tính khác để xem và in.",
                 Title, MessageBoxButtons.OK, MessageBoxIcon.Information);
-            return;
+            return false;
         }
 
-        WarehouseExportResult export = _export.Last!;
+        WarehouseExportResult export = CurrentExport.Last!;
         string printer = SelectedPrinter;
         await CheckPrinterAsync();
         bool printerOk = _printerState == PrinterState.Ready;
@@ -1929,7 +2297,7 @@ public class WarehouseExportView : UserControl
                 PdfFolder = pdfFolder,
                 FontDescription = DescribeFont()
             });
-            _export.MarkPreviewed(preview.SourceStamp);
+            CurrentExport.MarkPreviewed(preview.SourceStamp);
             WarehouseLog.Info($"Xem trước {export.OutputPath}: {preview.RenderedPageCount} trang PDF / Excel báo {preview.PageCount} " +
                               $"(mẫu {preview.TemplatePageCount?.ToString() ?? "?"}), máy in phân trang {preview.PaginationPrinter}, " +
                               $"{preview.WarningCount} cảnh báo bố cục");
@@ -1949,26 +2317,38 @@ public class WarehouseExportView : UserControl
         }
 
         if (preview == null)
-            return;
+            return false;
 
-        string hint = printerOk
-            ? $"Bấm IN để in {preview.RenderedPageCount} trang ra máy in: {printer}"
-            : "Chưa chọn máy in hợp lệ nên chưa in được — đang phân trang theo máy in mặc định của Excel. Chọn máy in ở màn hình phiếu rồi xem trước lại.";
+        // Nhiều phiếu: không in lẻ từ cửa sổ xem trước — phải xem trước đủ mọi phiếu rồi in tất cả ở màn hình chính.
+        bool canPrintHere = printerOk && !BatchMode;
+        string hint = !printerOk
+            ? "Chưa chọn máy in hợp lệ nên chưa in được — đang phân trang theo máy in mặc định của Excel. Chọn máy in ở màn hình phiếu rồi xem trước lại."
+            : BatchMode
+                ? $"Phiếu {_batch!.IndexOf(_batchTicket!) + 1}/{_batch.Count}: {TicketTag(_batchTicket!)}. " +
+                  "Đóng cửa sổ này để xem phiếu tiếp theo; xem đủ tất cả phiếu rồi bấm IN PHIẾU ở màn hình chính để in tất cả."
+                : $"Bấm IN để in {preview.RenderedPageCount} trang ra máy in: {printer}";
+        bool shown = false;
         try
         {
-            using FormWarehousePrintPreview form = new(preview, printerOk ? owner => PrintAsync(owner, preview) : null, hint);
+            using FormWarehousePrintPreview form = new(preview, canPrintHere ? owner => PrintAsync(owner, preview) : null, hint);
             form.ShowDialog(FindForm());
+            shown = true;
         }
         catch (WarehouseException ex)
         {
             WarehouseLog.Error($"Mở cửa sổ xem trước {preview.PdfPath}", ex);
             MessageBox.Show(ex.Message, Title, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            // Người dùng chưa thấy trang nào — không tính là đã xem trước.
+            CurrentExport.ForgetPreview();
         }
         finally
         {
             TryDeleteFile(preview.PdfPath);
+            RefreshBatchItems();
             UpdateState();
         }
+
+        return shown;
     }
 
     /// <summary>Dòng trạng thái sau khi dựng xem trước — số trang là số trang THỰC TẾ của bản xem trước.</summary>
@@ -1988,6 +2368,9 @@ public class WarehouseExportView : UserControl
             return false;
 
         dgvRows.EndEdit();
+        if (BatchMode)
+            return await PrintBatchAsync(owner);
+
         if (!IsExportCurrent(out string reason))
         {
             MessageBox.Show(owner, reason, Title, MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -2015,10 +2398,10 @@ public class WarehouseExportView : UserControl
             return false;
         }
 
-        WarehouseExportResult export = _export.Last!;
+        WarehouseExportResult export = CurrentExport.Last!;
         string file = export.OutputPath;
         string pages = preview != null ? $" ({preview.RenderedPageCount} trang)" : "";
-        string notPreviewed = preview == null && !_export.WasPreviewed
+        string notPreviewed = preview == null && !CurrentExport.WasPreviewed
             ? "\n\nChưa xem trước bản in của file này — nên bấm XEM TRƯỚC BẢN IN để kiểm tra từng trang trước."
             : "";
         if (MessageBox.Show(owner, $"In phiếu {Path.GetFileName(file)}{pages} ra máy in:\n{printer}?{notPreviewed}", Title,
@@ -2049,6 +2432,118 @@ public class WarehouseExportView : UserControl
         }
 
         return ok;
+    }
+
+    /// <summary>
+    /// Chế độ nhiều phiếu: in TẤT CẢ phiếu, chỉ khi mọi phiếu đã xuất (bản hiện
+    /// hành) VÀ đã được xem trước bản in. Hỏi xác nhận một lần, in lần lượt;
+    /// một phiếu in lỗi thì dừng (thường do máy in) và báo phiếu nào đã gửi.
+    /// </summary>
+    private async Task<bool> PrintBatchAsync(IWin32Window? owner)
+    {
+        List<WarehouseBatchTicket> batch = _batch!;
+        RefreshBatchItems();
+
+        List<string> notReady = new();
+        List<string> notPreviewed = new();
+        foreach (WarehouseBatchTicket ticket in batch)
+        {
+            WarehouseExportState state = ticket.Export.Check();
+            if (state != WarehouseExportState.Current)
+                notReady.Add($"  • {TicketTag(ticket)}: {ticket.Export.Describe(state).Split('\n')[0]}");
+            else if (!ticket.Export.WasPreviewed)
+                notPreviewed.Add("  • " + TicketTag(ticket));
+        }
+
+        if (notReady.Count > 0)
+        {
+            MessageBox.Show(owner, $"Chưa in được — {notReady.Count} phiếu chưa có bản xuất hiện hành:\n{string.Join("\n", notReady)}\n\n" +
+                                   "Hãy bấm XUẤT PHIẾU EXCEL (xuất lại tất cả phiếu).",
+                Title, MessageBoxButtons.OK, MessageBoxIcon.Information);
+            UpdateState();
+            return false;
+        }
+
+        if (notPreviewed.Count > 0)
+        {
+            MessageBox.Show(owner, $"Phải xem trước bản in TẤT CẢ phiếu trước khi in. Còn {notPreviewed.Count} phiếu chưa xem:\n" +
+                                   $"{string.Join("\n", notPreviewed)}\n\nBấm XEM TRƯỚC BẢN IN để xem tiếp.",
+                Title, MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return false;
+        }
+
+        string printer = SelectedPrinter;
+        await CheckPrinterAsync();
+        if (_printerState != PrinterState.Ready)
+        {
+            UpdateState();
+            MessageBox.Show(owner, printer.Length == 0
+                    ? "Chưa chọn máy in cho phiếu xuất kho — bấm Đổi máy in để chọn trong Cấu hình."
+                    : DescribePrinterProblem(printer),
+                Title, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            return false;
+        }
+
+        if (MessageBox.Show(owner, $"In {batch.Count} phiếu ra máy in:\n{printer}?\n\n" +
+                                   string.Join("\n", batch.Select(t => "  • " + Path.GetFileName(t.Export.Last!.OutputPath))),
+                Title, MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button2) != DialogResult.Yes)
+            return false;
+
+        List<string> sent = new();
+        string? failure = null;
+        try
+        {
+            SetBusy(true, $"Đang gửi lệnh in {batch.Count} phiếu tới {printer}...");
+            foreach (WarehouseBatchTicket ticket in batch)
+            {
+                WarehouseExportResult export = ticket.Export.Last!;
+                string name = Path.GetFileName(export.OutputPath);
+                // Kiểm tra lại ngay trước khi in từng file: file có thể vừa bị sửa bên ngoài.
+                WarehouseExportState state = ticket.Export.Check();
+                if (state != WarehouseExportState.Current)
+                {
+                    failure = $"{name}: {ticket.Export.Describe(state)}";
+                    break;
+                }
+
+                lblStatus.Text = $"Đang gửi lệnh in phiếu {sent.Count + 1}/{batch.Count}: {name}...";
+                try
+                {
+                    await _printerService.PrintWorkbookAsync(export.OutputPath, printer, sheetName: export.SheetName);
+                    sent.Add(name);
+                    WarehouseLog.Info($"In phiếu (lô {sent.Count}/{batch.Count}) {export.OutputPath} (sheet {export.SheetName}) → {printer}");
+                }
+                catch (WarehouseException ex)
+                {
+                    WarehouseLog.Error($"In phiếu (lô) {export.OutputPath} → {printer}", ex);
+                    failure = $"{name}: {ex.Message}";
+                    break;
+                }
+                catch (Exception ex)
+                {
+                    WarehouseLog.Error($"Lỗi ngoài dự kiến khi in phiếu (lô) {export.OutputPath} → {printer}", ex);
+                    failure = $"{name}: lỗi ngoài dự kiến — {ex.Message}";
+                    break;
+                }
+            }
+        }
+        finally
+        {
+            SetBusy(false, failure == null
+                ? $"Đã gửi lệnh in {sent.Count} phiếu tới hàng đợi của {printer}."
+                : $"Đã gửi {sent.Count}/{batch.Count} phiếu — dừng ở phiếu lỗi.");
+        }
+
+        if (failure != null)
+        {
+            List<string> unsent = batch.Select(t => Path.GetFileName(t.Export.Last!.OutputPath)).Except(sent).ToList();
+            MessageBox.Show(owner, $"In bị dừng ở: {failure}\n\n" +
+                                   (sent.Count > 0 ? $"Đã gửi lệnh in:\n{string.Join("\n", sent.Select(s => "  ✓ " + s))}\n\n" : "") +
+                                   $"Chưa in:\n{string.Join("\n", unsent.Select(s => "  • " + s))}",
+                Title, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
+
+        return failure == null;
     }
 
     private static void TryDeleteFile(string path)
@@ -2092,8 +2587,7 @@ public class WarehouseExportView : UserControl
         dgvRows.CancelEdit();
         txtTicketCode.Text = "";
         txtGoods.Text = "";
-        _document = null;
-        _export.Reset();
+        SetDocuments(null, null);
         RefreshDefaultDocumentDate();
         FillGrid();
         lblStatus.Text = "Đã xóa dữ liệu phiếu.";
@@ -2110,7 +2604,7 @@ public class WarehouseExportView : UserControl
 
         try
         {
-            string? file = _export.Last is { } last && File.Exists(last.OutputPath) ? last.OutputPath : null;
+            string? file = CurrentExport.Last is { } last && File.Exists(last.OutputPath) ? last.OutputPath : null;
             Process.Start(new ProcessStartInfo("explorer.exe", file != null ? $"/select,\"{file}\"" : $"\"{folder}\"") { UseShellExecute = true })?.Dispose();
         }
         catch (System.ComponentModel.Win32Exception ex)
@@ -2133,8 +2627,18 @@ public class WarehouseExportView : UserControl
     private void UpdateState()
     {
         TicketCodeResult code = CurrentTicketCode;
-        lblFullCode.Text = code.IsValid ? $"Mã phiếu hoàn chỉnh: {code.Code}" : (txtTicketCode.Text.Length == 0 ? "Mã phiếu hoàn chỉnh: —" : "⚠ " + code.Error);
-        lblFullCode.ForeColor = code.IsValid || txtTicketCode.Text.Length == 0 ? AppTheme.Colors.TextPrimary : AppTheme.Colors.Danger;
+        List<WarehouseBatchTicket> batch = _batch ?? [];
+        bool batchCodesValid = batch.All(t => t.TicketCode(txtPrefix.Text).IsValid);
+        if (BatchMode)
+        {
+            lblFullCode.Text = $"{batch.Count} phiếu (lấy từ Mã chuyển hàng): {string.Join(", ", batch.Select(TicketTag))}";
+            lblFullCode.ForeColor = batchCodesValid ? AppTheme.Colors.TextPrimary : AppTheme.Colors.Danger;
+        }
+        else
+        {
+            lblFullCode.Text = code.IsValid ? $"Mã phiếu hoàn chỉnh: {code.Code}" : (txtTicketCode.Text.Length == 0 ? "Mã phiếu hoàn chỉnh: —" : "⚠ " + code.Error);
+            lblFullCode.ForeColor = code.IsValid || txtTicketCode.Text.Length == 0 ? AppTheme.Colors.TextPrimary : AppTheme.Colors.Danger;
+        }
 
         lblTemplateInfo.Text = _layout == null
             ? (txtTemplate.Text.Length == 0 ? "File gốc chỉ được đọc, không bao giờ bị sửa." : "File mẫu chưa hợp lệ — chọn lại file.")
@@ -2147,12 +2651,21 @@ public class WarehouseExportView : UserControl
         lblGoodsInfo.Text = _document == null
             ? (txtGoods.Text.Length == 0 ? "Cần các cột: Mã hàng, Tên hàng, Số lượng chuyển (hoặc Số lượng)." : "Chưa đọc được file hàng hóa.")
             : $"Sheet \"{_document.Goods.SheetName}\" · tiêu đề dòng {_document.Goods.HeaderRowNumber} · " +
-              $"số lượng lấy từ cột \"{_document.Goods.QuantityColumnHeader}\" · {_document.Rows.Count} dòng hàng";
+              $"số lượng lấy từ cột \"{_document.Goods.QuantityColumnHeader}\" · " +
+              (BatchMode
+                  ? $"{batch.Count} phiếu chuyển, {batch.Sum(t => t.Document.Rows.Count)} dòng hàng (tách theo cột Mã chuyển hàng)"
+                  : $"{_document.Rows.Count} dòng hàng");
 
         string folder = txtOutput.Text.Trim();
         string extension = _layout?.FileExtension ?? ".xlsx";
+        int existingFiles = folder.Length == 0 ? 0 : batch.Count(t => t.TicketCode(txtPrefix.Text) is { IsValid: true } c &&
+                                                                      File.Exists(Path.Combine(folder, c.Code + extension)));
         lblOutputInfo.Text = folder.Length == 0
             ? "Thư mục chưa có sẽ được tạo khi xuất."
+            : BatchMode
+                ? $"Sẽ tạo {batch.Count} file riêng: " + string.Join(", ", batch.Select(t => TicketTag(t) + extension)) +
+                  (existingFiles > 0 ? $"  ({existingFiles} file đã tồn tại — sẽ hỏi trước khi ghi đè)" : "") +
+                  (Directory.Exists(folder) ? "" : "  · thư mục chưa có, sẽ được tạo")
             : code.IsValid
                 ? $"Tên file dự kiến: {code.Code}{extension}" +
                   (File.Exists(Path.Combine(folder, code.Code + extension)) ? "  (đã tồn tại — sẽ hỏi trước khi ghi đè)" : "") +
@@ -2175,19 +2688,33 @@ public class WarehouseExportView : UserControl
         int errors = _document?.ErrorCount ?? 0;
         int warnings = _document?.WarningCount ?? 0;
         int total = _document?.Rows.Count ?? 0;
+        int batchErrorTickets = batch.Count(t => t.Document.ErrorCount > 0);
         lblSummary.Text = _document == null
             ? "Chưa có dữ liệu — chọn file phiếu mẫu và file hàng hóa."
-            : $"{total} dòng hàng · {total - errors - warnings} hợp lệ · {warnings} cảnh báo · {errors} lỗi" +
-              (errors > 0 ? " — sửa các dòng lỗi (đỏ) trước khi xuất." : "");
+            : (BatchMode ? $"Phiếu {TicketTag(_batchTicket!)}: " : "") +
+              $"{total} dòng hàng · {total - errors - warnings} hợp lệ · {warnings} cảnh báo · {errors} lỗi" +
+              (errors > 0 ? " — sửa các dòng lỗi (đỏ) trước khi xuất." : "") +
+              (BatchMode && batchErrorTickets > 0 && errors == 0 ? $" — còn {batchErrorTickets} phiếu khác có lỗi." : "");
         lblSummary.ForeColor = errors > 0 ? AppTheme.Colors.Danger : warnings > 0 ? WarningText : AppTheme.Colors.TextSecondary;
 
-        WarehouseExportState exportState = _export.Check();
+        WarehouseExportState exportState = CurrentExport.Check();
         bool exported = exportState == WarehouseExportState.Current;
+        int batchExported = batch.Count(t => t.Export.Check() == WarehouseExportState.Current);
+        int batchPreviewed = batch.Count(t => t.Export.Check() == WarehouseExportState.Current && t.Export.WasPreviewed);
+        bool batchAllExported = BatchMode && batchExported == batch.Count;
         (lblDataState.Text, lblDataState.ForeColor) =
             _busy ? ("Đang xử lý...", AppTheme.Colors.TextSecondary)
+            : BatchMode ? (batchExported == 0
+                    ? (batchErrorTickets > 0 ? $"Trạng thái: {batchErrorTickets} phiếu còn dòng lỗi." : "Trạng thái: sẵn sàng xuất tất cả phiếu.",
+                        batchErrorTickets > 0 ? AppTheme.Colors.Danger : AppTheme.Colors.TextSecondary)
+                    : batchAllExported && batchPreviewed == batch.Count
+                        ? ($"Trạng thái: đã xuất và xem trước đủ {batch.Count} phiếu — có thể in tất cả.", AppTheme.Colors.Success)
+                        : batchAllExported
+                            ? ($"Trạng thái: đã xuất {batch.Count} phiếu, đã xem trước {batchPreviewed}/{batch.Count} — xem trước đủ rồi mới in.", WarningText)
+                            : ($"Trạng thái: mới có {batchExported}/{batch.Count} phiếu là bản xuất hiện hành — cần xuất lại.", WarningText))
             : _document == null ? ("Trạng thái: chưa có dữ liệu.", AppTheme.Colors.TextSecondary)
-            : exported ? ($"Trạng thái: đã xuất {Path.GetFileName(_export.Last!.OutputPath)}" +
-                          (_export.WasPreviewed ? " — đã xem trước, có thể in." : " — xem trước bản in rồi in."), AppTheme.Colors.Success)
+            : exported ? ($"Trạng thái: đã xuất {Path.GetFileName(CurrentExport.Last!.OutputPath)}" +
+                          (CurrentExport.WasPreviewed ? " — đã xem trước, có thể in." : " — xem trước bản in rồi in."), AppTheme.Colors.Success)
             : exportState == WarehouseExportState.Stale ? ("Trạng thái: bản đã xuất là bản CŨ (dữ liệu/thiết lập đã đổi) — cần xuất lại.", WarningText)
             : exportState == WarehouseExportState.Missing ? ("Trạng thái: file đã xuất không còn trên đĩa — cần xuất lại.", WarningText)
             : exportState == WarehouseExportState.ModifiedExternally ? ("Trạng thái: file đã xuất bị sửa bên ngoài — cần xuất lại.", WarningText)
@@ -2202,14 +2729,20 @@ public class WarehouseExportView : UserControl
         btnCheckPrinter.Enabled = idle && printer.Length > 0 && _printerState != PrinterState.Checking;
         cboScope.Enabled = idle;
         txtPrefix.Enabled = idle;
-        txtTicketCode.Enabled = idle;
+        txtTicketCode.Enabled = idle && !BatchMode; // nhiều phiếu: mã lấy từ cột Mã chuyển hàng
+        cboBatchTicket.Enabled = idle;
+        // Mã (theo tiền tố), số dòng lỗi, đã xuất / đã xem trước của từng phiếu trong ô chọn phiếu.
+        RefreshBatchItems();
         dtpDocumentDate.Enabled = idle;
         dgvRows.ReadOnly = !idle;
         btnValidate.Enabled = idle;
         btnPreview.Enabled = idle && txtTemplate.Text.Length > 0 && txtGoods.Text.Length > 0;
-        btnExport.Enabled = idle && _document != null && code.IsValid && folder.Length > 0 && errors == 0;
+        btnExport.Enabled = BatchMode
+            ? idle && folder.Length > 0 && batchCodesValid && batchErrorTickets == 0
+            : idle && _document != null && code.IsValid && folder.Length > 0 && errors == 0;
         btnPrintPreview.Enabled = idle && exported;
-        btnPrint.Enabled = idle && exported && printer.Length > 0 && !PrinterFailed;
+        // Nhiều phiếu: bật khi mọi phiếu đã xuất; bấm khi chưa xem trước đủ thì báo phiếu nào còn thiếu.
+        btnPrint.Enabled = idle && (BatchMode ? batchAllExported : exported) && printer.Length > 0 && !PrinterFailed;
         btnClear.Enabled = idle && (_document != null || txtTicketCode.Text.Length > 0 || txtGoods.Text.Length > 0);
         btnOpenFolder.Enabled = idle && folder.Length > 0;
 

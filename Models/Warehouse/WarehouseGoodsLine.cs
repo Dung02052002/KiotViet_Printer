@@ -18,6 +18,18 @@ public sealed class WarehouseGoodsLine
 
     /// <summary>Số lượng đọc được; null = ô trống hoặc không phải số.</summary>
     public double? Quantity { get; init; }
+
+    /// <summary>
+    /// Mã phiếu chuyển của dòng (cột "Mã chuyển hàng", vd "TRF023522") — chỉ
+    /// có ở file xuất danh sách chi tiết NHIỀU phiếu chuyển; rỗng nếu file không có cột này.
+    /// </summary>
+    public string TransferCode { get; init; } = "";
+
+    /// <summary>Cột "Ghi chú chuyển" (vd "BÌNH TÂN THÙNG 1") — chỉ để hiển thị.</summary>
+    public string TransferNote { get; init; } = "";
+
+    /// <summary>Cột "Tới chi nhánh" — chỉ để hiển thị.</summary>
+    public string TransferDestination { get; init; } = "";
 }
 
 /// <summary>Kết quả đọc file hàng hóa: các dòng + thông tin cột đã nhận diện.</summary>
@@ -26,6 +38,9 @@ public sealed class WarehouseGoodsFile
     public required string SheetName { get; init; }
     public required int HeaderRowNumber { get; init; }
     public required bool HasCodeColumn { get; init; }
+
+    /// <summary>File có cột "Mã chuyển hàng" (danh sách chi tiết nhiều phiếu chuyển).</summary>
+    public bool HasTransferColumn { get; init; }
 
     /// <summary>Tên cột số lượng đã dùng (vd "Số lượng chuyển").</summary>
     public required string QuantityColumnHeader { get; init; }

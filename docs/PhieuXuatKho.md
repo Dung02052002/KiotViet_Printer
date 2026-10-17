@@ -52,6 +52,37 @@ Dữ liệu, font hoặc thiết lập in đổi sau khi xuất → bản đã x
 XEM TRƯỚC BẢN IN và IN PHIẾU bị khóa tới khi xuất lại. File kết quả bị sửa / ghi
 đè bên ngoài (vd mở bằng Excel rồi lưu) cũng phải xuất lại mới in được.
 
+## Nhiều phiếu trong một file
+
+File hàng hóa là **Danh sách chi tiết chuyển hàng** xuất từ KiotViet cho nhiều
+phiếu chuyển cùng lúc (có cột `Mã chuyển hàng`, từ 2 mã trở lên) → màn hình tự
+chuyển sang chế độ nhiều phiếu:
+
+- Mỗi mã chuyển hàng là **một phiếu, xuất ra một file riêng** (không gộp). Mã
+  phiếu = mã chuyển, đổi tiền tố `TRF` thành tiền tố ở ô *Tiền tố*, **giữ nguyên
+  số 0 ở đầu**: `TRF023522` → `XK023522` → file `XK023522.xlsx`. Ô *Mã phiếu* bị
+  khóa.
+- Số lượng lấy từ cột `Số lượng chuyển` của từng dòng (không dùng *Tổng SL chuyển*
+  hay *Số lượng nhận*). Mỗi phiếu được đối chiếu riêng: một mã hàng có ở hai phiếu
+  khác nhau không bị coi là trùng.
+- Ngày lập phiếu: dùng ô *Ngày lập phiếu* trên màn hình (mặc định hôm nay) cho
+  mọi phiếu — **không** lấy cột *Ngày chuyển* trong file.
+- Ô **Phiếu đang xem** (trên bảng xem trước) chọn phiếu để xem / sửa; mỗi dòng ghi
+  ghi chú chuyển, số dòng, tổng SL và tình trạng (lỗi / chưa xuất / đã xuất /
+  đã xem trước).
+- **XUẤT PHIẾU EXCEL** kiểm tra **tất cả** phiếu trước — còn một phiếu lỗi thì
+  không xuất phiếu nào; file đã có thì hỏi ghi đè một lần cho cả lô.
+- **XEM TRƯỚC BẢN IN** xem phiếu đang chọn; đóng cửa sổ thì hỏi xem tiếp phiếu
+  chưa xem. Cửa sổ xem trước không có nút in lẻ.
+- **IN PHIẾU** in tất cả phiếu, chỉ khi **mọi phiếu đã được xem trước** bản in
+  (bản hiện hành). Sửa dữ liệu một phiếu chỉ bắt xuất / xem trước lại phiếu đó;
+  đổi ngày, font, thiết lập in, tiền tố, thư mục thì phải xuất lại tất cả.
+- Dòng thiếu mã chuyển hàng được gom thành một phiếu lỗi riêng ở cuối danh sách
+  và chặn xuất.
+
+File chỉ có **một** mã chuyển hàng: vẫn là chế độ một phiếu, ô *Mã phiếu* được
+điền sẵn từ mã chuyển (nếu đang trống).
+
 ## Quy tắc dữ liệu
 
 | Nội dung | Quy tắc |

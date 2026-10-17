@@ -119,6 +119,54 @@ public class WarehouseExportViewLayoutTests : IDisposable
         });
     }
 
+    /// <summary>
+    /// File có nhiều phiếu chuyển: hiện ô chọn phiếu (mỗi phiếu một dòng, mã XK lấy
+    /// từ mã chuyển), bảng chỉ hiện dòng của phiếu đang chọn, bố cục vẫn đúng.
+    /// </summary>
+    [Theory]
+    [InlineData(876, 540)]
+    [InlineData(1300, 640)]
+    public void BatchFile_ShowsTicketPicker_GridFollowsSelectedTicket(int width, int height)
+    {
+        RunInMessageLoop(width, height, async (form, view) =>
+        {
+            string template = WarehouseTestData.CreateTemplate(_dir, dataRows: 2, fileName: $"mau-batch-{width}.xlsx");
+            string goods = WarehouseTestData.CreateGoods(_dir,
+                ["Mã chuyển hàng", "Ghi chú chuyển", "Mã hàng", "Tên hàng", "Số lượng chuyển", "Số lượng nhận"],
+                [
+                    ["TRF023512", "BÌNH TÂN THÙNG 2", "SP3", "Ví nữ Pucini", 5, 5],
+                    ["TRF023512", "BÌNH TÂN THÙNG 2", "SP4", "Kính mắt Pucini", 1, 1],
+                    ["TRF023510", "BÌNH TÂN THÙNG 1", "SP1", "Túi xách tay nữ Pucini", 3, 3],
+                ], $"batch-{width}.xlsx");
+            await view.LoadFilesAsync(template, goods);
+            await Settle();
+
+            ComboBox picker = Visible(view).OfType<ComboBox>().Single(c => c.Items.Count > 0 && (c.Items[0] as string ?? "").StartsWith("XK0235"));
+            Assert.Equal(2, picker.Items.Count);
+            Assert.StartsWith("XK023510 · BÌNH TÂN THÙNG 1 · 1 dòng", (string)picker.Items[0]!);
+            Assert.StartsWith("XK023512 · BÌNH TÂN THÙNG 2 · 2 dòng", (string)picker.Items[1]!);
+            Assert.Equal(1, Grid(view).RowCount);
+
+            picker.SelectedIndex = 1;
+            await Settle();
+            Assert.Equal(2, Grid(view).RowCount);
+            Assert.Equal("SP3", Grid(view).Rows[0].Cells["colCode"].Value);
+
+            SaveScreenshot(view, $"{width}x{height}-batch");
+            AssertLayout(view);
+
+            // Cuộn hết trang: ô chọn phiếu + bảng vẫn nằm trọn trong vùng nhìn thấy.
+            ScrollableControl scroll = (ScrollableControl)Grid(view).Parent!.Parent!.Parent!;
+            scroll.AutoScrollPosition = new Point(0, int.MaxValue / 2);
+            await Settle();
+            Rectangle viewport = scroll.RectangleToScreen(scroll.ClientRectangle);
+            Assert.True(viewport.Contains(Grid(view).RectangleToScreen(Grid(view).ClientRectangle)), "Bảng không nằm trọn trong vùng nhìn thấy");
+            Assert.True(viewport.Contains(picker.RectangleToScreen(picker.ClientRectangle)), "Ô chọn phiếu không nằm trọn trong vùng nhìn thấy");
+            SaveScreenshot(view, $"{width}x{height}-batch-bottom");
+            AssertLayout(view);
+        });
+    }
+
     [System.Runtime.InteropServices.DllImport("user32.dll")]
     private static extern nint SendMessage(nint hWnd, int msg, nint wParam, nint lParam);
 
