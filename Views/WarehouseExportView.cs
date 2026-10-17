@@ -75,11 +75,21 @@ public class WarehouseExportView : UserControl
     private bool _fillingGrid;
     private Font? _previewFont;
 
-    // Kiểm tra máy in phải hỏi spooler (chậm với máy in mạng) — chỉ làm khi nạp
-    // danh sách / đổi máy in, không phải mỗi lần UpdateState (mỗi phím gõ).
-    // Trước khi xem trước / in vẫn kiểm tra lại trực tiếp.
-    private bool _printerAvailable;
-    private string _windowsDefaultPrinter = "";
+    // Máy in phiếu được chọn trong Cấu hình (FormConfig), màn hình này KHÔNG
+    // liệt kê máy in: hỏi Print Spooler có thể treo vô thời hạn trên máy có
+    // máy in mạng / driver lỗi (đã làm cửa sổ chính không hiện được). Chỉ kiểm
+    // tra máy in đã chọn — ở luồng nền, có giới hạn thời gian — ngay trước khi
+    // xem trước / in, khi mở màn hình, và khi bấm "Kiểm tra kết nối".
+    private PrinterState _printerState = PrinterState.Unknown;
+    private Task? _printerCheck;
+    private string _printerCheckFor = "";
+
+    private enum PrinterState { Unknown, Checking, Ready, NotInstalled, Invalid, NotResponding }
+
+    private bool PrinterFailed => _printerState is PrinterState.NotInstalled or PrinterState.Invalid or PrinterState.NotResponding;
+
+    /// <summary>Người dùng bấm "Đổi máy in" — FormMain mở màn hình Cấu hình.</summary>
+    public event EventHandler? PrinterSettingsRequested;
 
     /// <summary>Đang xuất / in — FormMain hỏi lại trước khi đóng app.</summary>
     public bool IsBusy => _busy;
@@ -163,8 +173,9 @@ public class WarehouseExportView : UserControl
 
     // Máy in
     private readonly Label lblPrinterTitle = new();
-    private readonly ComboBox cboPrinter = new();
-    private readonly RoundedButton btnRefreshPrinters = new();
+    private readonly RoundedTextBox txtPrinterName = new();
+    private readonly RoundedButton btnCheckPrinter = new();
+    private readonly RoundedButton btnChangePrinter = new();
     private readonly Label lblPrinterStatus = new();
 
     // Font chữ
@@ -266,8 +277,30 @@ public class WarehouseExportView : UserControl
             SaveSettings();
         }
 
-        if (!_busy)
-            LoadPrinters();
+        ReloadPrinterSetting();
+
+        // Tự kiểm tra máy in một lần khi mở màn hình — chạy nền, có giới hạn
+        // thời gian: máy in lỗi chỉ hiện trạng thái lỗi, không làm đơ màn hình.
+        if (_printerState == PrinterState.Unknown)
+            _ = CheckPrinterAsync();
+    }
+
+    /// <summary>
+    /// Đọc lại máy in phiếu từ file thiết lập (màn hình Cấu hình có thể vừa
+    /// đổi nó). Không hỏi spooler.
+    /// </summary>
+    public void ReloadPrinterSetting()
+    {
+        string printer = _settingsStore.Load().PrinterName;
+        if (!string.Equals(printer, _settings.PrinterName, StringComparison.Ordinal))
+        {
+            _settings.PrinterName = printer;
+            _printerState = PrinterState.Unknown;
+            // Bản xem trước phân trang theo máy in cũ — không còn đại diện cho bản sẽ in.
+            _export.ForgetPreview();
+        }
+
+        UpdateState();
     }
 
     /// <summary>Đơn vị logic (96 DPI) → pixel thật theo DPI màn hình.</summary>
@@ -477,33 +510,29 @@ public class WarehouseExportView : UserControl
     {
         StyleOverline(lblPrinterTitle, "MÁY IN PHIẾU (RIÊNG, KHÔNG ẢNH HƯỞNG MÁY IN TEM)");
 
-        cboPrinter.DropDownStyle = ComboBoxStyle.DropDownList;
-        AppTheme.StyleComboBox(cboPrinter);
-        cboPrinter.Anchor = AnchorStyles.Left | AnchorStyles.Right;
-        cboPrinter.Margin = new Padding(0, 0, S(ColumnGap), S(2));
-        cboPrinter.SelectedIndexChanged += (_, _) =>
-        {
-            if (_loadingUi)
-                return;
-            _settings.PrinterName = cboPrinter.SelectedItem as string ?? "";
-            SaveSettings();
-            RefreshPrinterAvailability();
-            // Bản xem trước phân trang theo máy in cũ — không còn đại diện cho bản sẽ in.
-            _export.ForgetPreview();
-            UpdateState();
-        };
+        StyleTextBox(txtPrinterName, "Chưa chọn máy in phiếu");
+        txtPrinterName.ReadOnly = true;
 
-        btnRefreshPrinters.Text = "Làm mới";
-        btnRefreshPrinters.Icon = IconGlyphs.Kind.Refresh;
-        btnRefreshPrinters.Variant = ButtonVariant.Outline;
-        btnRefreshPrinters.ContainerColor = AppTheme.Colors.SurfaceElevated;
-        btnRefreshPrinters.Size = new Size(btnRefreshPrinters.GetContentWidth(S(16)), S(ControlHeight));
-        btnRefreshPrinters.Margin = Padding.Empty;
-        btnRefreshPrinters.Click += (_, _) => LoadPrinters();
+        btnCheckPrinter.Text = "Kiểm tra kết nối";
+        btnCheckPrinter.Icon = IconGlyphs.Kind.Refresh;
+        btnCheckPrinter.Variant = ButtonVariant.Outline;
+        btnCheckPrinter.ContainerColor = AppTheme.Colors.SurfaceElevated;
+        btnCheckPrinter.Size = new Size(btnCheckPrinter.GetContentWidth(S(16)), S(ControlHeight));
+        btnCheckPrinter.Margin = new Padding(0, S(8), S(ColumnGap), 0);
+        btnCheckPrinter.Click += async (_, _) => await CheckPrinterAsync();
+
+        btnChangePrinter.Text = "Đổi máy in";
+        btnChangePrinter.Icon = IconGlyphs.Kind.Settings;
+        btnChangePrinter.Variant = ButtonVariant.Outline;
+        btnChangePrinter.ContainerColor = AppTheme.Colors.SurfaceElevated;
+        btnChangePrinter.Size = new Size(btnChangePrinter.GetContentWidth(S(16)), S(ControlHeight));
+        btnChangePrinter.Margin = new Padding(0, S(8), 0, 0);
+        btnChangePrinter.Click += (_, _) => PrinterSettingsRequested?.Invoke(this, EventArgs.Empty);
 
         StyleWrapping(lblPrinterStatus);
 
-        AddRows(secPrinter, lblPrinterTitle, Grid([Percent(100), AutoColumn()], cboPrinter, btnRefreshPrinters), lblPrinterStatus);
+        AddRows(secPrinter, lblPrinterTitle, txtPrinterName,
+            Grid([AutoColumn(), AutoColumn(), Percent(100)], btnCheckPrinter, btnChangePrinter, null), lblPrinterStatus);
     }
 
     private void BuildFontSection()
@@ -901,7 +930,7 @@ public class WarehouseExportView : UserControl
     {
         foreach (Control control in new Control[]
                  {
-                     dtpDocumentDate, cboPrinter, cboScope, cboFont, nudFontSize, cboPageMode, cboPaper, cboOrientation, cboScaleMode,
+                     dtpDocumentDate, cboScope, cboFont, nudFontSize, cboPageMode, cboPaper, cboOrientation, cboScaleMode,
                      nudScale, nudMarginLeft, nudMarginRight, nudMarginTop, nudMarginBottom
                  })
         {
@@ -952,7 +981,6 @@ public class WarehouseExportView : UserControl
             _loadingUi = false;
         }
 
-        LoadPrinters();
         UpdateFontPreview();
         UpdatePageInfo();
 
@@ -1344,31 +1372,75 @@ public class WarehouseExportView : UserControl
     #endregion
 
     #region Máy in
-    private void LoadPrinters()
+    /// <summary>
+    /// Kiểm tra (lại) kết nối tới máy in đã chọn. Đang có lần kiểm tra cho
+    /// đúng máy in này thì dùng chung, không mở thêm lệnh hỏi spooler.
+    /// </summary>
+    private Task CheckPrinterAsync()
     {
-        _loadingUi = true;
+        if (_printerCheck is { IsCompleted: false } && _printerCheckFor == SelectedPrinter)
+            return _printerCheck;
+
+        _printerCheckFor = SelectedPrinter;
+        return _printerCheck = RunPrinterCheckAsync(_printerCheckFor);
+    }
+
+    // Hỏi spooler ở luồng nền, tối đa SpoolerQuery.Timeout. Kết quả chỉ áp
+    // dụng nếu máy in không bị đổi trong lúc chờ.
+    private async Task RunPrinterCheckAsync(string printer)
+    {
+        if (printer.Length == 0)
+        {
+            _printerState = PrinterState.Unknown;
+            UpdateState();
+            return;
+        }
+
+        _printerState = PrinterState.Checking;
+        UpdateState();
+
+        PrinterState state;
         try
         {
-            cboPrinter.Items.Clear();
-            foreach (string printer in _printerService.GetInstalledPrinters())
-                cboPrinter.Items.Add(printer);
-
-            // Máy in đã lưu không còn: để trống (KHÔNG tự chuyển sang máy in mặc định).
-            cboPrinter.SelectedIndex = cboPrinter.Items.IndexOf(_settings.PrinterName);
-            _windowsDefaultPrinter = _printerService.GetWindowsDefaultPrinter();
+            state = await SpoolerQuery.RunAsync(() => _printerService.CheckPrinter(printer)) switch
+            {
+                PrinterCheckResult.Ready => PrinterState.Ready,
+                PrinterCheckResult.NotInstalled => PrinterState.NotInstalled,
+                PrinterCheckResult.Invalid => PrinterState.Invalid,
+                _ => PrinterState.Unknown,
+            };
         }
-        finally
+        catch (TimeoutException ex)
         {
-            _loadingUi = false;
+            WarehouseLog.Error($"Kiểm tra máy in \"{printer}\": spooler không phản hồi", ex);
+            state = PrinterState.NotResponding;
+        }
+        catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or System.Drawing.Printing.InvalidPrinterException)
+        {
+            WarehouseLog.Error($"Kiểm tra máy in \"{printer}\"", ex);
+            state = PrinterState.Invalid;
         }
 
-        RefreshPrinterAvailability();
+        if (IsDisposed || printer != SelectedPrinter)
+            return;
+
+        _printerState = state;
         UpdateState();
     }
 
-    private void RefreshPrinterAvailability() => _printerAvailable = _printerService.IsPrinterAvailable(SelectedPrinter);
+    private string DescribePrinterProblem(string printer) => _printerState switch
+    {
+        PrinterState.NotInstalled =>
+            $"Máy in \"{printer}\" không còn trong Windows (đã bị gỡ hoặc đổi tên) — bấm Đổi máy in để chọn lại.",
+        PrinterState.Invalid =>
+            $"Windows không mở được máy in \"{printer}\" — kiểm tra máy in đã bật, cáp / mạng còn kết nối, rồi bấm Kiểm tra kết nối.",
+        PrinterState.NotResponding =>
+            "Windows không phản hồi khi hỏi máy in (Print Spooler đang treo, thường do một máy in bị lỗi). " +
+            "Bật lại máy in, đợi một lát rồi bấm Kiểm tra kết nối; vẫn lỗi thì khởi động lại máy tính. Các chức năng khác vẫn dùng bình thường.",
+        _ => $"Máy in \"{printer}\" chưa sẵn sàng.",
+    };
 
-    private string SelectedPrinter => cboPrinter.SelectedItem as string ?? "";
+    private string SelectedPrinter => _settings.PrinterName;
     #endregion
 
     #region Khổ giấy và thiết lập in
@@ -1838,8 +1910,8 @@ public class WarehouseExportView : UserControl
 
         WarehouseExportResult export = _export.Last!;
         string printer = SelectedPrinter;
-        RefreshPrinterAvailability();
-        bool printerOk = _printerAvailable;
+        await CheckPrinterAsync();
+        bool printerOk = _printerState == PrinterState.Ready;
         string pdfFolder = WarehousePrintPreviewService.DefaultPreviewFolder;
         WarehousePrintPreview? preview = null;
 
@@ -1932,13 +2004,13 @@ public class WarehouseExportView : UserControl
 
         // Kiểm tra trực tiếp (không dùng kết quả lưu sẵn): máy in có thể vừa bị gỡ / tắt.
         string printer = SelectedPrinter;
-        RefreshPrinterAvailability();
-        if (!_printerAvailable)
+        await CheckPrinterAsync();
+        if (_printerState != PrinterState.Ready)
         {
             UpdateState();
             MessageBox.Show(owner, printer.Length == 0
-                    ? "Chưa chọn máy in cho phiếu xuất kho."
-                    : $"Máy in \"{printer}\" không còn tồn tại hoặc không dùng được.\n\nHãy bấm Làm mới và chọn lại máy in.",
+                    ? "Chưa chọn máy in cho phiếu xuất kho — bấm Đổi máy in để chọn trong Cấu hình."
+                    : DescribePrinterProblem(printer),
                 Title, MessageBoxButtons.OK, MessageBoxIcon.Warning);
             return false;
         }
@@ -2088,18 +2160,17 @@ public class WarehouseExportView : UserControl
                 : "Tên file dự kiến: <mã phiếu>.xlsx";
 
         string printer = SelectedPrinter;
-        bool printerOk = _printerAvailable;
-        lblPrinterStatus.Text = printer.Length == 0
-            ? (_settings.PrinterName.Length > 0
-                ? $"✗ Máy in đã chọn trước đây \"{_settings.PrinterName}\" không còn trên máy này — chọn máy in khác. " +
-                  "(Không tự chuyển sang máy in mặc định.)"
-                : $"Chưa chọn máy in. (Máy in mặc định của Windows: {_windowsDefaultPrinter} — không bị thay đổi.)")
-            : printerOk
-                ? $"✓ Đang chọn: {printer}. In bằng Microsoft Excel, đúng khổ giấy/lề của file mẫu."
-                : $"✗ Máy in \"{printer}\" không dùng được — bấm Làm mới hoặc chọn máy khác.";
-        lblPrinterStatus.ForeColor = printer.Length == 0
-            ? (_settings.PrinterName.Length > 0 ? AppTheme.Colors.Danger : AppTheme.Colors.TextMuted)
-            : printerOk ? AppTheme.Colors.Success : AppTheme.Colors.Danger;
+        txtPrinterName.Text = printer;
+        (lblPrinterStatus.Text, lblPrinterStatus.ForeColor) =
+            printer.Length == 0
+                ? ("Chưa chọn máy in phiếu — bấm Đổi máy in để chọn trong Cấu hình. (Không tự dùng máy in mặc định của Windows.)", AppTheme.Colors.Danger)
+            : _printerState == PrinterState.Checking
+                ? ("Đang kiểm tra kết nối máy in...", AppTheme.Colors.TextMuted)
+            : _printerState == PrinterState.Ready
+                ? ("✓ Máy in đã kết nối. In bằng Microsoft Excel, đúng khổ giấy/lề của file mẫu.", AppTheme.Colors.Success)
+            : PrinterFailed
+                ? ("✗ " + DescribePrinterProblem(printer), AppTheme.Colors.Danger)
+                : ("In bằng Microsoft Excel, đúng khổ giấy/lề của file mẫu. Bấm Kiểm tra kết nối để thử máy in.", AppTheme.Colors.TextMuted);
 
         int errors = _document?.ErrorCount ?? 0;
         int warnings = _document?.WarningCount ?? 0;
@@ -2127,8 +2198,8 @@ public class WarehouseExportView : UserControl
         btnChooseTemplate.Enabled = idle;
         btnChooseGoods.Enabled = idle;
         btnChooseOutput.Enabled = idle;
-        btnRefreshPrinters.Enabled = idle;
-        cboPrinter.Enabled = idle;
+        btnChangePrinter.Enabled = idle;
+        btnCheckPrinter.Enabled = idle && printer.Length > 0 && _printerState != PrinterState.Checking;
         cboScope.Enabled = idle;
         txtPrefix.Enabled = idle;
         txtTicketCode.Enabled = idle;
@@ -2138,7 +2209,7 @@ public class WarehouseExportView : UserControl
         btnPreview.Enabled = idle && txtTemplate.Text.Length > 0 && txtGoods.Text.Length > 0;
         btnExport.Enabled = idle && _document != null && code.IsValid && folder.Length > 0 && errors == 0;
         btnPrintPreview.Enabled = idle && exported;
-        btnPrint.Enabled = idle && exported && printerOk;
+        btnPrint.Enabled = idle && exported && printer.Length > 0 && !PrinterFailed;
         btnClear.Enabled = idle && (_document != null || txtTicketCode.Text.Length > 0 || txtGoods.Text.Length > 0);
         btnOpenFolder.Enabled = idle && folder.Length > 0;
 

@@ -619,6 +619,13 @@ public class FormMain : Form
         warehouseExportView.Height = ClientSize.Height - 236;
         warehouseExportView.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Bottom;
         warehouseExportView.Visible = false;
+        // Máy in phiếu được chọn trong màn hình Cấu hình — đóng lại thì phiếu
+        // xuất kho đọc lại máy in vừa chọn, vẫn ở nguyên màn hình phiếu.
+        warehouseExportView.PrinterSettingsRequested += (_, _) =>
+        {
+            ShowConfigDialog();
+            warehouseExportView.ReloadPrinterSetting();
+        };
         Controls.Add(warehouseExportView);
     }
     #endregion
@@ -1502,17 +1509,21 @@ public class FormMain : Form
 
     private void BtnConfig_Click(object? sender, EventArgs e)
     {
+        ShowConfigDialog();
+        ShowHome();
+    }
+
+    private void ShowConfigDialog()
+    {
         try
         {
             using FormConfig formConfig = new();
-            formConfig.ShowDialog();
+            formConfig.ShowDialog(this);
         }
         catch (Exception ex)
         {
             MessageBox.Show($"Form cấu hình chưa sẵn sàng hoặc đang lỗi:\n{ex.Message}", "Thông báo");
         }
-
-        ShowHome();
     }
 
     private void BtnHistory_Click(object? sender, EventArgs e)

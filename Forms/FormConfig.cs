@@ -2,8 +2,10 @@ using System.ComponentModel;
 using System.Drawing.Printing;
 using KiotVietLabelPrinter.Infrastructure.BarTender;
 using KiotVietLabelPrinter.Infrastructure.Diagnostics;
+using KiotVietLabelPrinter.Infrastructure.Printing;
 using KiotVietLabelPrinter.Infrastructure.Storage;
 using KiotVietLabelPrinter.Models.Labels;
+using KiotVietLabelPrinter.Models.Warehouse;
 using KiotVietLabelPrinter.Models;
 using KiotVietLabelPrinter.UI.Controls;
 using KiotVietLabelPrinter.UI.Theme;
@@ -15,12 +17,21 @@ public class FormConfig : Form
 {
     private readonly RoundedTextBox txtBarTender = new();
     private readonly ComboBox cboPrinter = new();
+    private readonly ComboBox cboWarehousePrinter = new();
+
+    // Máy in Phiếu xuất kho nằm ở file thiết lập riêng của chức năng đó
+    // (warehouse-export.json), không phải config.json.
+    private readonly WarehouseSettingsStore _warehouseStore = new();
+    private string _savedWarehousePrinter = "";
     private readonly ToggleSwitch chkRememberEmployee = new();
     private readonly RoundedTextBox txtDefaultEmployee = new();
 
     private readonly RoundedButton btnBrowseBarTender = new();
     private readonly Label lblCapabilityStatus = new();
     private readonly RoundedButton btnResetCapability = new();
+    private readonly RoundedButton btnReloadPrinters = new();
+    private readonly Label lblWarehousePrinterHint = new();
+    private bool _loadingPrinters;
     private readonly RoundedButton btnSave = new();
     private readonly RoundedButton btnAddLabel = new();
     private readonly RoundedButton btnDeleteLabel = new();
@@ -61,7 +72,7 @@ public class FormConfig : Form
             Left = 20,
             Top = 20,
             Width = ClientSize.Width - 40,
-            Height = 244,
+            Height = 290,
             CornerRadius = 18,
             FillColor = AppTheme.Colors.SurfaceElevated,
             BorderColor = AppTheme.Colors.Border,
@@ -131,7 +142,6 @@ public class FormConfig : Form
         cboPrinter.SetBounds(160, 108, 500, 34);
         cboPrinter.DropDownStyle = ComboBoxStyle.DropDownList;
         AppTheme.StyleComboBox(cboPrinter);
-        LoadPrinterList();
         grpGeneral.Controls.Add(cboPrinter);
 
         Label lblPrinterHint = new()
@@ -146,9 +156,44 @@ public class FormConfig : Form
         };
         grpGeneral.Controls.Add(lblPrinterHint);
 
+        Label lblWarehousePrinter = new()
+        {
+            Text = "Máy in phiếu XK",
+            Left = 24,
+            Top = 158,
+            Width = 130,
+            Font = AppTheme.Fonts.Body,
+            ForeColor = AppTheme.Colors.TextPrimary
+        };
+        grpGeneral.Controls.Add(lblWarehousePrinter);
+
+        cboWarehousePrinter.SetBounds(160, 154, 500, 34);
+        cboWarehousePrinter.DropDownStyle = ComboBoxStyle.DropDownList;
+        AppTheme.StyleComboBox(cboWarehousePrinter);
+        grpGeneral.Controls.Add(cboWarehousePrinter);
+
+        // Đọc lại danh sách máy in (vừa cắm / bật lại máy in, hoặc lần đọc
+        // trước Windows không phản hồi) — cập nhật cả hai ô máy in.
+        btnReloadPrinters.Text = "Tải lại";
+        btnReloadPrinters.SetBounds(676, 154, 100, 34);
+        btnReloadPrinters.Variant = ButtonVariant.Outline;
+        btnReloadPrinters.ContainerColor = AppTheme.Colors.Surface;
+        btnReloadPrinters.Click += async (_, _) => await LoadPrintersAsync();
+        grpGeneral.Controls.Add(btnReloadPrinters);
+
+        lblWarehousePrinterHint.Text = WarehousePrinterHint;
+        lblWarehousePrinterHint.Left = 792;
+        lblWarehousePrinterHint.Top = 152;
+        lblWarehousePrinterHint.Width = grpGeneral.Width - 816;
+        lblWarehousePrinterHint.Height = 40;
+        lblWarehousePrinterHint.Font = AppTheme.Fonts.Hint;
+        lblWarehousePrinterHint.ForeColor = AppTheme.Colors.TextMuted;
+        lblWarehousePrinterHint.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+        grpGeneral.Controls.Add(lblWarehousePrinterHint);
+
         chkRememberEmployee.Text = "Ghi nhớ mã nhân viên mặc định";
         chkRememberEmployee.Left = 24;
-        chkRememberEmployee.Top = 158;
+        chkRememberEmployee.Top = 204;
         chkRememberEmployee.Width = 280;
         chkRememberEmployee.Font = AppTheme.Fonts.Body;
         chkRememberEmployee.ContainerColor = AppTheme.Colors.Surface;
@@ -160,14 +205,14 @@ public class FormConfig : Form
         {
             Text = "Mã NV mặc định",
             Left = 332,
-            Top = 160,
+            Top = 206,
             Width = 130,
             Font = AppTheme.Fonts.Body,
             ForeColor = AppTheme.Colors.TextPrimary
         };
         grpGeneral.Controls.Add(lblDefaultEmployee);
 
-        txtDefaultEmployee.SetBounds(468, 151, 220, 38);
+        txtDefaultEmployee.SetBounds(468, 197, 220, 38);
         txtDefaultEmployee.Font = AppTheme.Fonts.Body;
         txtDefaultEmployee.ContainerColor = AppTheme.Colors.Surface;
         txtDefaultEmployee.PlaceholderText = "Ví dụ: H020";
@@ -177,7 +222,7 @@ public class FormConfig : Form
         {
             Text = "Ví dụ: H020 hoặc H020-K026",
             Left = 700,
-            Top = 160,
+            Top = 206,
             Width = 260,
             Font = AppTheme.Fonts.Hint,
             ForeColor = AppTheme.Colors.TextMuted
@@ -185,7 +230,7 @@ public class FormConfig : Form
         grpGeneral.Controls.Add(lblHint);
 
         lblCapabilityStatus.Left = 24;
-        lblCapabilityStatus.Top = 202;
+        lblCapabilityStatus.Top = 248;
         lblCapabilityStatus.Width = grpGeneral.Width - 210;
         lblCapabilityStatus.Height = 32;
         lblCapabilityStatus.Font = AppTheme.Fonts.Hint;
@@ -194,7 +239,7 @@ public class FormConfig : Form
         grpGeneral.Controls.Add(lblCapabilityStatus);
 
         btnResetCapability.Text = "Kiểm tra lại";
-        btnResetCapability.SetBounds(grpGeneral.Width - 174, 196, 150, 32);
+        btnResetCapability.SetBounds(grpGeneral.Width - 174, 242, 150, 32);
         btnResetCapability.Variant = ButtonVariant.Outline;
         btnResetCapability.ContainerColor = AppTheme.Colors.Surface;
         btnResetCapability.Anchor = AnchorStyles.Top | AnchorStyles.Right;
@@ -236,13 +281,83 @@ public class FormConfig : Form
         lblCapabilityStatus.Text = $"BarTender {versionText}{editionText} — {statusText}";
     }
 
-    private void LoadPrinterList()
+    // Đọc danh sách máy in ở luồng nền sau khi form đã hiện (SpoolerQuery):
+    // spooler treo thì form vẫn dùng được, máy in đã lưu (LoadConfig thêm sẵn
+    // vào danh sách) vẫn được giữ nguyên.
+    protected override async void OnShown(EventArgs e)
     {
-        cboPrinter.Items.Clear();
+        base.OnShown(e);
+        await LoadPrintersAsync();
+    }
 
-        foreach (string printer in PrinterSettings.InstalledPrinters)
+    private const string WarehousePrinterHint = "Riêng cho Phiếu xuất kho, không ảnh hưởng máy in tem.";
+
+    private async Task LoadPrintersAsync()
+    {
+        if (_loadingPrinters)
+            return;
+
+        _loadingPrinters = true;
+        btnReloadPrinters.Enabled = false;
+        btnReloadPrinters.Text = "Đang tải...";
+        try
         {
-            cboPrinter.Items.Add(printer);
+            List<string> printers = await SpoolerQuery.RunAsync(() => PrinterSettings.InstalledPrinters.Cast<string>().ToList());
+            if (IsDisposed)
+                return;
+
+            FillPrinters(cboPrinter, printers, selectFirstWhenEmpty: true);
+            // Máy in phiếu không bắt buộc: chưa chọn thì để trống, không tự chọn.
+            FillPrinters(cboWarehousePrinter, printers, selectFirstWhenEmpty: false);
+            SetPrinterHint(WarehousePrinterHint, AppTheme.Colors.TextMuted);
+        }
+        catch (Exception ex) when (ex is TimeoutException or Win32Exception)
+        {
+            PrintDiagnosticsLog.Write($"CONFIG load printers failed: {ex}");
+            if (!IsDisposed)
+                SetPrinterHint(ex is TimeoutException
+                        ? "Windows không phản hồi (máy in lỗi?) — bật lại máy in rồi bấm Tải lại."
+                        : $"Không đọc được danh sách máy in: {ex.Message}",
+                    AppTheme.Colors.Danger);
+        }
+        finally
+        {
+            _loadingPrinters = false;
+            if (!IsDisposed)
+            {
+                btnReloadPrinters.Text = "Tải lại";
+                btnReloadPrinters.Enabled = true;
+            }
+        }
+    }
+
+    private void SetPrinterHint(string text, Color color)
+    {
+        lblWarehousePrinterHint.Text = text;
+        lblWarehousePrinterHint.ForeColor = color;
+    }
+
+    private static void FillPrinters(ComboBox combo, List<string> printers, bool selectFirstWhenEmpty)
+    {
+        string? selected = combo.SelectedItem as string;
+        combo.BeginUpdate();
+        try
+        {
+            combo.Items.Clear();
+            foreach (string printer in printers)
+                combo.Items.Add(printer);
+
+            if (selected != null && !combo.Items.Contains(selected))
+                combo.Items.Add(selected);
+
+            if (selected != null)
+                combo.SelectedItem = selected;
+            else if (selectFirstWhenEmpty && combo.Items.Count > 0)
+                combo.SelectedIndex = 0;
+        }
+        finally
+        {
+            combo.EndUpdate();
         }
     }
     #endregion
@@ -253,9 +368,9 @@ public class FormConfig : Form
         RoundedPanel grpLabels = new()
         {
             Left = 20,
-            Top = 280,
+            Top = 326,
             Width = ClientSize.Width - 40,
-            Height = ClientSize.Height - 360,
+            Height = ClientSize.Height - 406,
             CornerRadius = 18,
             FillColor = AppTheme.Colors.SurfaceElevated,
             BorderColor = AppTheme.Colors.Border,
@@ -464,6 +579,13 @@ public class FormConfig : Form
             cboPrinter.SelectedIndex = 0;
         }
 
+        _savedWarehousePrinter = _warehouseStore.Load().PrinterName;
+        if (!string.IsNullOrWhiteSpace(_savedWarehousePrinter))
+        {
+            cboWarehousePrinter.Items.Add(_savedWarehousePrinter);
+            cboWarehousePrinter.SelectedItem = _savedWarehousePrinter;
+        }
+
         _labels = new BindingList<LabelDefinition>(
             config.Labels
                 .Select(x => new LabelDefinition
@@ -518,6 +640,7 @@ public class FormConfig : Form
                 .ToList();
 
             ConfigService.Instance.Save();
+            SaveWarehousePrinter();
 
             ToastForm.ShowSuccess("Đã lưu cấu hình.");
             DialogResult = DialogResult.OK;
@@ -527,6 +650,20 @@ public class FormConfig : Form
         {
             MessageBox.Show(ex.Message, "Lỗi cấu hình");
         }
+    }
+
+    // Chỉ ghi khi đổi máy in, và chỉ đổi đúng trường máy in — các thiết lập
+    // khác của Phiếu xuất kho (font, khổ giấy, thư mục...) giữ nguyên.
+    private void SaveWarehousePrinter()
+    {
+        string printer = cboWarehousePrinter.SelectedItem as string ?? "";
+        if (string.Equals(printer, _savedWarehousePrinter, StringComparison.Ordinal))
+            return;
+
+        WarehouseExportSettings settings = _warehouseStore.Load();
+        settings.PrinterName = printer;
+        _warehouseStore.Save(settings);
+        _savedWarehousePrinter = printer;
     }
 
     private void ValidateBeforeSave()

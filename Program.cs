@@ -122,8 +122,8 @@ internal static class Program
     /// roi" rồi thoát — nếu instance cũ đang kẹt KHÔNG có cửa sổ (nằm trong
     /// Background processes) thì người dùng không mở được app và không biết
     /// phải tắt tiến trình nào. Giờ: có cửa sổ thì đưa nó lên trước; không có
-    /// thì báo rõ PID để người dùng tự kết thúc. Không bao giờ tự kill tiến
-    /// trình khác.
+    /// thì báo rõ PID và HỎI người dùng có tắt nó rồi mở lại không. Không bao
+    /// giờ kill tiến trình khác khi người dùng chưa đồng ý.
     /// </summary>
     private static void HandleSecondInstance()
     {
@@ -143,21 +143,69 @@ internal static class Program
 
             StartupLog.Stage("Instance đang chạy không có cửa sổ: " + DescribeProcesses(others));
 
-            string details = others.Length == 0
-                ? "Phần mềm đang chạy hoặc đang đóng. Vui lòng đợi vài giây rồi mở lại."
-                : $"Phần mềm đã đang chạy (PID {string.Join(", ", others.Select(p => p.Id))}) nhưng không có cửa sổ " +
-                  "nào hiển thị — có thể tiến trình đó đang bị treo.\n\n" +
-                  "Mở Task Manager → tab Details, tìm đúng PID ở trên, chọn End task rồi mở lại phần mềm.";
+            if (others.Length == 0)
+            {
+                MessageBox.Show(
+                    "Phần mềm đang chạy hoặc đang đóng. Vui lòng đợi vài giây rồi mở lại.",
+                    "In Tem KiotViet", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
 
-            MessageBox.Show(
-                details + $"\n\nNhật ký khởi động: {StartupLog.FilePath ?? "(không ghi được)"}",
-                "In Tem KiotViet", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            DialogResult answer = MessageBox.Show(
+                $"Phần mềm đã đang chạy (PID {string.Join(", ", others.Select(p => p.Id))}) nhưng không có cửa sổ " +
+                "nào hiển thị — có thể tiến trình đó đang bị treo.\n\n" +
+                "Tắt tiến trình bị treo và mở lại phần mềm?\n\n" +
+                $"Nhật ký khởi động: {StartupLog.FilePath ?? "(không ghi được)"}",
+                "In Tem KiotViet", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+
+            if (answer == DialogResult.Yes)
+                KillAndRelaunch(others);
         }
         finally
         {
             foreach (Process other in others)
                 other.Dispose();
         }
+    }
+
+    // Chỉ chạy khi người dùng đã đồng ý. Tiến trình bị kill bỏ lại mutex
+    // (abandoned) — mở một tiến trình mới thay vì giành lại mutex trong
+    // tiến trình này, để lần mở lại đi đúng đường khởi động bình thường.
+    private static void KillAndRelaunch(Process[] others)
+    {
+        foreach (Process other in others)
+        {
+            try
+            {
+                StartupLog.Stage($"Người dùng đồng ý tắt instance treo PID={other.Id}");
+                other.Kill(entireProcessTree: true);
+                other.WaitForExit(10_000);
+            }
+            catch (Exception ex) when (ex is InvalidOperationException or System.ComponentModel.Win32Exception or NotSupportedException)
+            {
+                // Đã tự thoát, hoặc không đủ quyền (instance chạy bằng quyền admin).
+                StartupLog.Error($"Tắt instance PID={other.Id}", ex);
+            }
+        }
+
+        if (FindOtherInstances() is { Length: > 0 } stillRunning)
+        {
+            string pids = string.Join(", ", stillRunning.Select(p => p.Id));
+            foreach (Process p in stillRunning)
+                p.Dispose();
+
+            MessageBox.Show(
+                $"Không tắt được tiến trình (PID {pids}). Hãy khởi động lại máy rồi mở lại phần mềm.",
+                "In Tem KiotViet", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            return;
+        }
+
+        StartupLog.Stage("Đã tắt instance treo — mở lại phần mềm");
+        Process.Start(new ProcessStartInfo(Environment.ProcessPath!)
+        {
+            UseShellExecute = false,
+            WorkingDirectory = AppContext.BaseDirectory,
+        });
     }
 
     // Lọc theo tên tiến trình (= tên .exe), KHÔNG lọc theo đường dẫn: một bản

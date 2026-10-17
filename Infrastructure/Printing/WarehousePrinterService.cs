@@ -30,15 +30,24 @@ public class WarehousePrinterService
     /// <summary>Tên máy in mặc định của Windows (chỉ đọc — không bao giờ đặt lại).</summary>
     public string GetWindowsDefaultPrinter() => new PrinterSettings().PrinterName;
 
-    public bool IsPrinterAvailable(string? printerName)
+    public bool IsPrinterAvailable(string? printerName) => CheckPrinter(printerName) == PrinterCheckResult.Ready;
+
+    /// <summary>
+    /// Kiểm tra máy in, phân biệt "đã bị gỡ khỏi Windows" với "còn đó nhưng
+    /// Windows không mở được". Gọi spooler đồng bộ — UI phải gọi qua
+    /// <see cref="SpoolerQuery"/> (spooler treo thì hết giờ, không treo app).
+    /// </summary>
+    public PrinterCheckResult CheckPrinter(string? printerName)
     {
         if (string.IsNullOrWhiteSpace(printerName))
-            return false;
+            return PrinterCheckResult.NotSelected;
 
         if (!GetInstalledPrinters().Contains(printerName, StringComparer.OrdinalIgnoreCase))
-            return false;
+            return PrinterCheckResult.NotInstalled;
 
-        return new PrinterSettings { PrinterName = printerName }.IsValid;
+        return new PrinterSettings { PrinterName = printerName }.IsValid
+            ? PrinterCheckResult.Ready
+            : PrinterCheckResult.Invalid;
     }
 
     public static bool IsExcelAvailable() => ExcelSession.IsExcelInstalled();
@@ -49,16 +58,30 @@ public class WarehousePrinterService
     /// dùng cho máy in ảo (vd "Microsoft Print to PDF") để in ra file mà
     /// không hiện hộp thoại lưu — phục vụ kiểm tra.
     /// </summary>
-    public Task PrintWorkbookAsync(string workbookPath, string printerName, short copies = 1,
+    public async Task PrintWorkbookAsync(string workbookPath, string printerName, short copies = 1,
         string? printToFile = null, string? sheetName = null)
     {
         if (!File.Exists(workbookPath))
             throw new WarehouseException(WarehouseErrorKind.FileNotFound,
                 $"Không tìm thấy file phiếu để in:\n{workbookPath}\n\nHãy xuất phiếu Excel trước khi in.");
 
-        if (!IsPrinterAvailable(printerName))
+        // Hỏi spooler ở luồng nền (có giới hạn thời gian): máy in lỗi làm
+        // spooler treo thì báo lỗi, không làm đơ giao diện.
+        bool printerAvailable;
+        try
+        {
+            printerAvailable = await SpoolerQuery.RunAsync(() => IsPrinterAvailable(printerName));
+        }
+        catch (TimeoutException)
+        {
             throw new WarehouseException(WarehouseErrorKind.PrinterNotFound,
-                $"Máy in \"{printerName}\" không còn tồn tại hoặc không dùng được.\n\nHãy bấm làm mới danh sách máy in và chọn lại.");
+                $"Windows không phản hồi khi kiểm tra máy in \"{printerName}\" (máy in có thể đang lỗi).\n\n" +
+                "Bật lại máy in rồi bấm Kiểm tra kết nối; vẫn lỗi thì khởi động lại máy tính.");
+        }
+
+        if (!printerAvailable)
+            throw new WarehouseException(WarehouseErrorKind.PrinterNotFound,
+                $"Máy in \"{printerName}\" không còn tồn tại hoặc không dùng được.\n\nHãy bấm Kiểm tra kết nối hoặc Đổi máy in.");
 
         if (!IsExcelAvailable())
             throw new WarehouseException(WarehouseErrorKind.ExcelNotAvailable,
@@ -66,7 +89,7 @@ public class WarehousePrinterService
                 "File phiếu đã được xuất — hãy mở file bằng phần mềm bảng tính khác để in.");
 
         string activePrinter = ExcelSession.ResolveExcelPrinterName(printerName);
-        return ExcelAutomation.RunAsync(session =>
+        await ExcelAutomation.RunAsync(session =>
         {
             PrintWithExcel(session, workbookPath, activePrinter, copies, printToFile, sheetName);
             return true;
@@ -96,4 +119,15 @@ public class WarehousePrinterService
                 "Hãy kiểm tra máy in đang bật, còn giấy, và thử in lại. Nếu vẫn lỗi, mở file phiếu bằng Excel để in tay.", ex);
         }
     }
+}
+
+/// <summary>Kết quả kiểm tra máy in (xem <see cref="WarehousePrinterService.CheckPrinter"/>).</summary>
+public enum PrinterCheckResult
+{
+    Ready,
+    NotSelected,
+    /// <summary>Không còn trong danh sách máy in của Windows (đã gỡ / đổi tên).</summary>
+    NotInstalled,
+    /// <summary>Còn trong danh sách nhưng Windows không mở được (driver / kết nối lỗi).</summary>
+    Invalid
 }
