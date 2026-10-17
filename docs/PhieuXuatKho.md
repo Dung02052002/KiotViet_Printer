@@ -72,10 +72,13 @@ chuyển sang chế độ nhiều phiếu:
   đã xem trước).
 - **XUẤT PHIẾU EXCEL** kiểm tra **tất cả** phiếu trước — còn một phiếu lỗi thì
   không xuất phiếu nào; file đã có thì hỏi ghi đè một lần cho cả lô.
-- **XEM TRƯỚC BẢN IN** xem phiếu đang chọn; đóng cửa sổ thì hỏi xem tiếp phiếu
-  chưa xem. Cửa sổ xem trước không có nút in lẻ.
-- **IN PHIẾU** in tất cả phiếu, chỉ khi **mọi phiếu đã được xem trước** bản in
-  (bản hiện hành). Sửa dữ liệu một phiếu chỉ bắt xuất / xem trước lại phiếu đó;
+- **XEM TRƯỚC BẢN IN** mở phiếu đang chọn; trong cửa sổ xem trước có
+  **PHIẾU TRƯỚC / PHIẾU SAU** (góc trên bên phải, hoặc Ctrl + PageUp / PageDown)
+  để xem lần lượt mọi phiếu mà không phải đóng cửa sổ. Phiếu nào đã hiện trong
+  cửa sổ thì được tính là đã xem trước.
+- Nút in của cửa sổ xem trước là **IN TẤT CẢ**, chỉ bật khi đã xem đủ mọi phiếu.
+  **IN PHIẾU** ở màn hình chính cũng in tất cả phiếu với cùng điều kiện: **mọi
+  phiếu đã được xem trước** bản in (bản hiện hành). Sửa dữ liệu một phiếu chỉ bắt xuất / xem trước lại phiếu đó;
   đổi ngày, font, thiết lập in, tiền tố, thư mục thì phải xuất lại tất cả.
 - Dòng thiếu mã chuyển hàng được gom thành một phiếu lỗi riêng ở cuối danh sách
   và chặn xuất.

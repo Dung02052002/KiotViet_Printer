@@ -2228,52 +2228,101 @@ public class WarehouseExportView : UserControl
     /// <summary>
     /// Xem trước bản in: Excel xuất chính file phiếu ra PDF (phân trang theo
     /// máy in đã chọn) rồi mở cửa sổ xem từng trang. In từ cửa sổ này dùng
-    /// đúng file đã xem.
+    /// đúng file đã xem. Chế độ nhiều phiếu: chuyển phiếu ngay trong cửa sổ
+    /// (PHIẾU TRƯỚC / PHIẾU SAU) và IN TẤT CẢ bật khi đã xem đủ mọi phiếu.
     /// </summary>
     private async Task PrintPreviewAsync()
     {
-        // Chế độ nhiều phiếu: xem xong một phiếu thì mời xem tiếp phiếu chưa xem,
-        // tới khi đủ tất cả — chỉ khi đó mới in được.
-        while (await PreviewCurrentAsync() && _batch != null && !IsDisposed)
+        if (_busy)
+            return;
+
+        WarehousePrintPreview? preview = await BuildCurrentPreviewAsync(null);
+        if (preview == null)
+            return;
+
+        string printer = SelectedPrinter;
+        bool printerOk = _printerState == PrinterState.Ready;
+        // File PDF tạm của mọi phiếu đã xem trong cửa sổ — xoá khi đóng.
+        List<string> pdfs = [preview.PdfPath];
+        WarehousePreviewTickets? tickets = null;
+        if (_batch is { } batch)
         {
-            WarehouseBatchTicket? next = NextUnpreviewedTicket();
-            if (next == null)
+            tickets = new WarehousePreviewTickets
             {
-                MessageBox.Show($"Đã xem trước đủ {_batch.Count} phiếu. Bấm IN PHIẾU để in tất cả.", Title,
-                    MessageBoxButtons.OK, MessageBoxIcon.Information);
-                return;
-            }
+                Names = batch.Select(t => t.Note.Length > 0 ? $"{TicketTag(t)} · {t.Note}" : TicketTag(t)).ToList(),
+                StartIndex = batch.IndexOf(_batchTicket!),
+                Load = async (owner, index) =>
+                {
+                    SelectBatchTicket(batch[index]);
+                    WarehousePrintPreview? next = await BuildCurrentPreviewAsync(owner);
+                    if (next != null)
+                        pdfs.Add(next.PdfPath);
+                    return next;
+                },
+                CanPrint = () => printerOk && NextUnpreviewedTicket() == null,
+                Hint = () => !printerOk
+                    ? "Chưa chọn máy in hợp lệ nên chưa in được — đang phân trang theo máy in mặc định của Excel. Chọn máy in ở màn hình phiếu rồi xem trước lại."
+                    : BatchPreviewHint(printer)
+            };
+        }
 
-            int remaining = _batch.Count(t => !(t.Export.Check() == WarehouseExportState.Current && t.Export.WasPreviewed));
-            if (MessageBox.Show($"Còn {remaining} phiếu chưa xem trước bản in.\n\nXem tiếp phiếu {TicketTag(next)}?", Title,
-                    MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes)
-                return;
-
-            SelectBatchTicket(next);
+        string hint = !printerOk
+            ? "Chưa chọn máy in hợp lệ nên chưa in được — đang phân trang theo máy in mặc định của Excel. Chọn máy in ở màn hình phiếu rồi xem trước lại."
+            : $"Bấm IN để in {preview.RenderedPageCount} trang ra máy in: {printer}";
+        try
+        {
+            // Nhiều phiếu: nút in của cửa sổ là IN TẤT CẢ (PrintAsync chuyển sang PrintBatchAsync, vẫn kiểm tra đủ điều kiện).
+            using FormWarehousePrintPreview form = new(preview, printerOk ? owner => PrintAsync(owner, preview) : null, hint, tickets);
+            form.ShowDialog(FindForm());
+        }
+        catch (WarehouseException ex)
+        {
+            WarehouseLog.Error($"Mở cửa sổ xem trước {preview.PdfPath}", ex);
+            MessageBox.Show(ex.Message, Title, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            // Người dùng chưa thấy trang nào — không tính là đã xem trước.
+            CurrentExport.ForgetPreview();
+        }
+        finally
+        {
+            foreach (string pdf in pdfs)
+                TryDeleteFile(pdf);
+            RefreshBatchItems();
+            UpdateState();
         }
     }
 
-    /// <summary>Xem trước bản in của phiếu đang hiển thị. true = đã mở cửa sổ xem trước.</summary>
-    private async Task<bool> PreviewCurrentAsync()
+    private string BatchPreviewHint(string printer)
     {
-        if (_busy)
-            return false;
+        List<WarehouseBatchTicket> batch = _batch!;
+        int previewed = batch.Count(t => t.Export.Check() == WarehouseExportState.Current && t.Export.WasPreviewed);
+        return previewed == batch.Count
+            ? $"Đã xem trước đủ {batch.Count} phiếu — bấm IN TẤT CẢ để in ra máy in: {printer}"
+            : $"Đã xem {previewed}/{batch.Count} phiếu — bấm PHIẾU SAU (Ctrl + PageDown) để xem tiếp; xem đủ tất cả mới in được.";
+    }
 
+    /// <summary>
+    /// Dựng bản xem trước của phiếu đang hiển thị (và ghi nhận phiếu đó đã được
+    /// xem trước). null = không dựng được — đã báo lý do cho người dùng
+    /// (trên <paramref name="owner"/> nếu có, vd cửa sổ xem trước đang mở).
+    /// </summary>
+    private async Task<WarehousePrintPreview?> BuildCurrentPreviewAsync(IWin32Window? owner)
+    {
         // Ô đang sửa dở trong bảng được ghi nhận trước — nếu nó đổi dữ liệu thì bản đã xuất thành bản cũ.
         dgvRows.EndEdit();
         if (!IsExportCurrent(out string reason))
         {
-            MessageBox.Show(BatchMode ? $"Phiếu {TicketTag(_batchTicket!)}: {reason}" : reason, Title, MessageBoxButtons.OK, MessageBoxIcon.Information);
+            MessageBox.Show(owner, BatchMode ? $"Phiếu {TicketTag(_batchTicket!)}: {reason}" : reason, Title,
+                MessageBoxButtons.OK, MessageBoxIcon.Information);
             UpdateState();
-            return false;
+            return null;
         }
 
         if (!WarehousePrinterService.IsExcelAvailable())
         {
-            MessageBox.Show("Xem trước bản in cần Microsoft Excel (dùng chính Excel để phân trang giống khi in), " +
-                            "nhưng máy này chưa cài Excel.\n\nFile phiếu đã xuất vẫn mở được bằng phần mềm bảng tính khác để xem và in.",
+            MessageBox.Show(owner, "Xem trước bản in cần Microsoft Excel (dùng chính Excel để phân trang giống khi in), " +
+                                   "nhưng máy này chưa cài Excel.\n\nFile phiếu đã xuất vẫn mở được bằng phần mềm bảng tính khác để xem và in.",
                 Title, MessageBoxButtons.OK, MessageBoxIcon.Information);
-            return false;
+            return null;
         }
 
         WarehouseExportResult export = CurrentExport.Last!;
@@ -2305,50 +2354,19 @@ public class WarehouseExportView : UserControl
         catch (WarehouseException ex)
         {
             WarehouseLog.Error($"Xem trước bản in {export.OutputPath}", ex);
-            MessageBox.Show(ex.Message, Title, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            MessageBox.Show(owner, ex.Message, Title, MessageBoxButtons.OK, MessageBoxIcon.Warning);
         }
         catch (Exception ex)
         {
-            ReportUnexpected(null, "dựng bản xem trước bản in", ex, show: true);
+            ReportUnexpected(owner, "dựng bản xem trước bản in", ex, show: true);
         }
         finally
         {
             SetBusy(false, preview != null ? DescribePreview(preview) : "Chưa dựng được bản xem trước.");
-        }
-
-        if (preview == null)
-            return false;
-
-        // Nhiều phiếu: không in lẻ từ cửa sổ xem trước — phải xem trước đủ mọi phiếu rồi in tất cả ở màn hình chính.
-        bool canPrintHere = printerOk && !BatchMode;
-        string hint = !printerOk
-            ? "Chưa chọn máy in hợp lệ nên chưa in được — đang phân trang theo máy in mặc định của Excel. Chọn máy in ở màn hình phiếu rồi xem trước lại."
-            : BatchMode
-                ? $"Phiếu {_batch!.IndexOf(_batchTicket!) + 1}/{_batch.Count}: {TicketTag(_batchTicket!)}. " +
-                  "Đóng cửa sổ này để xem phiếu tiếp theo; xem đủ tất cả phiếu rồi bấm IN PHIẾU ở màn hình chính để in tất cả."
-                : $"Bấm IN để in {preview.RenderedPageCount} trang ra máy in: {printer}";
-        bool shown = false;
-        try
-        {
-            using FormWarehousePrintPreview form = new(preview, canPrintHere ? owner => PrintAsync(owner, preview) : null, hint);
-            form.ShowDialog(FindForm());
-            shown = true;
-        }
-        catch (WarehouseException ex)
-        {
-            WarehouseLog.Error($"Mở cửa sổ xem trước {preview.PdfPath}", ex);
-            MessageBox.Show(ex.Message, Title, MessageBoxButtons.OK, MessageBoxIcon.Warning);
-            // Người dùng chưa thấy trang nào — không tính là đã xem trước.
-            CurrentExport.ForgetPreview();
-        }
-        finally
-        {
-            TryDeleteFile(preview.PdfPath);
             RefreshBatchItems();
-            UpdateState();
         }
 
-        return shown;
+        return preview;
     }
 
     /// <summary>Dòng trạng thái sau khi dựng xem trước — số trang là số trang THỰC TẾ của bản xem trước.</summary>

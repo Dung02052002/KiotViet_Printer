@@ -23,11 +23,20 @@ public sealed class FormWarehousePrintPreview : Form
     private const int ThumbnailWidth = 210;
     private static readonly int[] ZoomSteps = [25, 50, 75, 100, 125, 150, 200, 300, 400];
 
-    private readonly WarehousePrintPreview _preview;
+    // Đổi được khi chuyển sang phiếu khác (chế độ nhiều phiếu) — xem SwitchTicketAsync.
+    private WarehousePrintPreview _preview;
     private readonly Func<IWin32Window, Task<bool>>? _printAction;
     private readonly string _printHint;
-    private readonly PdfPageRenderer _renderer;
-    private readonly WarehousePreviewNavigator _navigator;
+    private PdfPageRenderer _renderer;
+    private WarehousePreviewNavigator _navigator;
+
+    /// <summary>Chế độ nhiều phiếu: chuyển phiếu ngay trong cửa sổ; null = xem một phiếu.</summary>
+    private readonly WarehousePreviewTickets? _tickets;
+    private int _ticketIndex;
+    private bool _switching;
+
+    /// <summary>Tăng mỗi lần đổi tài liệu PDF: ảnh thu nhỏ của tài liệu cũ đang dựng dở thì bỏ.</summary>
+    private int _documentVersion;
 
     private Bitmap? _pageImage;
     private int _renderVersion;
@@ -51,6 +60,11 @@ public sealed class FormWarehousePrintPreview : Form
     private readonly RoundedButton btnSingle = new();
     private readonly RoundedButton btnMulti = new();
 
+    private readonly FlowLayoutPanel pnlTickets = new();
+    private readonly RoundedButton btnPrevTicket = new();
+    private readonly Label lblTicket = new();
+    private readonly RoundedButton btnNextTicket = new();
+
     private readonly ZoomPanImageView viewPage = new();
     private readonly FlowLayoutPanel pnlThumbnails = new();
 
@@ -65,19 +79,20 @@ public sealed class FormWarehousePrintPreview : Form
     private readonly RoundedButton btnPrint = new();
     private readonly RoundedButton btnClose = new();
 
-    public FormWarehousePrintPreview(WarehousePrintPreview preview, Func<IWin32Window, Task<bool>>? printAction, string printHint)
+    /// <param name="tickets">
+    /// Chế độ nhiều phiếu: thêm PHIẾU TRƯỚC / PHIẾU SAU để xem lần lượt mọi phiếu
+    /// ngay trong cửa sổ này. Khi đó <paramref name="printAction"/> là in TẤT CẢ
+    /// phiếu và chỉ bật khi <see cref="WarehousePreviewTickets.CanPrint"/>.
+    /// </param>
+    public FormWarehousePrintPreview(WarehousePrintPreview preview, Func<IWin32Window, Task<bool>>? printAction, string printHint,
+        WarehousePreviewTickets? tickets = null)
     {
         _preview = preview;
         _printAction = printAction;
         _printHint = printHint;
-        _renderer = PdfPageRenderer.Open(preview.PdfPath);
-        if (_renderer.PageCount < 1)
-        {
-            // Không giả làm "Trang 1 / 1" cho một tài liệu rỗng.
-            _renderer.Dispose();
-            throw new WarehouseException(WarehouseErrorKind.PreviewFailed,
-                "Bản xem trước không có trang nào — hãy xuất lại phiếu rồi xem trước lại.");
-        }
+        _tickets = tickets;
+        _ticketIndex = tickets?.StartIndex ?? 0;
+        _renderer = OpenRenderer(preview);
         _navigator = new WarehousePreviewNavigator(_renderer.PageCount);
 
         Text = $"Xem trước bản in — {Path.GetFileName(preview.WorkbookPath)}";
@@ -103,6 +118,19 @@ public sealed class FormWarehousePrintPreview : Form
         KeyDown += OnKeyDown;
     }
 
+    /// <summary>Mở PDF xem trước; không giả làm "Trang 1 / 1" cho một tài liệu rỗng.</summary>
+    private static PdfPageRenderer OpenRenderer(WarehousePrintPreview preview)
+    {
+        PdfPageRenderer renderer = PdfPageRenderer.Open(preview.PdfPath);
+        if (renderer.PageCount < 1)
+        {
+            renderer.Dispose();
+            throw new WarehouseException(WarehouseErrorKind.PreviewFailed,
+                "Bản xem trước không có trang nào — hãy xuất lại phiếu rồi xem trước lại.");
+        }
+        return renderer;
+    }
+
     #region Dựng giao diện
     private void BuildUi()
     {
@@ -111,8 +139,7 @@ public sealed class FormWarehousePrintPreview : Form
         lblTitle.ForeColor = AppTheme.Colors.TextPrimary;
         Controls.Add(lblTitle);
 
-        lblSubtitle.Text = $"{Path.GetFileName(_preview.WorkbookPath)} · sheet \"{_preview.SheetName}\" · " +
-                           "mỗi trang là đúng một trang Excel sẽ in (Excel phân trang theo máy in đã chọn).";
+        lblSubtitle.Text = SubtitleText();
         lblSubtitle.Font = AppTheme.Fonts.Hint;
         lblSubtitle.ForeColor = AppTheme.Colors.TextSecondary;
         lblSubtitle.AutoEllipsis = true;
@@ -162,14 +189,15 @@ public sealed class FormWarehousePrintPreview : Form
         Controls.Add(pnlThumbnails);
 
         BuildSidePanel();
+        BuildTicketBar();
 
         lblHint.Font = AppTheme.Fonts.Hint;
         lblHint.ForeColor = AppTheme.Colors.TextSecondary;
         lblHint.AutoEllipsis = true;
-        lblHint.Text = _printHint;
+        lblHint.Text = HintText();
         Controls.Add(lblHint);
 
-        btnPrint.Text = "IN";
+        btnPrint.Text = _tickets != null ? "IN TẤT CẢ" : "IN";
         btnPrint.Icon = IconGlyphs.Kind.Printer;
         btnPrint.Variant = ButtonVariant.Primary;
         btnPrint.Font = AppTheme.Fonts.ButtonLarge;
@@ -185,6 +213,52 @@ public sealed class FormWarehousePrintPreview : Form
         Controls.Add(btnClose);
 
         RelayoutAll();
+    }
+
+    private string SubtitleText() =>
+        $"{Path.GetFileName(_preview.WorkbookPath)} · sheet \"{_preview.SheetName}\" · " +
+        "mỗi trang là đúng một trang Excel sẽ in (Excel phân trang theo máy in đã chọn).";
+
+    private string HintText() => _tickets?.Hint() ?? _printHint;
+
+    /// <summary>Thanh chuyển phiếu (chỉ ở chế độ nhiều phiếu), góc trên bên phải.</summary>
+    private void BuildTicketBar()
+    {
+        if (_tickets == null)
+            return;
+
+        pnlTickets.FlowDirection = FlowDirection.LeftToRight;
+        pnlTickets.WrapContents = false;
+        pnlTickets.AutoSize = true;
+        pnlTickets.BackColor = AppTheme.Colors.Background;
+        Controls.Add(pnlTickets);
+
+        StyleTicketButton(btnPrevTicket, "PHIẾU TRƯỚC", IconGlyphs.Kind.ArrowLeft, () => _ = SwitchTicketAsync(_ticketIndex - 1));
+        pnlTickets.Controls.Add(btnPrevTicket);
+
+        lblTicket.Font = AppTheme.Fonts.BodyBold;
+        lblTicket.ForeColor = AppTheme.Colors.Primary;
+        lblTicket.TextAlign = ContentAlignment.MiddleCenter;
+        lblTicket.AutoEllipsis = true;
+        lblTicket.Size = new Size(230, 40);
+        lblTicket.Margin = new Padding(4, 0, 4, 0);
+        pnlTickets.Controls.Add(lblTicket);
+
+        StyleTicketButton(btnNextTicket, "PHIẾU SAU", IconGlyphs.Kind.ArrowRight, () => _ = SwitchTicketAsync(_ticketIndex + 1));
+        btnNextTicket.Variant = ButtonVariant.Primary;
+        btnNextTicket.Margin = Padding.Empty;
+        pnlTickets.Controls.Add(btnNextTicket);
+    }
+
+    private static void StyleTicketButton(RoundedButton button, string text, IconGlyphs.Kind icon, Action onClick)
+    {
+        button.Text = text;
+        button.Icon = icon;
+        button.Variant = ButtonVariant.Outline;
+        button.ContainerColor = AppTheme.Colors.Background;
+        button.Size = new Size(150, 40);
+        button.Margin = new Padding(0, 0, 6, 0);
+        button.Click += (_, _) => onClick();
     }
 
     private void BuildSidePanel()
@@ -271,7 +345,14 @@ public sealed class FormWarehousePrintPreview : Form
         int height = ClientSize.Height;
 
         lblTitle.SetBounds(pad, 12, 400, 28);
-        lblSubtitle.SetBounds(pad, 40, width - pad * 2, 18);
+        int ticketBarWidth = 0;
+        if (_tickets != null)
+        {
+            // Góc trên bên phải, ngang hàng tiêu đề — không chen vào thanh công cụ trang vốn đã kín.
+            ticketBarWidth = pnlTickets.PreferredSize.Width;
+            pnlTickets.SetBounds(width - pad - ticketBarWidth, 12, ticketBarWidth, 44);
+        }
+        lblSubtitle.SetBounds(pad, 40, Math.Max(100, width - pad * 2 - (ticketBarWidth > 0 ? ticketBarWidth + 16 : 0)), 18);
         pnlToolbar.SetBounds(pad, 66, width - pad * 2, 44);
 
         int contentTop = 118;
@@ -403,7 +484,7 @@ public sealed class FormWarehousePrintPreview : Form
     private void UpdateNavigation()
     {
         lblPage.Text = _navigator.Label;
-        bool idle = !_printing;
+        bool idle = !_printing && !_switching;
         btnFirst.Enabled = idle && _navigator.CanGoBack;
         btnPrevious.Enabled = idle && _navigator.CanGoBack;
         btnNext.Enabled = idle && _navigator.CanGoForward;
@@ -416,8 +497,15 @@ public sealed class FormWarehousePrintPreview : Form
         btnMulti.Variant = _multiPage ? ButtonVariant.Primary : ButtonVariant.Outline;
         btnSingle.Invalidate();
         btnMulti.Invalidate();
-        btnPrint.Enabled = idle && _printAction != null;
+        btnPrint.Enabled = idle && _printAction != null && (_tickets?.CanPrint() ?? true);
         btnClose.Enabled = idle;
+
+        if (_tickets != null)
+        {
+            lblTicket.Text = $"Phiếu {_ticketIndex + 1}/{_tickets.Names.Count}: {_tickets.Names[_ticketIndex]}";
+            btnPrevTicket.Enabled = idle && _ticketIndex > 0;
+            btnNextTicket.Enabled = idle && _ticketIndex < _tickets.Names.Count - 1;
+        }
 
         if (lstPages.SelectedIndex != _navigator.Current - 1 && _navigator.Current - 1 < lstPages.Items.Count)
             lstPages.SelectedIndex = _navigator.Current - 1;
@@ -431,14 +519,15 @@ public sealed class FormWarehousePrintPreview : Form
     {
         int version = ++_renderVersion;
         int pageIndex = _navigator.Current - 1;
+        PdfPageRenderer renderer = _renderer;
         Bitmap image;
         try
         {
-            image = await Task.Run(() => _renderer.Render(pageIndex, PageDpi));
+            image = await Task.Run(() => renderer.Render(pageIndex, PageDpi));
         }
-        catch (ObjectDisposedException) when (IsDisposed || Disposing)
+        catch (ObjectDisposedException) when (IsDisposed || Disposing || renderer != _renderer)
         {
-            // Cửa sổ đã đóng trong lúc đang dựng trang: không còn gì để hiển thị.
+            // Cửa sổ đã đóng / đã chuyển sang phiếu khác trong lúc đang dựng trang: không còn gì để hiển thị.
             return;
         }
         catch (WarehouseException ex)
@@ -493,10 +582,14 @@ public sealed class FormWarehousePrintPreview : Form
     /// <summary>Chế độ nhiều trang: ảnh thu nhỏ của mọi trang, bấm một trang để mở trang đó.</summary>
     private async Task BuildThumbnailsAsync()
     {
-        for (int i = 0; i < _renderer.PageCount; i++)
+        int document = _documentVersion;
+        PdfPageRenderer renderer = _renderer;
+        for (int i = 0; i < renderer.PageCount; i++)
         {
+            if (document != _documentVersion)
+                return; // đã chuyển sang phiếu khác
             int pageNumber = i + 1;
-            SizeF size = _renderer.GetPageSizePoints(i);
+            SizeF size = renderer.GetPageSizePoints(i);
             float dpi = ThumbnailWidth / (size.Width / 72f);
 
             Panel frame = new() { Padding = new Padding(3), Margin = new Padding(10), Tag = pageNumber };
@@ -532,9 +625,9 @@ public sealed class FormWarehousePrintPreview : Form
             Bitmap thumb;
             try
             {
-                thumb = await Task.Run(() => _renderer.Render(index, dpi));
+                thumb = await Task.Run(() => renderer.Render(index, dpi));
             }
-            catch (ObjectDisposedException) when (IsDisposed || Disposing)
+            catch (ObjectDisposedException) when (IsDisposed || Disposing || document != _documentVersion)
             {
                 return;
             }
@@ -546,7 +639,7 @@ public sealed class FormWarehousePrintPreview : Form
                 continue;
             }
 
-            if (IsDisposed)
+            if (IsDisposed || document != _documentVersion)
             {
                 thumb.Dispose();
                 return;
@@ -557,11 +650,18 @@ public sealed class FormWarehousePrintPreview : Form
 
     private void OnKeyDown(object? sender, KeyEventArgs e)
     {
-        if (_printing)
+        if (_printing || _switching)
             return;
 
         switch (e.KeyCode)
         {
+            // Ctrl + PageDown / PageUp: phiếu sau / phiếu trước (chế độ nhiều phiếu).
+            case Keys.PageDown when e.Control && _tickets != null:
+                _ = SwitchTicketAsync(_ticketIndex + 1);
+                break;
+            case Keys.PageUp when e.Control && _tickets != null:
+                _ = SwitchTicketAsync(_ticketIndex - 1);
+                break;
             case Keys.PageDown or Keys.Right when !e.Control:
                 Navigate(_navigator.Next());
                 break;
@@ -591,6 +691,88 @@ public sealed class FormWarehousePrintPreview : Form
     }
     #endregion
 
+    #region Chuyển phiếu
+    /// <summary>
+    /// Chuyển sang phiếu thứ <paramref name="index"/>: màn hình phiếu dựng bản xem
+    /// trước của phiếu đó (Excel → PDF) rồi cửa sổ thay tài liệu đang xem, giữ
+    /// nguyên chế độ một / nhiều trang. Không dựng được thì ở lại phiếu đang xem.
+    /// </summary>
+    private async Task SwitchTicketAsync(int index)
+    {
+        if (_tickets == null || _switching || _printing || index < 0 || index >= _tickets.Names.Count || index == _ticketIndex)
+            return;
+
+        _switching = true;
+        UseWaitCursor = true;
+        UpdateNavigation();
+        lblHint.Text = $"Đang dựng bản xem trước phiếu {_tickets.Names[index]} bằng Microsoft Excel...";
+
+        WarehousePrintPreview? next = null;
+        PdfPageRenderer? renderer = null;
+        try
+        {
+            next = await _tickets.Load(this, index);
+            if (next != null)
+                renderer = OpenRenderer(next);
+        }
+        catch (WarehouseException ex)
+        {
+            WarehouseLog.Error($"Chuyển sang phiếu {_tickets.Names[index]} trong cửa sổ xem trước", ex);
+            if (!IsDisposed)
+                MessageBox.Show(this, ex.Message, Text, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
+        finally
+        {
+            _switching = false;
+            UseWaitCursor = false;
+        }
+
+        if (IsDisposed)
+        {
+            renderer?.Dispose();
+            return;
+        }
+
+        if (renderer == null || next == null)
+        {
+            lblHint.Text = HintText();
+            UpdateNavigation();
+            return;
+        }
+
+        // Bỏ ảnh / ảnh thu nhỏ của phiếu cũ trước khi đóng tài liệu cũ.
+        _documentVersion++;
+        _renderVersion++;
+        viewPage.SetImage(null, checkerboard: false, resetView: true);
+        _pageImage?.Dispose();
+        _pageImage = null;
+        foreach ((Panel frame, PictureBox picture) in _thumbnails)
+        {
+            picture.Image?.Dispose();
+            frame.Dispose();
+        }
+        _thumbnails.Clear();
+        pnlThumbnails.Controls.Clear();
+        _renderer.Dispose();
+
+        _preview = next;
+        _renderer = renderer;
+        _navigator = new WarehousePreviewNavigator(renderer.PageCount);
+        _ticketIndex = index;
+
+        Text = $"Xem trước bản in — {Path.GetFileName(next.WorkbookPath)}";
+        lblSubtitle.Text = SubtitleText();
+        lblHint.Text = HintText();
+        FillSidePanel();
+        UpdateNavigation();
+
+        if (_multiPage)
+            _ = BuildThumbnailsAsync();
+        viewPage.ZoomFit();
+        await ShowCurrentPageAsync(resetView: true);
+    }
+    #endregion
+
     #region In
     private async Task PrintAsync()
     {
@@ -603,7 +785,9 @@ public sealed class FormWarehousePrintPreview : Form
         try
         {
             if (await _printAction(this))
-                lblHint.Text = "Đã gửi lệnh in. Có thể đóng cửa sổ xem trước.";
+                lblHint.Text = _tickets != null
+                    ? "Đã gửi lệnh in tất cả phiếu. Có thể đóng cửa sổ xem trước."
+                    : "Đã gửi lệnh in. Có thể đóng cửa sổ xem trước.";
         }
         finally
         {
@@ -615,8 +799,8 @@ public sealed class FormWarehousePrintPreview : Form
 
     protected override void OnFormClosing(FormClosingEventArgs e)
     {
-        // Đang gửi lệnh in qua Excel: chờ xong (có giới hạn thời gian) rồi mới đóng.
-        if (_printing)
+        // Đang gửi lệnh in / dựng phiếu khác qua Excel: chờ xong (có giới hạn thời gian) rồi mới đóng.
+        if (_printing || _switching)
             e.Cancel = true;
         base.OnFormClosing(e);
     }
@@ -626,6 +810,7 @@ public sealed class FormWarehousePrintPreview : Form
         if (disposing)
         {
             _renderVersion++;
+            _documentVersion++;
             viewPage.SetImage(null, checkerboard: false, resetView: true);
             _pageImage?.Dispose();
             foreach ((_, PictureBox picture) in _thumbnails)
@@ -636,4 +821,26 @@ public sealed class FormWarehousePrintPreview : Form
         base.Dispose(disposing);
     }
     #endregion
+}
+
+/// <summary>
+/// Chế độ nhiều phiếu của cửa sổ xem trước: danh sách phiếu và cách dựng bản
+/// xem trước của một phiếu (màn hình phiếu thực hiện, kể cả ghi nhận "đã xem").
+/// </summary>
+public sealed class WarehousePreviewTickets
+{
+    /// <summary>Tên hiển thị từng phiếu (vd "XK023512 · BÌNH TÂN THÙNG 2").</summary>
+    public required IReadOnlyList<string> Names { get; init; }
+
+    /// <summary>Phiếu đang mở khi cửa sổ hiện ra.</summary>
+    public required int StartIndex { get; init; }
+
+    /// <summary>Dựng bản xem trước của phiếu thứ i; null = không dựng được (đã báo lỗi cho người dùng).</summary>
+    public required Func<IWin32Window, int, Task<WarehousePrintPreview?>> Load { get; init; }
+
+    /// <summary>Đã xem trước đủ mọi phiếu (bản hiện hành) — nút IN TẤT CẢ mới bật.</summary>
+    public required Func<bool> CanPrint { get; init; }
+
+    /// <summary>Dòng hướng dẫn cuối cửa sổ (vd "Đã xem 2/4 phiếu...").</summary>
+    public required Func<string> Hint { get; init; }
 }
