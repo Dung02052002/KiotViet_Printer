@@ -1,7 +1,7 @@
 ﻿[Setup]
 AppId={{8E1A7C3D-2D91-4E37-8B54-123456789ABC}
 AppName=In Tem KiotViet
-AppVersion=2.1.0
+AppVersion=2.2.0
 AppPublisher=Dung Store
 
 ; Người dùng tự chọn thư mục cài. App ghi config/data/logs cạnh file .exe nên
@@ -15,7 +15,7 @@ ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 
 OutputDir=installer_output
-OutputBaseFilename=InTemKiotViet_V2.1.0_Setup
+OutputBaseFilename=InTemKiotViet_V2.2.0_Setup
 
 Compression=lzma
 SolidCompression=yes
