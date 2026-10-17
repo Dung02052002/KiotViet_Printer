@@ -48,7 +48,9 @@ public sealed class BackgroundRemovalService : IDisposable
     // nào bắt được. Vì vậy chỉ giải phóng session khi không còn ảnh nào chạy;
     // Dispose giữa chừng được hoãn tới lúc ảnh cuối cùng chạy xong.
     private int _activeRuns;
-    private bool _disposeRequested;
+
+    // volatile: Dispose đặt cờ mà không cần giữ _sessionLock (xem Dispose).
+    private volatile bool _disposeRequested;
 
     public string ModelCacheDir => _store.CacheDir;
 
@@ -83,29 +85,39 @@ public sealed class BackgroundRemovalService : IDisposable
         {
             ObjectDisposedException.ThrowIf(_disposeRequested, this);
 
-            if (_loadedDevice != device)
+            try
             {
-                if (_activeRuns > 0)
-                    throw new InvalidOperationException(
-                        "Đang xử lý ảnh — chờ xong (hoặc bấm Dừng) rồi mới đổi CPU/GPU.");
-                DisposeSessions();
-                _loadedDevice = device;
+                if (_loadedDevice != device)
+                {
+                    if (_activeRuns > 0)
+                        throw new InvalidOperationException(
+                            "Đang xử lý ảnh — chờ xong (hoặc bấm Dừng) rồi mới đổi CPU/GPU.");
+                    DisposeSessions();
+                    _loadedDevice = device;
+                }
+
+                BgModelId segId = _store.IsAvailable(BgModelId.BiRefNetLite)
+                    ? BgModelId.BiRefNetLite
+                    : BgModelId.IsNetGeneral;
+
+                LoadSession(segId, device);
+                _segmentationModel = segId;
+                ActiveProviderDescription = _sessions[segId].ProviderDescription;
+
+                if (mode.NeedsMattingModel())
+                {
+                    if (!_store.IsAvailable(BgModelId.BiRefNetMatting))
+                        throw new FileNotFoundException(
+                            "Mode Tối đa cần model BiRefNet-matting nhưng chưa tải về.");
+                    LoadSession(BgModelId.BiRefNetMatting, device);
+                }
             }
-
-            BgModelId segId = _store.IsAvailable(BgModelId.BiRefNetLite)
-                ? BgModelId.BiRefNetLite
-                : BgModelId.IsNetGeneral;
-
-            LoadSession(segId, device);
-            _segmentationModel = segId;
-            ActiveProviderDescription = _sessions[segId].ProviderDescription;
-
-            if (mode.NeedsMattingModel())
+            finally
             {
-                if (!_store.IsAvailable(BgModelId.BiRefNetMatting))
-                    throw new FileNotFoundException(
-                        "Mode Tối đa cần model BiRefNet-matting nhưng chưa tải về.");
-                LoadSession(BgModelId.BiRefNetMatting, device);
+                // Dispose() được gọi trong lúc đang nạp model (không lấy được
+                // khoá nên đã bỏ qua) — dọn thay nó ngay khi nạp xong.
+                if (_disposeRequested && _activeRuns == 0)
+                    DisposeSessions();
             }
         }
     }
@@ -214,13 +226,28 @@ public sealed class BackgroundRemovalService : IDisposable
         _segmentationModel = null;
     }
 
+    // Dispose chạy trên UI thread khi đóng app (FormMain dispose cascade xuống
+    // BackgroundRemoverView). KHÔNG được chờ _sessionLock: EnsureLoaded giữ
+    // khoá suốt lúc nạp model (~1 GB, DirectML có thể mất hàng chục giây hoặc
+    // treo hẳn với driver GPU lỗi). Chờ ở đây = cửa sổ đã đóng nhưng tiến
+    // trình vẫn sống (Background processes) và giữ mutex chặn lần mở sau.
+    // Không lấy được khoá thì luồng đang giữ khoá tự dọn khi nhả (xem
+    // EnsureLoaded / ProcessCore) — tiến trình thoát cũng giải phóng luôn.
     public void Dispose()
     {
-        lock (_sessionLock)
+        _disposeRequested = true;
+
+        if (!Monitor.TryEnter(_sessionLock))
+            return;
+
+        try
         {
-            _disposeRequested = true;
             if (_activeRuns == 0)
                 DisposeSessions();
+        }
+        finally
+        {
+            Monitor.Exit(_sessionLock);
         }
     }
 }

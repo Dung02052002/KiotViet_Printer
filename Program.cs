@@ -1,4 +1,5 @@
-﻿using System.Runtime.InteropServices;
+﻿using System.Diagnostics;
+using System.Runtime.InteropServices;
 using KiotVietLabelPrinter.Forms;
 using KiotVietLabelPrinter.Infrastructure.BarTender;
 using KiotVietLabelPrinter.Infrastructure.Diagnostics;
@@ -13,6 +14,20 @@ internal static class Program
     private static extern bool AttachConsole(int dwProcessId);
 
     private const int AttachParentProcess = -1;
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool SetForegroundWindow(IntPtr hWnd);
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool IsIconic(IntPtr hWnd);
+
+    private const int SwRestore = 9;
 
     [STAThread]
     static int Main(string[] args)
@@ -35,28 +50,53 @@ internal static class Program
             return BarTenderSelfTest.Run();
         }
 
+        StartupLog.Begin();
+        StartupLog.Stage("Main");
+
         // Ten mutex phai khop voi AppMutex trong installer.iss de Inno Setup
         // co the phat hien va dong app dang chay truoc khi cai/ghi de.
         using var mutex = new Mutex(true, "KiotVietLabelPrinterProV2Mutex", out bool isNewInstance);
 
+        ApplicationConfiguration.Initialize();
+
         if (!isNewInstance)
         {
-            MessageBox.Show("Ung dung dang chay roi.", "In Tem KiotViet",
-                MessageBoxButtons.OK, MessageBoxIcon.Information);
+            HandleSecondInstance();
             return 0;
         }
 
-        ApplicationConfiguration.Initialize();
+        StartupLog.Stage("Đã giữ single-instance mutex");
         InstallGlobalErrorHandlers();
 
-        ConfigService.Instance.Load();
+        // Chỉ ghi log, không can thiệp: nếu sau 30 giây cửa sổ chính vẫn chưa
+        // hiện, log ghi lại giai đoạn đang kẹt (nạp cấu hình, dựng FormMain...).
+        StartupLog.WatchForStall(TimeSpan.FromSeconds(30));
 
-        if (ConfigService.Instance.LoadWarning is string configWarning)
+        // Lỗi trước khi message loop chạy (đọc cấu hình, dựng FormMain) không
+        // đi qua Application.ThreadException: trước đây nó làm tiến trình sập
+        // qua Windows Error Reporting mà không có thông báo dễ hiểu nào. Giờ
+        // ghi log + báo lỗi + thoát hẳn, không để tiến trình chạy nền vô ích.
+        try
         {
-            MessageBox.Show(configWarning, "Cấu hình",
-                MessageBoxButtons.OK, MessageBoxIcon.Warning);
-            ConfigService.Instance.ClearLoadWarning();
+            RunApplication();
+            return 0;
         }
+        catch (Exception ex)
+        {
+            LogUnhandled($"STARTUP (giai đoạn: {StartupLog.LastStage})", ex);
+            MessageBox.Show(
+                "Không khởi động được phần mềm.\n\n" +
+                $"Chi tiết: {ex.Message}\n\n" +
+                $"Nhật ký khởi động: {StartupLog.FilePath ?? "(không ghi được)"}",
+                "In Tem KiotViet", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            return 1;
+        }
+    }
+
+    private static void RunApplication()
+    {
+        StartupLog.Stage("Nạp cấu hình");
+        ConfigService.Instance.Load();
 
         // Ghi log khởi động: version + đường dẫn .exe thật + BaseDirectory —
         // để xác nhận một máy đang chạy ĐÚNG build (không phải bản .exe cũ ở
@@ -66,9 +106,112 @@ internal static class Program
             $"Configured print : {ConfigService.Instance.Config.PrinterName}" + Environment.NewLine +
             $"XmlScript cache  : {BarTenderCapabilityService.Instance.XmlScriptSupported?.ToString() ?? "chưa biết"}");
 
-        Application.Run(new FormMain());
-        return 0;
+        // Không mở hộp thoại nào trước Application.Run: cảnh báo cấu hình
+        // (ConfigService.LoadWarning) và việc hỏi cấu hình lần đầu do FormMain
+        // hiển thị SAU khi cửa sổ chính đã hiện — xem FormMain.OnShown.
+        StartupLog.Stage("Tạo FormMain");
+        using FormMain form = new();
+
+        StartupLog.Stage("Application.Run");
+        Application.Run(form);
+        StartupLog.Stage("Message loop kết thúc");
     }
+
+    /// <summary>
+    /// Một instance khác đang giữ mutex. Trước đây chỉ báo "Ung dung dang chay
+    /// roi" rồi thoát — nếu instance cũ đang kẹt KHÔNG có cửa sổ (nằm trong
+    /// Background processes) thì người dùng không mở được app và không biết
+    /// phải tắt tiến trình nào. Giờ: có cửa sổ thì đưa nó lên trước; không có
+    /// thì báo rõ PID để người dùng tự kết thúc. Không bao giờ tự kill tiến
+    /// trình khác.
+    /// </summary>
+    private static void HandleSecondInstance()
+    {
+        StartupLog.Stage("Mutex đã bị instance khác giữ");
+
+        Process[] others = FindOtherInstances();
+        try
+        {
+            foreach (Process other in others)
+            {
+                if (TryActivateMainWindow(other))
+                {
+                    StartupLog.Stage($"Đã đưa cửa sổ của instance PID={other.Id} lên trước — thoát");
+                    return;
+                }
+            }
+
+            StartupLog.Stage("Instance đang chạy không có cửa sổ: " + DescribeProcesses(others));
+
+            string details = others.Length == 0
+                ? "Phần mềm đang chạy hoặc đang đóng. Vui lòng đợi vài giây rồi mở lại."
+                : $"Phần mềm đã đang chạy (PID {string.Join(", ", others.Select(p => p.Id))}) nhưng không có cửa sổ " +
+                  "nào hiển thị — có thể tiến trình đó đang bị treo.\n\n" +
+                  "Mở Task Manager → tab Details, tìm đúng PID ở trên, chọn End task rồi mở lại phần mềm.";
+
+            MessageBox.Show(
+                details + $"\n\nNhật ký khởi động: {StartupLog.FilePath ?? "(không ghi được)"}",
+                "In Tem KiotViet", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+        finally
+        {
+            foreach (Process other in others)
+                other.Dispose();
+        }
+    }
+
+    // Lọc theo tên tiến trình (= tên .exe), KHÔNG lọc theo đường dẫn: một bản
+    // chép ở thư mục khác vẫn giữ CÙNG tên mutex nên cũng chặn instance mới —
+    // phải liệt kê được nó thì người dùng mới biết tắt tiến trình nào.
+    private static Process[] FindOtherInstances()
+    {
+        using Process current = Process.GetCurrentProcess();
+        List<Process> others = new();
+
+        foreach (Process process in Process.GetProcessesByName(current.ProcessName))
+        {
+            if (process.Id == current.Id)
+                process.Dispose();
+            else
+                others.Add(process);
+        }
+
+        return others.ToArray();
+    }
+
+    private static bool TryActivateMainWindow(Process process)
+    {
+        try
+        {
+            IntPtr hwnd = process.MainWindowHandle;
+            if (hwnd == IntPtr.Zero)
+                return false;
+
+            if (IsIconic(hwnd))
+                ShowWindow(hwnd, SwRestore);
+
+            SetForegroundWindow(hwnd);
+            return true;
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or System.ComponentModel.Win32Exception)
+        {
+            // Tiến trình vừa thoát / thuộc phiên người dùng khác — coi như không có cửa sổ.
+            return false;
+        }
+    }
+
+    private static string DescribeProcesses(IEnumerable<Process> processes) =>
+        string.Join("; ", processes.Select(p =>
+        {
+            try
+            {
+                return $"PID={p.Id} start={p.StartTime:yyyy-MM-dd HH:mm:ss} responding={p.Responding} path={p.MainModule?.FileName}";
+            }
+            catch (Exception ex) when (ex is InvalidOperationException or System.ComponentModel.Win32Exception or NotSupportedException)
+            {
+                return $"PID={p.Id} (không đọc được chi tiết: {ex.Message})";
+            }
+        }));
 
     // Lưới an toàn cuối cùng: lỗi không lường trước ở bất kỳ event handler /
     // async void nào được ghi log và báo bằng thông báo dễ hiểu — thay vì hộp
@@ -104,6 +247,10 @@ internal static class Program
 
     private static void LogUnhandled(string source, Exception? ex)
     {
+        // Ghi cả vào log khởi động ở %LOCALAPPDATA%: logs\ cạnh .exe có thể
+        // không ghi được (app nằm trong Program Files / thư mục bị khoá).
+        StartupLog.Error($"UNHANDLED {source}", ex);
+
         try
         {
             string folder = Path.Combine(AppContext.BaseDirectory, "logs");

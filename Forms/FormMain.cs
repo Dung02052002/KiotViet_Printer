@@ -103,7 +103,6 @@ public class FormMain : Form
         AppTheme.StyleForm(this);
 
         BuildUi();
-        CheckConfigOnStart();
         ShowHome();
 
         // pnlBack anchors to the right edge and the header paints its own soft
@@ -1383,28 +1382,70 @@ public class FormMain : Form
         base.OnFormClosing(e);
     }
 
-    private void CheckConfigOnStart()
+    protected override void OnLoad(EventArgs e)
     {
-        if (!ConfigService.Instance.IsConfigured())
-        {
-            MessageBox.Show("Phần mềm chưa được cấu hình đầy đủ. Vui lòng kiểm tra cấu hình trước khi sử dụng.");
+        StartupLog.Stage("FormMain.Load");
+        base.OnLoad(e);
+    }
 
-            // Lỗi mở form cấu hình không được chặn app mở lên, nhưng phải báo
-            // (trước đây bị nuốt im lặng → người dùng vào app chưa cấu hình mà
-            // không biết vì sao).
-            try
-            {
-                using FormConfig formConfig = new();
-                formConfig.ShowDialog();
-            }
-            catch (Exception ex)
-            {
-                PrintDiagnosticsLog.Write($"CONFIG form failed on start: {ex}");
-                MessageBox.Show($"Không mở được màn hình cấu hình:\n{ex.Message}\n\n" +
-                                "Bạn có thể mở lại bằng nút Cấu hình trong màn hình in tem.",
-                    "Cấu hình", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-            }
+    // Các hộp thoại lúc khởi động (cảnh báo cấu hình, hỏi cấu hình lần đầu)
+    // trước đây được mở ngay trong constructor / trước Application.Run — khi
+    // cửa sổ chính CHƯA tồn tại. Lúc đó tiến trình chỉ có một hộp thoại không
+    // chủ sở hữu: nếu nó không giành được foreground (bị cửa sổ khác che) hoặc
+    // FormConfig kẹt lúc liệt kê máy in (PrinterSettings.InstalledPrinters gọi
+    // spooler đồng bộ) thì người dùng không thấy cửa sổ nào, tiến trình nằm
+    // trong Background processes và giữ mutex chặn mọi lần mở lại. Giờ chúng
+    // chỉ hiện SAU khi cửa sổ chính đã hiển thị, và luôn có owner là FormMain.
+    protected override void OnShown(EventArgs e)
+    {
+        base.OnShown(e);
+        StartupLog.MarkUiReady();
+
+        if (ConfigService.Instance.LoadWarning is string configWarning)
+        {
+            MessageBox.Show(this, configWarning, "Cấu hình", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            ConfigService.Instance.ClearLoadWarning();
         }
+
+        if (CheckConfigOnStart())
+            ShowHome(); // danh mục tem có thể vừa được thêm / bật trong Cấu hình
+    }
+
+    protected override void OnFormClosed(FormClosedEventArgs e)
+    {
+        StartupLog.Stage($"FormMain đóng ({e.CloseReason})");
+        base.OnFormClosed(e);
+    }
+
+    /// <returns>true nếu đã mở màn hình Cấu hình.</returns>
+    private bool CheckConfigOnStart()
+    {
+        if (ConfigService.Instance.IsConfigured())
+            return false;
+
+        MessageBox.Show(this, "Phần mềm chưa được cấu hình đầy đủ. Vui lòng kiểm tra cấu hình trước khi sử dụng.",
+            "Cấu hình", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+        // Lỗi mở form cấu hình không được chặn app mở lên, nhưng phải báo
+        // (trước đây bị nuốt im lặng → người dùng vào app chưa cấu hình mà
+        // không biết vì sao).
+        StartupLog.Stage("Mở Cấu hình lần đầu");
+        try
+        {
+            using FormConfig formConfig = new();
+            formConfig.ShowDialog(this);
+        }
+        catch (Exception ex)
+        {
+            StartupLog.Error("Mở Cấu hình lần đầu", ex);
+            PrintDiagnosticsLog.Write($"CONFIG form failed on start: {ex}");
+            MessageBox.Show(this, $"Không mở được màn hình cấu hình:\n{ex.Message}\n\n" +
+                                  "Bạn có thể mở lại bằng nút Cấu hình trong màn hình in tem.",
+                "Cấu hình", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
+
+        StartupLog.Stage("Đóng Cấu hình lần đầu");
+        return true;
     }
 
     private void BtnChooseExcel_Click(object? sender, EventArgs e)
