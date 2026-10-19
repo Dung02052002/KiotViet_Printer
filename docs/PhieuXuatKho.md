@@ -38,7 +38,7 @@ Màn hình chính → mục **CÔNG CỤ** → card **Phiếu xuất kho**.
 7. **KIỂM TRA DỮ LIỆU** → **XUẤT PHIẾU EXCEL**. File đã tồn tại thì luôn hỏi
    trước khi ghi đè. Sau khi ghi, file được mở lại và đối chiếu với mẫu; thông
    báo liệt kê những gì đã kiểm tra.
-8. **XEM TRƯỚC BẢN IN** (cần Microsoft Excel): xem từng trang đúng như sẽ in —
+8. *(Tùy chọn — có thể bỏ qua, in thẳng ở bước 9)* **XEM TRƯỚC BẢN IN** (cần Microsoft Excel): xem từng trang đúng như sẽ in —
    TRANG ĐẦU / TRANG TRƯỚC / TRANG SAU / TRANG CUỐI, "Trang X / Y", phóng to /
    thu nhỏ (Ctrl + lăn chuột, nút − / +, VỪA TRANG, 100% = đúng cỡ tờ giấy), xem
    MỘT TRANG hoặc NHIỀU TRANG. Bên phải: khổ giấy (trong file và thực tế), hướng,
@@ -46,7 +46,8 @@ Màn hình chính → mục **CÔNG CỤ** → card **Phiếu xuất kho**.
    cảnh báo bố cục (bấm một cảnh báo để mở trang liên quan). Có thể bấm **IN**
    ngay trong cửa sổ này.
 9. Chọn **MÁY IN PHIẾU** rồi bấm **IN PHIẾU** (hoặc IN trong cửa sổ xem trước).
-   Luôn hỏi xác nhận trước khi in.
+   Luôn hỏi xác nhận trước khi in. Không bắt buộc xem trước: chưa xem thì hộp
+   xác nhận chỉ nhắc, vẫn in được.
 
 Dữ liệu, font hoặc thiết lập in đổi sau khi xuất → bản đã xuất bị coi là **cũ**:
 XEM TRƯỚC BẢN IN và IN PHIẾU bị khóa tới khi xuất lại. File kết quả bị sửa / ghi
@@ -76,9 +77,10 @@ chuyển sang chế độ nhiều phiếu:
   **PHIẾU TRƯỚC / PHIẾU SAU** (góc trên bên phải, hoặc Ctrl + PageUp / PageDown)
   để xem lần lượt mọi phiếu mà không phải đóng cửa sổ. Phiếu nào đã hiện trong
   cửa sổ thì được tính là đã xem trước.
-- Nút in của cửa sổ xem trước là **IN TẤT CẢ**, chỉ bật khi đã xem đủ mọi phiếu.
-  **IN PHIẾU** ở màn hình chính cũng in tất cả phiếu với cùng điều kiện: **mọi
-  phiếu đã được xem trước** bản in (bản hiện hành). Sửa dữ liệu một phiếu chỉ bắt xuất / xem trước lại phiếu đó;
+- Nút in của cửa sổ xem trước là **IN TẤT CẢ**, bật ngay khi máy in hợp lệ —
+  **không** cần xem đủ mọi phiếu. **IN PHIẾU** ở màn hình chính cũng in tất cả
+  phiếu, chỉ cần **mọi phiếu là bản xuất hiện hành**; phiếu nào chưa xem trước
+  được liệt kê trong hộp xác nhận để nhắc. Sửa dữ liệu một phiếu chỉ bắt xuất lại phiếu đó;
   đổi ngày, font, thiết lập in, tiền tố, thư mục thì phải xuất lại tất cả.
 - Dòng thiếu mã chuyển hàng được gom thành một phiếu lỗi riêng ở cuối danh sách
   và chặn xuất.

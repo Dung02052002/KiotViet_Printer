@@ -1223,9 +1223,13 @@ public class WarehouseExportView : UserControl
         return code.IsValid ? code.Code! : ticket.TransferCode.Length > 0 ? ticket.TransferCode : "thiếu mã chuyển hàng";
     }
 
-    /// <summary>Phiếu đầu tiên đã xuất (bản hiện hành) mà chưa được xem trước bản in.</summary>
-    private WarehouseBatchTicket? NextUnpreviewedTicket() =>
-        _batch?.FirstOrDefault(t => !(t.Export.Check() == WarehouseExportState.Current && t.Export.WasPreviewed));
+    /// <summary>
+    /// Các phiếu (chế độ nhiều phiếu) chưa được xem trước bản in ở bản xuất hiện
+    /// hành. Xem trước KHÔNG bắt buộc — danh sách này chỉ dùng để nhắc người
+    /// dùng (hộp xác nhận in, dòng hướng dẫn), không dùng để chặn in.
+    /// </summary>
+    private List<WarehouseBatchTicket> UnpreviewedTickets() =>
+        _batch?.Where(t => !(t.Export.Check() == WarehouseExportState.Current && t.Export.WasPreviewed)).ToList() ?? [];
     #endregion
 
     #region Ngày lập phiếu
@@ -2092,7 +2096,7 @@ public class WarehouseExportView : UserControl
         if (failed.Count > 0)
             message += "\n\nKHÔNG XUẤT ĐƯỢC:\n" + string.Join("\n", failed.Select(f => "  ✗ " + f));
         if (done.Count > 0)
-            message += "\n\nBước tiếp theo: XEM TRƯỚC BẢN IN — phải xem trước đủ tất cả phiếu rồi mới in được.";
+            message += "\n\nBước tiếp theo: bấm IN PHIẾU để in tất cả phiếu, hoặc XEM TRƯỚC BẢN IN để kiểm tra từng trang trước (không bắt buộc).";
         MessageBox.Show(message, Title, MessageBoxButtons.OK, failed.Count > 0 ? MessageBoxIcon.Warning : MessageBoxIcon.Information);
     }
 
@@ -2198,7 +2202,7 @@ public class WarehouseExportView : UserControl
             MessageBox.Show(
                 $"Đã xuất phiếu {code} ({result.RowCount} dòng hàng):\n{result.OutputPath}\n\n" +
                 "Đã mở lại file và kiểm tra:\n" + string.Join("\n", result.VerifiedChecks.Select(c => "  ✓ " + c)) +
-                "\n\nBước tiếp theo: XEM TRƯỚC BẢN IN để kiểm tra từng trang trước khi in.",
+                "\n\nBước tiếp theo: bấm IN PHIẾU để in, hoặc XEM TRƯỚC BẢN IN để kiểm tra từng trang trước (không bắt buộc).",
                 Title, MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
     }
@@ -2229,7 +2233,9 @@ public class WarehouseExportView : UserControl
     /// Xem trước bản in: Excel xuất chính file phiếu ra PDF (phân trang theo
     /// máy in đã chọn) rồi mở cửa sổ xem từng trang. In từ cửa sổ này dùng
     /// đúng file đã xem. Chế độ nhiều phiếu: chuyển phiếu ngay trong cửa sổ
-    /// (PHIẾU TRƯỚC / PHIẾU SAU) và IN TẤT CẢ bật khi đã xem đủ mọi phiếu.
+    /// (PHIẾU TRƯỚC / PHIẾU SAU); IN TẤT CẢ bật ngay khi máy in hợp lệ.
+    /// Xem trước là bước TÙY CHỌN: không xem vẫn in được bằng nút IN PHIẾU
+    /// (xem <see cref="PrintAsync"/>).
     /// </summary>
     private async Task PrintPreviewAsync()
     {
@@ -2259,16 +2265,15 @@ public class WarehouseExportView : UserControl
                         pdfs.Add(next.PdfPath);
                     return next;
                 },
-                CanPrint = () => printerOk && NextUnpreviewedTicket() == null,
-                Hint = () => !printerOk
-                    ? "Chưa chọn máy in hợp lệ nên chưa in được — đang phân trang theo máy in mặc định của Excel. Chọn máy in ở màn hình phiếu rồi xem trước lại."
-                    : BatchPreviewHint(printer)
+                // Không đòi xem đủ mọi phiếu: chỉ cần máy in hợp lệ (PrintBatchAsync vẫn kiểm tra bản xuất hiện hành).
+                CanPrint = () => printerOk,
+                Hint = () => printerOk ? BatchPreviewHint(printer) : NoPrinterHint
             };
         }
 
-        string hint = !printerOk
-            ? "Chưa chọn máy in hợp lệ nên chưa in được — đang phân trang theo máy in mặc định của Excel. Chọn máy in ở màn hình phiếu rồi xem trước lại."
-            : $"Bấm IN để in {preview.RenderedPageCount} trang ra máy in: {printer}";
+        string hint = printerOk
+            ? $"Bấm IN để in {preview.RenderedPageCount} trang ra máy in: {printer}"
+            : NoPrinterHint;
         try
         {
             // Nhiều phiếu: nút in của cửa sổ là IN TẤT CẢ (PrintAsync chuyển sang PrintBatchAsync, vẫn kiểm tra đủ điều kiện).
@@ -2291,13 +2296,18 @@ public class WarehouseExportView : UserControl
         }
     }
 
+    /// <summary>Dòng hướng dẫn của cửa sổ xem trước khi máy in phiếu chưa hợp lệ (nút IN bị tắt).</summary>
+    private const string NoPrinterHint =
+        "Chưa chọn máy in hợp lệ nên chưa in được — đang phân trang theo máy in mặc định của Excel. Chọn máy in ở màn hình phiếu rồi xem trước lại.";
+
+    /// <summary>Dòng hướng dẫn của cửa sổ xem trước ở chế độ nhiều phiếu: đã xem bao nhiêu phiếu, IN TẤT CẢ in những gì.</summary>
     private string BatchPreviewHint(string printer)
     {
-        List<WarehouseBatchTicket> batch = _batch!;
-        int previewed = batch.Count(t => t.Export.Check() == WarehouseExportState.Current && t.Export.WasPreviewed);
-        return previewed == batch.Count
-            ? $"Đã xem trước đủ {batch.Count} phiếu — bấm IN TẤT CẢ để in ra máy in: {printer}"
-            : $"Đã xem {previewed}/{batch.Count} phiếu — bấm PHIẾU SAU (Ctrl + PageDown) để xem tiếp; xem đủ tất cả mới in được.";
+        int total = _batch!.Count;
+        int previewed = total - UnpreviewedTickets().Count;
+        return previewed == total
+            ? $"Đã xem trước đủ {total} phiếu — bấm IN TẤT CẢ để in ra máy in: {printer}"
+            : $"Đã xem {previewed}/{total} phiếu — bấm PHIẾU SAU (Ctrl + PageDown) để xem tiếp, hoặc IN TẤT CẢ để in luôn {total} phiếu ra: {printer}";
     }
 
     /// <summary>
@@ -2378,7 +2388,9 @@ public class WarehouseExportView : UserControl
     /// <summary>
     /// In file phiếu mới nhất ra máy in đã chọn sau khi người dùng xác nhận.
     /// <paramref name="preview"/> != null: in từ cửa sổ xem trước — file phải
-    /// đúng là bản vừa xem. Trả về true nếu đã gửi lệnh in.
+    /// đúng là bản vừa xem. <paramref name="preview"/> == null: in thẳng từ
+    /// màn hình, KHÔNG cần xem trước (chưa xem thì chỉ nhắc trong hộp xác nhận).
+    /// Trả về true nếu đã gửi lệnh in.
     /// </summary>
     private async Task<bool> PrintAsync(IWin32Window? owner, WarehousePrintPreview? preview)
     {
@@ -2419,8 +2431,9 @@ public class WarehouseExportView : UserControl
         WarehouseExportResult export = CurrentExport.Last!;
         string file = export.OutputPath;
         string pages = preview != null ? $" ({preview.RenderedPageCount} trang)" : "";
+        // Chưa xem trước: chỉ nhắc (không chặn) — người dùng tự quyết in luôn hay xem trước.
         string notPreviewed = preview == null && !CurrentExport.WasPreviewed
-            ? "\n\nChưa xem trước bản in của file này — nên bấm XEM TRƯỚC BẢN IN để kiểm tra từng trang trước."
+            ? "\n\n(Chưa xem trước bản in — có thể bấm Không rồi XEM TRƯỚC BẢN IN nếu muốn kiểm tra từng trang trước.)"
             : "";
         if (MessageBox.Show(owner, $"In phiếu {Path.GetFileName(file)}{pages} ra máy in:\n{printer}?{notPreviewed}", Title,
                 MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button2) != DialogResult.Yes)
@@ -2454,23 +2467,22 @@ public class WarehouseExportView : UserControl
 
     /// <summary>
     /// Chế độ nhiều phiếu: in TẤT CẢ phiếu, chỉ khi mọi phiếu đã xuất (bản hiện
-    /// hành) VÀ đã được xem trước bản in. Hỏi xác nhận một lần, in lần lượt;
-    /// một phiếu in lỗi thì dừng (thường do máy in) và báo phiếu nào đã gửi.
+    /// hành). Xem trước bản in KHÔNG bắt buộc — phiếu nào chưa xem chỉ được liệt
+    /// kê trong hộp xác nhận. Hỏi xác nhận một lần, in lần lượt; một phiếu in
+    /// lỗi thì dừng (thường do máy in) và báo phiếu nào đã gửi.
     /// </summary>
     private async Task<bool> PrintBatchAsync(IWin32Window? owner)
     {
         List<WarehouseBatchTicket> batch = _batch!;
         RefreshBatchItems();
 
+        // Điều kiện BẮT BUỘC duy nhất về dữ liệu: mọi phiếu là bản xuất hiện hành (in đúng dữ liệu đang thấy).
         List<string> notReady = new();
-        List<string> notPreviewed = new();
         foreach (WarehouseBatchTicket ticket in batch)
         {
             WarehouseExportState state = ticket.Export.Check();
             if (state != WarehouseExportState.Current)
                 notReady.Add($"  • {TicketTag(ticket)}: {ticket.Export.Describe(state).Split('\n')[0]}");
-            else if (!ticket.Export.WasPreviewed)
-                notPreviewed.Add("  • " + TicketTag(ticket));
         }
 
         if (notReady.Count > 0)
@@ -2479,14 +2491,6 @@ public class WarehouseExportView : UserControl
                                    "Hãy bấm XUẤT PHIẾU EXCEL (xuất lại tất cả phiếu).",
                 Title, MessageBoxButtons.OK, MessageBoxIcon.Information);
             UpdateState();
-            return false;
-        }
-
-        if (notPreviewed.Count > 0)
-        {
-            MessageBox.Show(owner, $"Phải xem trước bản in TẤT CẢ phiếu trước khi in. Còn {notPreviewed.Count} phiếu chưa xem:\n" +
-                                   $"{string.Join("\n", notPreviewed)}\n\nBấm XEM TRƯỚC BẢN IN để xem tiếp.",
-                Title, MessageBoxButtons.OK, MessageBoxIcon.Information);
             return false;
         }
 
@@ -2502,8 +2506,14 @@ public class WarehouseExportView : UserControl
             return false;
         }
 
+        // Phiếu chưa xem trước: chỉ nhắc trong hộp xác nhận, người dùng tự quyết in luôn hay xem trước.
+        List<WarehouseBatchTicket> unpreviewed = UnpreviewedTickets();
+        string notPreviewed = unpreviewed.Count > 0
+            ? $"\n\n(Có {unpreviewed.Count}/{batch.Count} phiếu chưa xem trước bản in: {string.Join(", ", unpreviewed.Select(TicketTag))} — " +
+              "có thể bấm Không rồi XEM TRƯỚC BẢN IN nếu muốn kiểm tra trước.)"
+            : "";
         if (MessageBox.Show(owner, $"In {batch.Count} phiếu ra máy in:\n{printer}?\n\n" +
-                                   string.Join("\n", batch.Select(t => "  • " + Path.GetFileName(t.Export.Last!.OutputPath))),
+                                   string.Join("\n", batch.Select(t => "  • " + Path.GetFileName(t.Export.Last!.OutputPath))) + notPreviewed,
                 Title, MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button2) != DialogResult.Yes)
             return false;
 
@@ -2725,14 +2735,12 @@ public class WarehouseExportView : UserControl
             : BatchMode ? (batchExported == 0
                     ? (batchErrorTickets > 0 ? $"Trạng thái: {batchErrorTickets} phiếu còn dòng lỗi." : "Trạng thái: sẵn sàng xuất tất cả phiếu.",
                         batchErrorTickets > 0 ? AppTheme.Colors.Danger : AppTheme.Colors.TextSecondary)
-                    : batchAllExported && batchPreviewed == batch.Count
-                        ? ($"Trạng thái: đã xuất và xem trước đủ {batch.Count} phiếu — có thể in tất cả.", AppTheme.Colors.Success)
-                        : batchAllExported
-                            ? ($"Trạng thái: đã xuất {batch.Count} phiếu, đã xem trước {batchPreviewed}/{batch.Count} — xem trước đủ rồi mới in.", WarningText)
-                            : ($"Trạng thái: mới có {batchExported}/{batch.Count} phiếu là bản xuất hiện hành — cần xuất lại.", WarningText))
+                    : batchAllExported
+                        ? ($"Trạng thái: đã xuất {batch.Count} phiếu (đã xem trước {batchPreviewed}/{batch.Count}) — có thể in tất cả.", AppTheme.Colors.Success)
+                        : ($"Trạng thái: mới có {batchExported}/{batch.Count} phiếu là bản xuất hiện hành — cần xuất lại.", WarningText))
             : _document == null ? ("Trạng thái: chưa có dữ liệu.", AppTheme.Colors.TextSecondary)
             : exported ? ($"Trạng thái: đã xuất {Path.GetFileName(CurrentExport.Last!.OutputPath)}" +
-                          (CurrentExport.WasPreviewed ? " — đã xem trước, có thể in." : " — xem trước bản in rồi in."), AppTheme.Colors.Success)
+                          (CurrentExport.WasPreviewed ? " — đã xem trước, có thể in." : " — có thể in (xem trước không bắt buộc)."), AppTheme.Colors.Success)
             : exportState == WarehouseExportState.Stale ? ("Trạng thái: bản đã xuất là bản CŨ (dữ liệu/thiết lập đã đổi) — cần xuất lại.", WarningText)
             : exportState == WarehouseExportState.Missing ? ("Trạng thái: file đã xuất không còn trên đĩa — cần xuất lại.", WarningText)
             : exportState == WarehouseExportState.ModifiedExternally ? ("Trạng thái: file đã xuất bị sửa bên ngoài — cần xuất lại.", WarningText)
@@ -2758,8 +2766,9 @@ public class WarehouseExportView : UserControl
         btnExport.Enabled = BatchMode
             ? idle && folder.Length > 0 && batchCodesValid && batchErrorTickets == 0
             : idle && _document != null && code.IsValid && folder.Length > 0 && errors == 0;
+        // XEM TRƯỚC BẢN IN và IN PHIẾU độc lập nhau: cả hai chỉ cần bản xuất hiện hành,
+        // in KHÔNG phụ thuộc đã xem trước hay chưa. Nhiều phiếu: in bật khi mọi phiếu đã xuất.
         btnPrintPreview.Enabled = idle && exported;
-        // Nhiều phiếu: bật khi mọi phiếu đã xuất; bấm khi chưa xem trước đủ thì báo phiếu nào còn thiếu.
         btnPrint.Enabled = idle && (BatchMode ? batchAllExported : exported) && printer.Length > 0 && !PrinterFailed;
         btnClear.Enabled = idle && (_document != null || txtTicketCode.Text.Length > 0 || txtGoods.Text.Length > 0);
         btnOpenFolder.Enabled = idle && folder.Length > 0;

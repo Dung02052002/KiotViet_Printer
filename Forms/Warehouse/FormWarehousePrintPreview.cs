@@ -82,7 +82,8 @@ public sealed class FormWarehousePrintPreview : Form
     /// <param name="tickets">
     /// Chế độ nhiều phiếu: thêm PHIẾU TRƯỚC / PHIẾU SAU để xem lần lượt mọi phiếu
     /// ngay trong cửa sổ này. Khi đó <paramref name="printAction"/> là in TẤT CẢ
-    /// phiếu và chỉ bật khi <see cref="WarehousePreviewTickets.CanPrint"/>.
+    /// phiếu và chỉ bật khi <see cref="WarehousePreviewTickets.CanPrint"/>
+    /// (không đòi phải xem đủ mọi phiếu — xem trước là bước tùy chọn).
     /// </param>
     public FormWarehousePrintPreview(WarehousePrintPreview preview, Func<IWin32Window, Task<bool>>? printAction, string printHint,
         WarehousePreviewTickets? tickets = null)
@@ -838,7 +839,10 @@ public sealed class WarehousePreviewTickets
     /// <summary>Dựng bản xem trước của phiếu thứ i; null = không dựng được (đã báo lỗi cho người dùng).</summary>
     public required Func<IWin32Window, int, Task<WarehousePrintPreview?>> Load { get; init; }
 
-    /// <summary>Đã xem trước đủ mọi phiếu (bản hiện hành) — nút IN TẤT CẢ mới bật.</summary>
+    /// <summary>
+    /// Nút IN TẤT CẢ có được bật không (vd máy in hợp lệ). Hỏi lại sau mỗi lần
+    /// chuyển phiếu / in. Không dùng để bắt xem đủ mọi phiếu: xem trước là tùy chọn.
+    /// </summary>
     public required Func<bool> CanPrint { get; init; }
 
     /// <summary>Dòng hướng dẫn cuối cửa sổ (vd "Đã xem 2/4 phiếu...").</summary>
