@@ -733,9 +733,10 @@ public class WarehouseExportView : UserControl
         // Tiêu đề cột xuống dòng khi cột hẹp (không bị cắt "..."); chiều cao tiêu đề theo chữ.
         dgvRows.ColumnHeadersDefaultCellStyle.WrapMode = DataGridViewTriState.True;
         dgvRows.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-        // Tên hàng / trạng thái dài xuống dòng. Chỉ đo các dòng đang hiển thị —
-        // không đo lại toàn bộ danh sách mỗi lần cập nhật.
-        dgvRows.AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.DisplayedCellsExceptHeaders;
+        // Tên hàng / trạng thái dài xuống dòng. Đo MỌI dòng: chế độ "chỉ dòng đang hiển thị"
+        // coi dòng chưa hiện là cao 36px → bảng tưởng đã tới cuối, không cuộn xuống được
+        // các dòng cuối. Lúc đổ dữ liệu tạm tắt đo (xem FillGrid) để không chậm.
+        dgvRows.AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.AllCellsExceptHeaders;
         dgvRows.RowTemplate.MinimumHeight = S(36);
 
         AddColumn("colSourceRow", "Dòng", 5, readOnly: true, minWidth: S(56));
@@ -1476,6 +1477,8 @@ public class WarehouseExportView : UserControl
     {
         _fillingGrid = true;
         dgvRows.SuspendLayout();
+        // Thêm từng dòng mà vẫn bật tự đo thì mỗi lần thêm lại đo — tắt đi, bật lại cuối cùng (đo một lượt).
+        dgvRows.AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.None;
         try
         {
             dgvRows.Rows.Clear();
@@ -1493,6 +1496,7 @@ public class WarehouseExportView : UserControl
         }
         finally
         {
+            dgvRows.AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.AllCellsExceptHeaders;
             dgvRows.ResumeLayout();
             dgvRows.ClearSelection();
             _fillingGrid = false;
