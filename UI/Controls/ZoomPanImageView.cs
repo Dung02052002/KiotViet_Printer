@@ -112,6 +112,20 @@ public sealed class ZoomPanImageView : Control
         TabStop = false;
     }
 
+    /// <summary>
+    /// Lưu sẵn bản thu nhỏ của ảnh theo mức zoom đang xem (chỉ khi zoom &lt; 100%).
+    /// Ảnh lớn (vd trang PDF ~1800×2500) mà co lại bằng bicubic ở MỖI lần vẽ thì
+    /// kéo / đổi cỡ cửa sổ bị giật; có bản lưu sẵn thì mỗi lần vẽ chỉ chép ảnh.
+    /// Chỉ bật cho ảnh KHÔNG bị sửa tại chỗ sau SetImage — ảnh bị sửa trực tiếp
+    /// (vd cọ sửa mask) sẽ hiện bản lưu cũ.
+    /// </summary>
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+    public bool CacheScaledImage { get; set; }
+
+    // Bản thu nhỏ đang lưu và ảnh gốc của nó (xem CacheScaledImage).
+    private Bitmap? _scaled;
+    private Image? _scaledSource;
+
     public bool IsFit => _fit;
 
     // Zoom thực tế đang hiển thị (đã tính cả chế độ Fit).
@@ -119,6 +133,8 @@ public sealed class ZoomPanImageView : Control
 
     public void SetImage(Image? image, bool checkerboard, bool resetView)
     {
+        if (!ReferenceEquals(image, _image))
+            ReleaseScaledImage();
         _image = image;
         _checkerboard = checkerboard;
         _dragging = false;
@@ -412,15 +428,73 @@ public sealed class ZoomPanImageView : Control
             DrawChecker(g, dest);
 
         bool crisp = z >= 1f;
-        g.InterpolationMode = crisp ? InterpolationMode.NearestNeighbor : InterpolationMode.HighQualityBicubic;
-        g.PixelOffsetMode = crisp ? PixelOffsetMode.Half : PixelOffsetMode.HighQuality;
         g.CompositingMode = CompositingMode.SourceOver;
 
-        RectangleF src = new(0f, 0f, _image.Width, _image.Height);
-        g.DrawImage(_image, dest, src, GraphicsUnit.Pixel);
+        if (!crisp && CacheScaledImage)
+        {
+            // Bản thu nhỏ đã dựng sẵn đúng cỡ hiển thị: chép nguyên điểm ảnh, không co lại mỗi lần vẽ.
+            Bitmap scaled = GetScaledImage(_image, z);
+            g.InterpolationMode = InterpolationMode.NearestNeighbor;
+            g.PixelOffsetMode = PixelOffsetMode.Half;
+            g.DrawImage(scaled, new Rectangle((int)Math.Round(ox), (int)Math.Round(oy), scaled.Width, scaled.Height));
+        }
+        else
+        {
+            g.InterpolationMode = crisp ? InterpolationMode.NearestNeighbor : InterpolationMode.HighQualityBicubic;
+            g.PixelOffsetMode = crisp ? PixelOffsetMode.Half : PixelOffsetMode.HighQuality;
+            DrawVisiblePart(g, _image, dest, z);
+        }
 
         if (BrushEnabled && _cursorInside)
             DrawBrushCursor(g, z);
+    }
+
+    /// <summary>
+    /// Chỉ vẽ phần ảnh nằm trong khung. Phóng to (vd 400%) thì ảnh lớn gấp nhiều
+    /// lần khung — vẽ cả ảnh rồi để GDI+ cắt bỏ phần ngoài khung rất chậm.
+    /// </summary>
+    private void DrawVisiblePart(Graphics g, Image image, RectangleF dest, float zoom)
+    {
+        RectangleF visible = RectangleF.Intersect(dest, ClientRectangle);
+        if (visible.Width <= 0 || visible.Height <= 0)
+            return;
+
+        // Cùng phép biến đổi màn hình → ảnh như khi vẽ cả ảnh, nên hình hiển thị không đổi.
+        RectangleF src = new((visible.X - dest.X) / zoom, (visible.Y - dest.Y) / zoom, visible.Width / zoom, visible.Height / zoom);
+        g.DrawImage(image, visible, src, GraphicsUnit.Pixel);
+    }
+
+    /// <summary>Bản thu nhỏ của <paramref name="image"/> ở mức <paramref name="zoom"/>; dựng lại khi ảnh hoặc cỡ hiển thị đổi.</summary>
+    private Bitmap GetScaledImage(Image image, float zoom)
+    {
+        int width = Math.Max(1, (int)Math.Round(image.Width * zoom));
+        int height = Math.Max(1, (int)Math.Round(image.Height * zoom));
+        if (_scaled != null && ReferenceEquals(_scaledSource, image) && _scaled.Width == width && _scaled.Height == height)
+            return _scaled;
+
+        ReleaseScaledImage();
+        Bitmap scaled = new(width, height, System.Drawing.Imaging.PixelFormat.Format32bppPArgb);
+        using (Graphics g = Graphics.FromImage(scaled))
+        using (System.Drawing.Imaging.ImageAttributes edges = new())
+        {
+            g.InterpolationMode = InterpolationMode.HighQualityBicubic;
+            g.PixelOffsetMode = PixelOffsetMode.HighQuality;
+            g.CompositingMode = CompositingMode.SourceCopy;
+            // Lặp gương ở mép: bicubic không kéo màu "ngoài ảnh" vào thành viền mờ quanh ảnh.
+            edges.SetWrapMode(WrapMode.TileFlipXY);
+            g.DrawImage(image, new Rectangle(0, 0, width, height), 0, 0, image.Width, image.Height, GraphicsUnit.Pixel, edges);
+        }
+
+        _scaled = scaled;
+        _scaledSource = image;
+        return scaled;
+    }
+
+    private void ReleaseScaledImage()
+    {
+        _scaled?.Dispose();
+        _scaled = null;
+        _scaledSource = null;
     }
 
     // Vòng tròn cỡ cọ: viền đôi trắng/đen để nhìn rõ trên cả mask đen lẫn mask
@@ -468,7 +542,10 @@ public sealed class ZoomPanImageView : Control
     protected override void Dispose(bool disposing)
     {
         if (disposing)
+        {
             DetachWheelFilter();
+            ReleaseScaledImage();
+        }
         base.Dispose(disposing);
     }
 

@@ -179,6 +179,8 @@ public sealed class FormWarehousePrintPreview : Form
         AddToolButton(btnSingle, "MỘT TRANG", null, 114, () => SetMultiPage(false));
         AddToolButton(btnMulti, "NHIỀU TRANG", null, 124, () => SetMultiPage(true));
 
+        // Ảnh trang PDF không bị sửa sau khi dựng → lưu sẵn bản thu nhỏ, kéo / đổi cỡ cửa sổ không giật.
+        viewPage.CacheScaledImage = true;
         viewPage.ViewChanged += (_, _) => UpdateZoomLabel();
         Controls.Add(viewPage);
 

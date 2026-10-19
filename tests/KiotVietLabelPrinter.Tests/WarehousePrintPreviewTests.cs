@@ -346,14 +346,15 @@ public class WarehousePrintPreviewExcelTests
         Process.GetProcessesByName("EXCEL").Select(p => p.Id).ToHashSet();
 
     /// <summary>
-    /// Không còn tiến trình Excel mới nào. Cho vài giây: khi máy bận (cả bộ
-    /// test chạy song song) tiến trình vừa thoát vẫn có thể còn trong danh
-    /// sách một lúc.
+    /// Không còn tiến trình Excel mới nào. Xem trước trả kết quả TRƯỚC khi Excel
+    /// thoát (ExcelShutdown.Background) nên cho tới 12 giây: phiên chờ Excel tự
+    /// thoát tối đa 5 giây rồi dừng hẳn tiến trình; máy bận (cả bộ test chạy
+    /// song song) thì tiến trình vừa thoát còn trong danh sách thêm một lúc.
     /// </summary>
     private static void AssertNoExcelLeftBehind(HashSet<int> before)
     {
         HashSet<int> extra = new();
-        for (int i = 0; i < 20; i++)
+        for (int i = 0; i < 48; i++)
         {
             extra = ExcelPids();
             extra.ExceptWith(before);
@@ -362,7 +363,22 @@ public class WarehousePrintPreviewExcelTests
             Thread.Sleep(250);
         }
 
-        Assert.Fail("Tiến trình Excel còn lại sau 5 giây: " + string.Join("; ", extra.Select(Describe)));
+        Assert.Fail("Tiến trình Excel còn lại sau 12 giây: " + string.Join("; ", extra.Select(Describe)));
+    }
+
+    [Fact]
+    public async Task ExcelAutomation_BackgroundShutdown_ExcelStillExitsAfterReturning()
+    {
+        if (!Enabled)
+            return;
+
+        HashSet<int> excelBefore = ExcelPids();
+        int pid = await ExcelAutomation.RunAsync(session => session.ProcessId, TimeSpan.FromMinutes(1), "test",
+            WarehouseErrorKind.PreviewFailed, ExcelShutdown.Background);
+
+        Assert.True(pid > 0, "Không xác định được tiến trình Excel của phiên");
+        // Trả kết quả sớm nhưng Excel vẫn phải thoát hẳn ngay sau đó — không chạy ngầm.
+        AssertNoExcelLeftBehind(excelBefore);
     }
 
     [Fact]

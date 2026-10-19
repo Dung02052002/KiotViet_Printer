@@ -133,21 +133,30 @@ public sealed class ExcelSession : IDisposable
         return printerName;
     }
 
+    /// <summary>
+    /// Đóng (không lưu) mọi workbook phiên đã mở — nhả file trên đĩa. Gọi được
+    /// trước Dispose để trả kết quả sớm; Dispose gọi lại cũng không sao.
+    /// </summary>
+    public void CloseWorkbooks()
+    {
+        foreach (dynamic workbook in _openWorkbooks)
+            Try(() => workbook.Close(false), "đóng workbook");
+        _openWorkbooks.Clear();
+    }
+
     public void Dispose()
     {
         if (_disposed)
             return;
         _disposed = true;
 
-        foreach (dynamic workbook in _openWorkbooks)
-            Try(() => workbook.Close(false), "đóng workbook");
+        CloseWorkbooks();
         Try(() => App.Quit(), "thoát Excel");
 
         for (int i = _owned.Count - 1; i >= 0; i--)
             Release(_owned[i]);
         Release(App);
         _owned.Clear();
-        _openWorkbooks.Clear();
 
         // Các đối tượng COM trung gian (vd ws.PageSetup) do dynamic tạo ra chỉ
         // được giải phóng khi GC chạy — chạy ngay để Excel thoát.
@@ -219,6 +228,23 @@ public sealed class ExcelSession : IDisposable
     private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint processId);
 }
 
+/// <summary>Khi nào <see cref="ExcelAutomation.RunAsync{T}"/> báo xong cho người gọi.</summary>
+public enum ExcelShutdown
+{
+    /// <summary>
+    /// Sau khi tiến trình Excel đã thoát hẳn. Dùng cho thao tác cần chắc Excel
+    /// đã xong mọi việc (vd in: lệnh in đã giao hết cho hàng đợi máy in).
+    /// </summary>
+    Wait,
+
+    /// <summary>
+    /// Ngay khi thao tác xong và mọi workbook đã đóng (file trên đĩa đã được
+    /// nhả). Excel thoát mất 2–3 giây — thao tác chỉ đọc (xem trước bản in)
+    /// dùng chế độ này để người dùng không phải chờ phần đó.
+    /// </summary>
+    Background
+}
+
 /// <summary>
 /// Chạy một thao tác Excel trên luồng STA riêng (COM của Excel cần STA), có
 /// giới hạn thời gian: Excel treo (hộp thoại ẩn, máy in lỗi...) thì tiến
@@ -233,8 +259,14 @@ public static class ExcelAutomation
     private static readonly HashSet<int> ActiveProcessIds = new();
     private static int _exitHookInstalled;
 
+    /// <param name="shutdown">
+    /// Khi nào báo xong: <see cref="ExcelShutdown.Wait"/> (mặc định) sau khi Excel
+    /// đã thoát hẳn; <see cref="ExcelShutdown.Background"/> ngay khi thao tác xong
+    /// và workbook đã đóng — Excel thoát tiếp ở nền (vẫn có giới hạn thời gian,
+    /// vẫn bị dừng nếu app thoát giữa chừng).
+    /// </param>
     public static Task<T> RunAsync<T>(Func<ExcelSession, T> work, TimeSpan timeout, string operation,
-        WarehouseErrorKind failureKind)
+        WarehouseErrorKind failureKind, ExcelShutdown shutdown = ExcelShutdown.Wait)
     {
         if (!ExcelSession.IsExcelInstalled())
             throw new WarehouseException(WarehouseErrorKind.ExcelNotAvailable,
@@ -258,9 +290,18 @@ public static class ExcelAutomation
                     registeredPid = session.ProcessId;
                     Register(registeredPid);
                     result = work(session);
+
+                    if (shutdown == ExcelShutdown.Background)
+                    {
+                        // Nhả file trước rồi mới báo xong; Quit + chờ tiến trình thoát (Dispose)
+                        // chạy tiếp trên luồng này, người gọi không phải chờ.
+                        session.CloseWorkbooks();
+                        completion.TrySetResult(result);
+                    }
                 }
 
-                // Chỉ báo xong khi phiên Excel đã đóng hẳn.
+                // ExcelShutdown.Wait: chỉ báo xong khi phiên Excel đã đóng hẳn
+                // (Background đã báo ở trên — lệnh này không làm gì).
                 completion.TrySetResult(result);
             }
             catch (WarehouseException ex)

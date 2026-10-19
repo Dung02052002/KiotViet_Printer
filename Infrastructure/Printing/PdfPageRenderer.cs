@@ -80,9 +80,12 @@ public sealed class PdfPageRenderer : IDisposable
         int width = Math.Max(1, (int)Math.Round(size.Width / 72f * dpi));
         int height = Math.Max(1, (int)Math.Round(size.Height / 72f * dpi));
 
-        Bitmap bitmap = new(width, height, PixelFormat.Format32bppArgb);
+        // PArgb (alpha nhân sẵn) là định dạng GDI+ vẽ nhanh nhất — nhanh hơn Argb nhiều lần
+        // khi phóng / thu ảnh trang lớn trên màn hình. Trang được tô nền trắng đục (alpha 255)
+        // trước khi dựng nên dữ liệu BGRA của PDFium giống hệt ở hai định dạng.
+        Bitmap bitmap = new(width, height, PixelFormat.Format32bppPArgb);
         bitmap.SetResolution(dpi, dpi);
-        BitmapData data = bitmap.LockBits(new Rectangle(0, 0, width, height), ImageLockMode.ReadWrite, PixelFormat.Format32bppArgb);
+        BitmapData data = bitmap.LockBits(new Rectangle(0, 0, width, height), ImageLockMode.ReadWrite, PixelFormat.Format32bppPArgb);
         try
         {
             lock (PdfiumLock)

@@ -152,7 +152,13 @@ tiếng Việt → cảnh báo.
   và không in trực tiếp.
 - Mọi thao tác Excel có giới hạn thời gian (xem trước 2 phút, in 3 phút). Excel
   treo thì đúng tiến trình Excel của phần mềm bị dừng; tiến trình Excel của
-  phiên luôn được đóng hẳn sau mỗi lần xem trước / in.
+  phiên luôn được đóng hẳn sau mỗi lần xem trước / in. Riêng xem trước (chỉ
+  đọc file) hiện kết quả ngay khi xong, Excel thoát tiếp ở nền (mất 2–3 giây)
+  thay vì bắt người dùng chờ; số trang của file mẫu được nhớ lại nên các phiếu
+  sau cùng mẫu / máy in không phải mở mẫu đếm lại.
+- Log ghi thời gian từng bước dựng xem trước (mở phiếu, phân trang, xuất PDF,
+  ngắt trang, số trang mẫu, đo bố cục ô) — máy nào chậm thì đọc log biết chậm
+  ở bước nào.
 
 ## Nhật ký
 
