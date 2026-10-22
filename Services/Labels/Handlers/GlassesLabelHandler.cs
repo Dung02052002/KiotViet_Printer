@@ -6,6 +6,7 @@ namespace KiotVietLabelPrinter.Services.Labels.Handlers;
 /// <summary>
 /// Tem kính: ô "mã nhân viên" trên màn hình in được dùng làm MÃ MÀU — mã vạch
 /// = mã parse từ tên hàng + mã màu (xem GlassesInfoBuilder.BuildBarcode).
+/// Có thể ghi đè giá bán theo lựa chọn trên màn hình in (giống Tem đầy đủ).
 /// </summary>
 public class GlassesLabelHandler : ILabelHandler
 {
@@ -54,6 +55,7 @@ public class GlassesLabelHandler : ILabelHandler
         _printService.Print(
             products,
             label,
-            colorCode: employeeCode);
+            colorCode: employeeCode,
+            priceOverride);
     }
 }

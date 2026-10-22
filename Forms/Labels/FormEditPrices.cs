@@ -7,7 +7,7 @@ using KiotVietLabelPrinter.UI;
 namespace KiotVietLabelPrinter.Forms.Labels;
 
 // Modal "Sửa giá một vài sản phẩm" - mở từ FormMain khi chọn chế độ giá bán
-// tương ứng ở màn hình Tem đầy đủ. Chỉ chỉnh giá trong bộ nhớ, không đụng tới
+// tương ứng ở màn hình Tem đầy đủ / Tem kính. Chỉ chỉnh giá trong bộ nhớ, không đụng tới
 // file Excel nguồn (xem PriceOverride, ExcelService.CopyToBarTenderData).
 public class FormEditPrices : Form
 {

@@ -140,7 +140,7 @@ public class FormPreview : Form
             if (IsDisposed || Disposing || !Visible)
                 return;
 
-            // Phản ánh đúng giá đã chỉnh ở màn hình Tem đầy đủ (nếu có) - chỉ đổi
+            // Phản ánh đúng giá đã chỉnh ở màn hình in (nếu có) - chỉ đổi
             // giá trị hiển thị trên dòng preview, không đụng tới file Excel nguồn.
             if (_priceOverride != null)
             {

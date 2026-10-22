@@ -5,9 +5,12 @@ namespace KiotVietLabelPrinter.Infrastructure.Excel;
 
 public class GlassesExcelService
 {
+    /// <param name="price">Giá ghi vào cột giá bán — giá gốc hoặc giá đã sửa
+    /// trên màn hình in (xem PriceOverride.ResolvePrice).</param>
     public void WriteSingleProduct(
         ProductRow product,
-        string dataFile)
+        string dataFile,
+        double price)
     {
         if (!File.Exists(dataFile))
             throw new FileNotFoundException(dataFile);
@@ -82,7 +85,7 @@ public class GlassesExcelService
         SetCell(row, 4, product.ProductName);
         SetCell(row, 5, product.ProductNameWithAttr);
         SetCell(row, 7, product.Quantity);
-        SetCell(row, 8, product.Price);
+        SetCell(row, 8, price);
 
         //=========================================
         // Save

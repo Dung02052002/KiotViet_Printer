@@ -17,7 +17,8 @@ public class GlassesPrintService
     public void Print(
         List<ProductRow> products,
         LabelDefinition label,
-        string colorCode)
+        string colorCode,
+        PriceOverride? priceOverride = null)
     {
         if (products == null || products.Count == 0)
             throw new Exception("Không có sản phẩm để in.");
@@ -54,7 +55,8 @@ public class GlassesPrintService
             PrintSingle(
                 products[0],
                 label,
-                colorCode);
+                colorCode,
+                priceOverride);
 
             return;
         }
@@ -78,7 +80,8 @@ public class GlassesPrintService
                 PrintSingle(
                     product,
                     label,
-                    colorCode);
+                    colorCode,
+                    priceOverride);
 
                 printedProducts.Add(product);
             }
@@ -108,7 +111,8 @@ public class GlassesPrintService
     private void PrintSingle(
         ProductRow product,
         LabelDefinition label,
-        string colorCode)
+        string colorCode,
+        PriceOverride? priceOverride)
     {
         PrintSequenceGate.Wait();
 
@@ -120,7 +124,8 @@ public class GlassesPrintService
                     colorCode);
 
             // File data chỉ nhận dữ liệu GỐC của mã này từ Excel import (mã
-            // hàng, mã vạch, tên, thuộc tính, số lượng, giá) — không ghi mã đã
+            // hàng, mã vạch, tên, thuộc tính, số lượng, giá — giá có thể đã sửa
+            // trên màn hình in, xem PriceOverride) — không ghi mã đã
             // parse vào, và không đụng cột F (Tên hàng thuộc tính: vừa là chữ
             // hiển thị trên tem vừa là nguồn để parser cắt mã). Mã đã parse,
             // mã vạch và khối thông tin kính đi riêng qua Named Sub-String
@@ -134,7 +139,8 @@ public class GlassesPrintService
             {
                 _excelService.WriteSingleProduct(
                     document.Product,
-                    label.DataFilePath);
+                    label.DataFilePath,
+                    priceOverride?.ResolvePrice(product) ?? product.Price);
             }
             catch (IOException ex)
             {

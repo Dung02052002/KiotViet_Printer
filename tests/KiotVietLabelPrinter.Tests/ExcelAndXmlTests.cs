@@ -114,6 +114,23 @@ public class ExcelAndXmlTests
         }.Select(s => s.ReplaceLineEndings("\n")).ToList());
     }
 
+    // Tem kính: cột Giá bán (I) của file data nhận giá đã sửa trên màn hình in,
+    // mã không bị sửa giữ nguyên giá gốc.
+    [Theory]
+    [InlineData("SP1", "Numeric:77000")]
+    [InlineData("SP2", "Numeric:150000")]
+    public void GlassesWriteSingleProduct_UsesResolvedPrice(string productCode, string expectedPriceCell)
+    {
+        string target = TestData.CreateBarTenderDataTemplate(TestData.NewTempDir(), "data.xls");
+        ProductRow product = new() { ProductCode = productCode, ProductName = "Kính", Quantity = 2, Price = 150000 };
+        PriceOverride price = new() { Mode = PriceOverrideMode.PerProduct };
+        price.ProductOverrides["sp1"] = 77000;
+
+        new GlassesExcelService().WriteSingleProduct(product, target, price.ResolvePrice(product));
+
+        Assert.Equal(expectedPriceCell, TestData.ReadAllCells(target)[1][8]);
+    }
+
     [Fact]
     public void PriceOverride_TryResolve()
     {

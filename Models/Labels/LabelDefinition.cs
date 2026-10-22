@@ -30,6 +30,11 @@ public class LabelDefinition
         set => _handlerType = (value ?? "").Trim().ToUpperInvariant();
     }
 
+    // Màn hình in có cho sửa giá bán không (Tem đầy đủ, Tem kính) — handler
+    // tương ứng phải áp dụng PriceOverride khi ghi file data.
+    [JsonIgnore]
+    public bool SupportsPriceOverride => HandlerType is "FULL" or "GLASSES";
+
     // Có cần nhập mã nhân viên không
     public bool RequiresEmployeeCode { get; set; }
 

@@ -79,7 +79,7 @@ public class ImageToolTests
         Snapshot.Match(new
         {
             FileNames = new[] { "ABC-123", "a/b\\c:d*e?f\"g<h>i|j", "  x  ", "TL12-MẪU 4" }
-                .Select(Code128BarcodeService.ToFileName).ToList(),
+                .Select(name => Code128BarcodeService.ToFileName(name, "")).ToList(),
             Csv = table,
             Items = Code128BarcodeService.ParseLabelTable(table),
             NoHeader = Code128BarcodeService.ParseLabelTable([["A1", "Tên A"], ["B2", "Tên B"]]),

@@ -1,8 +1,9 @@
 namespace KiotVietLabelPrinter.Models.Labels;
 
-// Gói thông tin chỉnh giá bán khi in Tem đầy đủ. Không đụng tới file Excel
-// nguồn - chỉ áp dụng khi ghi dữ liệu ra file data cho BarTender
-// (xem ExcelService.CopyToBarTenderData).
+// Gói thông tin chỉnh giá bán khi in Tem đầy đủ / Tem kính (xem
+// LabelDefinition.SupportsPriceOverride). Không đụng tới file Excel nguồn -
+// chỉ áp dụng khi ghi dữ liệu ra file data cho BarTender
+// (xem ExcelService.CopyToBarTenderData, GlassesPrintService).
 public class PriceOverride
 {
     public PriceOverrideMode Mode { get; set; } = PriceOverrideMode.Keep;
@@ -37,4 +38,8 @@ public class PriceOverride
                 return false;
         }
     }
+
+    /// <summary>Giá sẽ in cho <paramref name="product"/>: giá đã sửa nếu có, ngược lại giá gốc.</summary>
+    public double ResolvePrice(ProductRow product) =>
+        TryResolve(product.ProductCode, out double price) ? price : product.Price;
 }

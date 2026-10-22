@@ -59,8 +59,8 @@ public class FormMain : Form
     private readonly RoundedTextBox txtExcelFile = new();
     private readonly RoundedTextBox txtEmployeeCode = new();
 
-    // Nhập giá bán - chỉ hiện với Tem đầy đủ (HandlerType == "FULL").
-    // Xem ApplyPriceEditMode/UpdatePriceModeUi.
+    // Nhập giá bán - chỉ hiện với loại tem cho sửa giá (Tem đầy đủ, Tem kính -
+    // xem LabelDefinition.SupportsPriceOverride, ApplyPriceEditMode/UpdatePriceModeUi).
     private readonly Label lblPriceMode = new();
     private readonly ComboBox cboPriceMode = new();
     private readonly RoundedTextBox txtUniformPrice = new();
@@ -887,10 +887,8 @@ public class FormMain : Form
         flpActions.Controls.Add(btnPrint);
     }
 
-    // Cùng hàng/toạ độ với "Mã nhân viên" (lblEmployee/txtEmployeeCode): hai
-    // nhóm control này không bao giờ hiện cùng lúc (FULL không dùng mã nhân
-    // viên - xem ApplyEmployeeCodeMode), nên dùng chung chỗ trống đó thay vì
-    // đẩy layout của THAO TÁC/IN TEM xuống.
+    // Toạ độ dọc (Top) ở đây chỉ là mặc định - LayoutOptionRows xếp lại hàng
+    // này ngay dưới hàng "Mã nhân viên"/"Mã màu" nếu hàng đó đang hiện (Tem kính).
     private void BuildPriceModeRow()
     {
         lblPriceMode.Text = "Nhập giá bán";
@@ -949,8 +947,8 @@ public class FormMain : Form
     }
 
     // Hàng riêng ngay dưới hàng giá bán, chỉ hiện với Tem đầy đủ (xem
-    // ApplyPriceEditMode). Không đụng tới control/logic của hàng giá bán ở
-    // trên - đây là control mới, độc lập hoàn toàn.
+    // ApplyPriceEditMode, LayoutOptionRows). Không đụng tới control/logic của
+    // hàng giá bán ở trên - đây là control mới, độc lập hoàn toàn.
     private void BuildNameEditRow()
     {
         btnEditNames.Text = "Sửa tên hàng";
@@ -976,7 +974,7 @@ public class FormMain : Form
     }
     #endregion
 
-    #region Giá bán (Tem đầy đủ)
+    #region Giá bán (Tem đầy đủ, Tem kính)
     private void CboPriceMode_SelectedIndexChanged(object? sender, EventArgs e)
     {
         _priceMode = (PriceOverrideMode)cboPriceMode.SelectedIndex;
@@ -1065,24 +1063,24 @@ public class FormMain : Form
         return true;
     }
 
-    // Gọi mỗi khi vào workspace của một danh mục tem và mỗi khi đổi file Excel
-    // nguồn: chỉ Tem đầy đủ (HandlerType == "FULL") mới hiện các control này,
-    // và các mã sản phẩm đã sửa giá gắn với một file Excel cụ thể nên không
-    // nên giữ lại khi người dùng đổi sang file khác.
+    // Gọi mỗi khi vào workspace của một danh mục tem: chỉ loại tem cho sửa giá
+    // (LabelDefinition.SupportsPriceOverride) mới hiện các control này. Các mã
+    // sản phẩm đã sửa giá gắn với một file Excel cụ thể nên được xoá khi đổi
+    // file (ResetPriceState).
     private void ApplyPriceEditMode(LabelDefinition label)
     {
-        bool isFull = label.HandlerType == "FULL";
+        bool supportsPrice = label.SupportsPriceOverride;
 
-        lblPriceMode.Visible = isFull;
-        cboPriceMode.Visible = isFull;
+        lblPriceMode.Visible = supportsPrice;
+        cboPriceMode.Visible = supportsPrice;
 
         UpdatePriceModeUi();
 
-        // Sửa tên hàng dùng chung điều kiện hiển thị (chỉ Tem đầy đủ) nhưng là
-        // control/state riêng - xem region "Sửa tên hàng (Tem đầy đủ)".
-        btnEditNames.Visible = isFull;
+        // Sửa tên hàng là control/state riêng, chỉ Tem đầy đủ - xem region
+        // "Sửa tên hàng (Tem đầy đủ)".
+        btnEditNames.Visible = label.HandlerType == "FULL";
         UpdateNameEditUi();
-        RepositionActionsSection();
+        LayoutOptionRows();
     }
 
     private void ResetPriceState()
@@ -1101,10 +1099,10 @@ public class FormMain : Form
 
     private void UpdatePriceModeUi()
     {
-        bool isFull = cboPriceMode.Visible;
-        bool isKeep = isFull && _priceMode == PriceOverrideMode.Keep;
-        bool isUniform = isFull && _priceMode == PriceOverrideMode.Uniform;
-        bool isPerProduct = isFull && _priceMode == PriceOverrideMode.PerProduct;
+        bool supportsPrice = cboPriceMode.Visible;
+        bool isKeep = supportsPrice && _priceMode == PriceOverrideMode.Keep;
+        bool isUniform = supportsPrice && _priceMode == PriceOverrideMode.Uniform;
+        bool isPerProduct = supportsPrice && _priceMode == PriceOverrideMode.PerProduct;
 
         // Giữ nguyên giá: hiện ô giá nhưng khoá lại (disable), không cho nhập -
         // chỉ còn dòng chữ mờ (placeholder) nhắc là đang dùng nguyên giá Excel.
@@ -1191,16 +1189,54 @@ public class FormMain : Form
         return new Dictionary<string, string>(_productNameOverrides, StringComparer.OrdinalIgnoreCase);
     }
 
-    // Đẩy phần "THAO TÁC"/IN TEM xuống khi hàng "Sửa tên hàng" đang hiển thị
-    // (chỉ Tem đầy đủ), để không đè lên nút/trạng thái của hàng đó. Gọi lại
-    // mỗi khi đổi danh mục tem (xem ApplyPriceEditMode).
-    private void RepositionActionsSection()
+    // Xếp các hàng tuỳ chọn đang hiện liền nhau theo thứ tự: "Mã nhân viên"/
+    // "Mã màu" → "Nhập giá bán" → "Sửa tên hàng", rồi đẩy phần "THAO TÁC"/IN TEM
+    // xuống dưới hàng cuối. Tem kính hiện cả "Mã màu" lẫn "Nhập giá bán" nên các
+    // hàng không thể cố định toạ độ. Gọi lại mỗi khi đổi danh mục tem (xem
+    // ApplyPriceEditMode).
+    private void LayoutOptionRows()
     {
-        int extra = btnEditNames.Visible ? 52 : 0;
+        const int firstRowTop = 194;
+        const int rowHeight = 52;
 
-        pnlDivider2.Top = 254 + extra;
+        int rowTop = firstRowTop;
+
+        if (txtEmployeeCode.Visible)
+        {
+            PlaceOptionRow(rowTop, pnlWorkspace.Controls["lblEmployee"], pnlWorkspace.Controls["lblEmployeeHint"], txtEmployeeCode);
+            rowTop += rowHeight;
+        }
+
+        if (cboPriceMode.Visible)
+        {
+            PlaceOptionRow(rowTop, lblPriceMode, lblPriceStatus, cboPriceMode, txtUniformPrice, btnEditPrices);
+            rowTop += rowHeight;
+        }
+
+        if (btnEditNames.Visible)
+        {
+            PlaceOptionRow(rowTop, null, lblNameStatus, btnEditNames);
+            rowTop += rowHeight;
+        }
+
+        // Không có hàng nào vẫn giữ chỗ trống một hàng như bố cục gốc.
+        pnlDivider2.Top = Math.Max(rowTop, firstRowTop + rowHeight) + 8;
         lblSectionActionsTitle.Top = pnlDivider2.Top + 20;
         flpActions.Top = lblSectionActionsTitle.Top + 32;
+    }
+
+    // Căn một hàng tuỳ chọn: ô nhập/nút cao 42px nằm sát đỉnh hàng, nhãn và
+    // dòng gợi ý/trạng thái hạ xuống để thẳng hàng giữa với ô nhập.
+    private static void PlaceOptionRow(int rowTop, Control? label, Control? hint, params Control[] inputs)
+    {
+        if (label != null)
+            label.Top = rowTop + 8;
+
+        if (hint != null)
+            hint.Top = rowTop + 14;
+
+        foreach (Control input in inputs)
+            input.Top = rowTop;
     }
     #endregion
 
@@ -1796,11 +1832,11 @@ public class FormMain : Form
             throw new Exception("Cấu hình chưa đầy đủ.");
     }
 
-    // Chỉ Tem đầy đủ mới có chỉnh giá bán - các loại tem khác luôn in bằng
-    // đúng giá trong file Excel (trả về null).
+    // Chỉ loại tem cho sửa giá (Tem đầy đủ, Tem kính) mới có chỉnh giá bán -
+    // các loại tem khác luôn in bằng đúng giá trong file Excel (trả về null).
     private PriceOverride? BuildPriceOverrideOrThrow()
     {
-        if (_selectedLabel!.HandlerType != "FULL")
+        if (!_selectedLabel!.SupportsPriceOverride)
             return null;
 
         switch (_priceMode)

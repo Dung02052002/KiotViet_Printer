@@ -12,10 +12,10 @@
     <!-- Phiên bản hiển thị trong app + ghi log lúc khởi động, để xác nhận
          máy nào đang chạy đúng build nào (xem services/AppInfo.cs). Tăng số
          này mỗi lần phát hành bản mới. -->
-    <Version>2.2.1</Version>
-    <AssemblyVersion>2.2.1.0</AssemblyVersion>
-    <FileVersion>2.2.1.0</FileVersion>
-    <InformationalVersion>2.2.1</InformationalVersion>
+    <Version>2.2.2</Version>
+    <AssemblyVersion>2.2.2.0</AssemblyVersion>
+    <FileVersion>2.2.2.0</FileVersion>
+    <InformationalVersion>2.2.2</InformationalVersion>
   </PropertyGroup>
 
   <!-- Nhúng thời điểm build vào assembly metadata (đọc qua AppInfo). MSBuild
