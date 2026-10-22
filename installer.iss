@@ -1,7 +1,13 @@
-﻿[Setup]
+﻿; Phiên bản do build-installer.bat truyền vào (/DAppVer=...) từ <Version>
+; trong .csproj — chỉ cần sửa một chỗ. Giá trị dưới chỉ dùng khi chạy ISCC tay.
+#ifndef AppVer
+  #define AppVer "2.2.0"
+#endif
+
+[Setup]
 AppId={{8E1A7C3D-2D91-4E37-8B54-123456789ABC}
 AppName=In Tem KiotViet
-AppVersion=2.2.0
+AppVersion={#AppVer}
 AppPublisher=Dung Store
 
 ; Người dùng tự chọn thư mục cài. App ghi config/data/logs cạnh file .exe nên
@@ -15,7 +21,7 @@ ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 
 OutputDir=installer_output
-OutputBaseFilename=InTemKiotViet_V2.2.0_Setup
+OutputBaseFilename=InTemKiotViet_V{#AppVer}_Setup
 
 Compression=lzma
 SolidCompression=yes
@@ -55,7 +61,10 @@ Source: "publish\Data\history.json"; DestDir: "{app}\Data"; Flags: onlyifdoesnte
 Name: "{userdesktop}\In Tem KiotViet"; Filename: "{app}\KiotViet Label Printer Pro V2.exe"; WorkingDir: "{app}"; Tasks: desktopicon
 
 [Run]
-Filename: "{app}\KiotViet Label Printer Pro V2.exe"; Description: "Mở In Tem KiotViet"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\KiotViet Label Printer Pro V2.exe"; Description: "Mở In Tem KiotViet"; Flags: nowait postinstall skipifsilent runasoriginaluser
+; Cập nhật từ trong app (UpdateService chạy setup /SILENT): mở lại app sau
+; khi cài xong, bằng quyền của người dùng chứ không phải quyền admin của setup.
+Filename: "{app}\KiotViet Label Printer Pro V2.exe"; Flags: nowait postinstall skipifnotsilent runasoriginaluser
 
 [Code]
 // ===== Gỡ sạch bản cũ trước khi cài =====

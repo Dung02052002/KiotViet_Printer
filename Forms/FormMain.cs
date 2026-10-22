@@ -3,6 +3,7 @@ using KiotVietLabelPrinter.Forms.Glasses;
 using KiotVietLabelPrinter.Forms.Labels;
 using KiotVietLabelPrinter.Infrastructure.Diagnostics;
 using KiotVietLabelPrinter.Infrastructure.Storage;
+using KiotVietLabelPrinter.Infrastructure.Update;
 using KiotVietLabelPrinter.Models.Labels;
 using KiotVietLabelPrinter.Models;
 using KiotVietLabelPrinter.Services.ImageTools;
@@ -28,6 +29,11 @@ public class FormMain : Form
     private readonly Label lblTitle = new();
     private readonly Label lblSubtitle = new();
     private readonly Label lblVersion = new();
+    private readonly RoundedButton btnUpdate = new();
+
+    // Cập nhật phần mềm — xem region "Cập nhật".
+    private UpdateInfo? _availableUpdate;
+    private bool _updateBusy;
 
     // Home / Category
     private readonly Panel pnlCategory = new();
@@ -208,6 +214,22 @@ public class FormMain : Form
         btnBack.Visible = false;
         btnBack.Click += (_, _) => ShowHome();
         pnlHeader.Controls.Add(btnBack);
+
+        // Luôn hiện ở góc phải dưới header, ngang hàng dòng phiên bản.
+        btnUpdate.Text = "Kiểm tra cập nhật";
+        btnUpdate.Icon = IconGlyphs.Kind.Refresh;
+        btnUpdate.Width = 200;
+        btnUpdate.Height = 36;
+        btnUpdate.Top = 136;
+        btnUpdate.Left = pnlHeader.Width - btnUpdate.Width - 32;
+        btnUpdate.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+        btnUpdate.Variant = ButtonVariant.Ghost;
+        btnUpdate.ContainerColor = AppTheme.Colors.Background;
+        btnUpdate.Font = AppTheme.Fonts.ButtonRegular;
+        btnUpdate.Click += async (_, _) => await RunUpdateFlowAsync(silentIfNone: false);
+        pnlHeader.Controls.Add(btnUpdate);
+        // lblVersion rộng 640px có thể đè lên nút khi cửa sổ hẹp.
+        btnUpdate.BringToFront();
     }
 
     // Very soft, low-contrast blue shapes on the right of the header — just
@@ -1416,7 +1438,137 @@ public class FormMain : Form
 
         if (CheckConfigOnStart())
             ShowHome(); // danh mục tem có thể vừa được thêm / bật trong Cấu hình
+
+        // Kiểm tra bản mới mỗi lần mở; mất mạng / lỗi GitHub thì im lặng.
+        _ = RunUpdateFlowAsync(silentIfNone: true);
     }
+
+    #region Cập nhật
+    /// <param name="silentIfNone">
+    /// true khi tự kiểm tra lúc mở app: không báo "đang là bản mới nhất" và
+    /// không báo lỗi mạng. false khi người dùng bấm nút.
+    /// </param>
+    private async Task RunUpdateFlowAsync(bool silentIfNone)
+    {
+        if (_updateBusy || IsDisposed)
+            return;
+
+        _updateBusy = true;
+        try
+        {
+            if (_availableUpdate == null || silentIfNone)
+            {
+                SetUpdateButton("Đang kiểm tra...", enabled: false);
+                try
+                {
+                    _availableUpdate = await UpdateService.CheckAsync();
+                }
+                catch (Exception ex)
+                {
+                    StartupLog.Error("Kiểm tra cập nhật", ex);
+                    if (!silentIfNone && !IsDisposed)
+                        MessageBox.Show(this, $"Không kiểm tra được bản cập nhật. Hãy kiểm tra kết nối mạng.\n\nChi tiết: {ex.Message}",
+                            "Cập nhật", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+            }
+
+            if (IsDisposed)
+                return;
+
+            if (_availableUpdate is not UpdateInfo update)
+            {
+                if (!silentIfNone)
+                    MessageBox.Show(this, $"Bạn đang dùng phiên bản mới nhất (v{AppInfo.Version}).",
+                        "Cập nhật", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            string notes = string.IsNullOrWhiteSpace(update.Notes) ? "" : $"\n\nNội dung thay đổi:\n{Truncate(update.Notes, 800)}";
+            DialogResult answer = MessageBox.Show(this,
+                $"Đã có phiên bản mới v{update.Version} (bạn đang dùng v{AppInfo.Version}).{notes}\n\n" +
+                "Cập nhật ngay? Phần mềm sẽ tự đóng, cài bản mới rồi mở lại. Cấu hình và lịch sử in được giữ nguyên.",
+                "Có bản cập nhật mới", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+            if (answer != DialogResult.Yes)
+                return;
+
+            if (LabelService.IsPrinting)
+            {
+                MessageBox.Show(this, "Đang có lệnh in chưa xong. Hãy đợi in xong rồi bấm nút cập nhật ở góc trên bên phải.",
+                    "Cập nhật", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            string installer;
+            try
+            {
+                Progress<int> progress = new(p => SetUpdateButton($"Đang tải... {p}%", enabled: false));
+                SetUpdateButton("Đang tải... 0%", enabled: false);
+                installer = await UpdateService.DownloadAsync(update, progress);
+            }
+            catch (Exception ex)
+            {
+                StartupLog.Error("Tải bản cập nhật", ex);
+                if (!IsDisposed)
+                    MessageBox.Show(this, $"Tải bản cập nhật thất bại. Vui lòng thử lại sau.\n\nChi tiết: {ex.Message}",
+                        "Cập nhật", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            try
+            {
+                UpdateService.LaunchInstaller(installer);
+            }
+            catch (System.ComponentModel.Win32Exception ex) when (ex.NativeErrorCode == 1223)
+            {
+                // Người dùng bấm "No" ở hộp thoại quyền quản trị (UAC).
+                StartupLog.Stage("Cập nhật: người dùng huỷ UAC");
+                return;
+            }
+            catch (Exception ex)
+            {
+                StartupLog.Error("Chạy bộ cài cập nhật", ex);
+                MessageBox.Show(this, $"Không chạy được bộ cài:\n{ex.Message}\n\nFile đã tải: {installer}",
+                    "Cập nhật", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            // Thoát để bộ cài ghi đè được file .exe; bộ cài mở lại app khi xong.
+            Application.Exit();
+        }
+        finally
+        {
+            _updateBusy = false;
+            if (!IsDisposed)
+                RefreshUpdateButton();
+        }
+    }
+
+    private void RefreshUpdateButton()
+    {
+        if (_availableUpdate is UpdateInfo update)
+        {
+            SetUpdateButton($"Cập nhật v{update.Version}", enabled: true);
+            btnUpdate.Variant = ButtonVariant.Primary;
+        }
+        else
+        {
+            SetUpdateButton("Kiểm tra cập nhật", enabled: true);
+            btnUpdate.Variant = ButtonVariant.Ghost;
+        }
+    }
+
+    private void SetUpdateButton(string text, bool enabled)
+    {
+        if (IsDisposed)
+            return;
+        btnUpdate.Text = text;
+        btnUpdate.Enabled = enabled;
+    }
+
+    private static string Truncate(string text, int max) =>
+        text.Length <= max ? text : text[..max] + "...";
+    #endregion
 
     protected override void OnFormClosed(FormClosedEventArgs e)
     {

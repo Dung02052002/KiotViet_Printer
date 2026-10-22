@@ -63,8 +63,18 @@ if not defined ISCC (
     exit /b 1
 )
 
-echo Dung ISCC tai: %ISCC%
-"%ISCC%" installer.iss
+rem Lay <Version> tu .csproj de setup cung so phien ban voi app (app so
+rem phien ban nay voi tag GitHub Release khi tu cap nhat).
+set "APP_VER="
+for /f "usebackq delims=" %%V in (`powershell -NoProfile -Command "([xml](Get-Content -Raw 'KiotViet Label Printer Pro V2.csproj')).Project.PropertyGroup.Version | Where-Object { $_ } | Select-Object -First 1"`) do set "APP_VER=%%V"
+if not defined APP_VER (
+    echo LOI: Khong doc duoc ^<Version^> trong .csproj.
+    pause
+    exit /b 1
+)
+
+echo Dung ISCC tai: %ISCC%  ^(phien ban %APP_VER%^)
+"%ISCC%" /DAppVer=%APP_VER% installer.iss
 if errorlevel 1 (
     echo Installer build failed.
     pause
@@ -73,4 +83,9 @@ if errorlevel 1 (
 
 echo.
 echo DONE. File setup nam trong installer_output
+echo.
+echo DE CAC MAY KHAC TU CAP NHAT: vao https://github.com/Dung02052002/KiotViet_Printer/releases/new
+echo   - Tag: v%APP_VER%
+echo   - Keo tha file installer_output\InTemKiotViet_V%APP_VER%_Setup.exe vao muc dinh kem
+echo   - Ghi noi dung thay doi ^(hien cho nguoi dung khi hoi cap nhat^) roi bam Publish release
 pause
