@@ -131,6 +131,18 @@ public class ParserTests
         Snapshot.Match(results);
     }
 
+    // Mũ: mã "MUxxx" nằm trong cụm màu cuối câu; kích thước "kt(D31.5*H10)"
+    // đứng trước không được nhặt nhầm thành mã ("D31", "D28").
+    [Theory]
+    [InlineData("Mũ rộng vành nữ, hình tròn, kt(D31.5*H10)cm(+/-10%), được tết từ vật liệu thực vật, nhãn hiệu PUCINI, mới 100% (BROWN MU011-XC23724 MC)", "MU011")]
+    [InlineData("Mũ rộng vành nữ, hình tròn, kt(D28*H17)cm(+/-10%), được tết từ vật liệu thực vật, nhãn hiệu PUCINI, mới 100% (BROWN MU010-XC23723 MC)", "MU010")]
+    [InlineData("Mũ rộng vành nữ, hình tròn, kt(D31.5*H17)cm(+/-10%), dệt kim từ Polyester, nhãn hiệu PUCINI, mới 100% (BEIGE MU012-CM262007 MC)", "MU012")]
+    public void Parsers_HatCodeIgnoresDimensions(string input, string expected)
+    {
+        Assert.Equal(expected, BarcodeParser.Parse(input, "FB"));
+        Assert.Equal(expected, new GlassesParser().Parse(input).BaseCode);
+    }
+
     [Fact]
     public void BarcodeParser_EdgeInputs()
     {

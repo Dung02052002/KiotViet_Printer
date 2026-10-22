@@ -54,6 +54,9 @@ public static class BarcodeParser
         new(@"\b[A-Za-z]{1,10}[A-Za-z0-9\-]{2,30}\b", RegexOptions.Compiled);
     private static readonly Regex StartsWithDigitRegex = new(@"^\d", RegexOptions.Compiled);
     private static readonly Regex TrailingParenRegex = new(@"(\([^()]+\))\s*$", RegexOptions.Compiled);
+    // Mũ: mã "MUxx" (VD "MU011-XC23724" -> "MU011"), giống MuHatRule bên GlassesParser.
+    private static readonly Regex MuHatRegex =
+        new(@"(?<![A-Za-z0-9])(MU\d+)(?=-[A-Za-z0-9]+(?![A-Za-z0-9\-])|(?![A-Za-z0-9\-]))", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
     private static Regex[] BuildKeywordRegexes()
     {
@@ -128,6 +131,14 @@ public static class BarcodeParser
 {
     if (string.IsNullOrWhiteSpace(text))
         return "";
+
+    // Mũ: mã chỉ nằm trong cụm màu cuối câu, không có keyword đi kèm, nên
+    // bước dò token bên dưới hay nhặt nhầm kích thước đứng trước
+    // ("kt(D31.5*H10)" -> "D31"). Bắt MUxx trước.
+    Match mu = MuHatRegex.Match(text);
+
+    if (mu.Success)
+        return mu.Groups[1].Value.ToUpper();
 
     // Ưu tiên parse sau keyword
     for (int i = 0; i < Keywords.Length; i++)
