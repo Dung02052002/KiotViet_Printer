@@ -980,7 +980,7 @@ public class BarcodeGeneratorView : UserControl
             FilterIndex = 1,
             DefaultExt = "png",
             AddExtension = true,
-            FileName = Code128BarcodeService.ToFileName(_current.Code) + ".png"
+            FileName = Code128BarcodeService.ToFileName(_current.Name, _current.Code) + ".png"
         };
 
         if (dialog.ShowDialog(FindForm()) != DialogResult.OK)
@@ -1264,8 +1264,8 @@ public class BarcodeGeneratorView : UserControl
     {
         Directory.CreateDirectory(folder);
 
-        // Windows không phân biệt hoa/thường trong tên file: "sp1" và "SP1"
-        // sẽ ghi đè nhau — thêm hậu tố _2, _3... vào TÊN FILE (không phải mã).
+        // Nhiều dòng có thể trùng tên hàng (Windows còn không phân biệt
+        // hoa/thường) — thêm hậu tố _2, _3... vào TÊN FILE để không ghi đè nhau.
         HashSet<string> usedNames = new(StringComparer.OrdinalIgnoreCase);
         int saved = 0;
 
@@ -1282,7 +1282,7 @@ public class BarcodeGeneratorView : UserControl
                     continue;
                 }
 
-                string baseName = Code128BarcodeService.ToFileName(code);
+                string baseName = Code128BarcodeService.ToFileName(item.Name, code);
                 string name = baseName;
                 for (int n = 2; !usedNames.Add(name); n++)
                     name = $"{baseName}_{n}";

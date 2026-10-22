@@ -425,16 +425,26 @@ public class Code128BarcodeService
         "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9"
     };
 
+    // Giới hạn độ dài tên file để đường dẫn đầy đủ không vượt MAX_PATH khi
+    // tên hàng quá dài.
+    private const int MaxFileNameLength = 120;
+
     /// <summary>
-    /// Tên file lấy đúng theo mã hàng; chỉ những ký tự Windows cấm trong tên
-    /// file (\ / : * ? " &lt; &gt; |) mới được thay bằng '_'. Nội dung mã vạch
-    /// không bị ảnh hưởng.
+    /// Tên file lấy theo tên hàng; dòng không có tên hàng thì dùng mã hàng.
+    /// Chỉ những ký tự Windows cấm trong tên file (\ / : * ? " &lt; &gt; |)
+    /// mới được thay bằng '_'. Nội dung mã vạch không bị ảnh hưởng.
     /// </summary>
-    public static string ToFileName(string code)
+    public static string ToFileName(string productName, string code)
     {
+        string source = string.Join(' ', productName.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
+        if (source.Length == 0)
+            source = code;
+
         char[] invalid = Path.GetInvalidFileNameChars();
-        string name = new(code.Select(c => invalid.Contains(c) ? '_' : c).ToArray());
-        name = name.TrimEnd('.', ' ');
+        string name = new(source.Select(c => invalid.Contains(c) ? '_' : c).ToArray());
+        if (name.Length > MaxFileNameLength)
+            name = name[..MaxFileNameLength];
+        name = name.Trim().TrimEnd('.', ' ');
 
         if (name.Length == 0)
             name = "_";
