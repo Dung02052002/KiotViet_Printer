@@ -4,6 +4,7 @@ using KiotVietLabelPrinter.Forms;
 using KiotVietLabelPrinter.Infrastructure.BarTender;
 using KiotVietLabelPrinter.Infrastructure.Diagnostics;
 using KiotVietLabelPrinter.Infrastructure.Storage;
+using KiotVietLabelPrinter.Infrastructure.Update;
 using KiotVietLabelPrinter.Services.BackgroundRemoval;
 
 namespace KiotVietLabelPrinter;
@@ -50,8 +51,18 @@ internal static class Program
             return BarTenderSelfTest.Run();
         }
 
+        // Chế độ CLI build-installer.bat gọi để tạo gói cập nhật từng phần.
+        if (UpdatePackageCli.ShouldRun(args))
+        {
+            AttachConsole(AttachParentProcess);
+            return UpdatePackageCli.Run(args);
+        }
+
         StartupLog.Begin();
         StartupLog.Stage("Main");
+
+        // Vừa cập nhật từng phần xong: đợi bản cũ thoát hẳn rồi mới giành mutex.
+        PatchUpdater.WaitForPreviousInstance(args);
 
         // Bộ cài (installer.iss) không dựa vào mutex này: nó tìm tiến trình
         // theo tên .exe rồi tắt hẳn trước khi cài — kể cả tiến trình bị treo.

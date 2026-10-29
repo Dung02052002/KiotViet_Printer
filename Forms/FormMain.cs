@@ -1475,6 +1475,9 @@ public class FormMain : Form
         if (CheckConfigOnStart())
             ShowHome(); // danh mục tem có thể vừa được thêm / bật trong Cấu hình
 
+        // Bản này đã mở lên được → xoá file cũ còn sót của lần cập nhật từng phần trước.
+        _ = Task.Run(() => PatchUpdater.CleanupLeftovers(AppInfo.BaseDirectory));
+
         // Kiểm tra bản mới mỗi lần mở; mất mạng / lỗi GitHub thì im lặng.
         _ = RunUpdateFlowAsync(silentIfNone: true);
     }
@@ -1535,6 +1538,12 @@ public class FormMain : Form
                 return;
             }
 
+            if (await TryPatchAsync(update))
+            {
+                Application.Exit();
+                return;
+            }
+
             string installer;
             try
             {
@@ -1578,6 +1587,41 @@ public class FormMain : Form
             if (!IsDisposed)
                 RefreshUpdateButton();
         }
+    }
+
+    /// <summary>
+    /// Cập nhật từng phần (chỉ tải file đã đổi). false = không dùng được / lỗi:
+    /// thư mục cài giữ nguyên, người gọi tải bộ cài đầy đủ.
+    /// </summary>
+    private async Task<bool> TryPatchAsync(UpdateInfo update)
+    {
+        try
+        {
+            SetUpdateButton("Đang kiểm tra file...", enabled: false);
+            if (await PatchUpdater.PlanAsync(update, AppInfo.BaseDirectory) is not { } plan)
+                return false;
+
+            Progress<int> progress = new(p => SetUpdateButton($"Đang tải... {p}%", enabled: false));
+            await PatchUpdater.DownloadAndApplyAsync(plan, progress);
+        }
+        catch (Exception ex)
+        {
+            StartupLog.Error("Cập nhật từng phần — chuyển sang bộ cài đầy đủ", ex);
+            return false;
+        }
+
+        try
+        {
+            PatchUpdater.Restart();
+        }
+        catch (Exception ex)
+        {
+            // File đã thay xong, chỉ không tự mở lại được.
+            StartupLog.Error("Mở lại app sau khi cập nhật", ex);
+            MessageBox.Show(this, $"Đã cập nhật lên v{update.Version}. Hãy mở lại phần mềm.",
+                "Cập nhật", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+        return true;
     }
 
     private void RefreshUpdateButton()

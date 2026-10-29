@@ -81,11 +81,23 @@ if errorlevel 1 (
     exit /b 1
 )
 
+echo ==== TAO GOI CAP NHAT TUNG PHAN ====
+rem Chay chinh ban vua publish: ghi update-manifest.json + goi _Patch.zip (cac
+rem file khac release moi nhat tren GitHub) vao installer_output. May khach o
+rem dung ban truoc chi tai goi nay thay vi ca bo cai (xem PatchUpdater.cs).
+"publish\%EXE_NAME%" --make-update-package publish installer_output
+if errorlevel 1 (
+    echo LOI: Khong tao duoc goi cap nhat tung phan.
+    pause
+    exit /b 1
+)
+
 echo.
-echo DONE. File setup nam trong installer_output
+echo DONE. File setup + goi cap nhat nam trong installer_output
 echo.
 echo DE CAC MAY KHAC TU CAP NHAT: vao https://github.com/Dung02052002/KiotViet_Printer/releases/new
 echo   - Tag: v%APP_VER%
-echo   - Keo tha file installer_output\InTemKiotViet_V%APP_VER%_Setup.exe vao muc dinh kem
+echo   - Keo tha MOI file trong installer_output vao muc dinh kem:
+echo       InTemKiotViet_V%APP_VER%_Setup.exe, update-manifest.json, InTemKiotViet_V%APP_VER%_Patch.zip ^(neu co^)
 echo   - Ghi noi dung thay doi ^(hien cho nguoi dung khi hoi cap nhat^) roi bam Publish release
 pause

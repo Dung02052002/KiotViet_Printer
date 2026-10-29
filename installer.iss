@@ -1,7 +1,7 @@
 ﻿; Phiên bản do build-installer.bat truyền vào (/DAppVer=...) từ <Version>
 ; trong .csproj — chỉ cần sửa một chỗ. Giá trị dưới chỉ dùng khi chạy ISCC tay.
 #ifndef AppVer
-  #define AppVer "2.2.3"
+  #define AppVer "2.2.4"
 #endif
 
 [Setup]

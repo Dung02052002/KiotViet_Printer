@@ -6,24 +6,31 @@ using Newtonsoft.Json.Linq;
 namespace KiotVietLabelPrinter.Infrastructure.Update;
 
 /// <summary>Một bản phát hành mới hơn bản đang chạy.</summary>
-public sealed record UpdateInfo(Version Version, string Tag, string Notes, string DownloadUrl, string FileName, long Size);
+/// <param name="DownloadUrl">File Setup đầy đủ — luôn có, dùng khi không cập nhật từng phần được.</param>
+/// <param name="ManifestUrl">Manifest + gói cập nhật từng phần (null nếu release không đính kèm, vd bản cũ).</param>
+public sealed record UpdateInfo(
+    Version Version, string Tag, string Notes, string DownloadUrl, string FileName, long Size,
+    string? ManifestUrl = null, string? PatchUrl = null, long PatchSize = 0);
 
 /// <summary>
 /// Tự cập nhật qua GitHub Releases: đọc release mới nhất của repo, so với
-/// <see cref="AppInfo.Version"/>, tải file Setup (.exe đính kèm release) về
-/// thư mục tạm rồi chạy bộ cài ở chế độ im lặng. Bộ cài (installer.iss) tự
-/// tắt app, cài đè giữ nguyên Config/Data và mở lại app sau khi cài xong.
+/// <see cref="AppInfo.Version"/>. Ưu tiên cập nhật từng phần (chỉ tải các
+/// file đã đổi — xem <see cref="PatchUpdater"/>); không được thì tải file
+/// Setup (.exe đính kèm release) về thư mục tạm rồi chạy bộ cài ở chế độ im
+/// lặng. Bộ cài (installer.iss) tự tắt app, cài đè giữ nguyên Config/Data và
+/// mở lại app sau khi cài xong.
 ///
 /// Cách phát hành bản mới: tăng &lt;Version&gt; trong .csproj, chạy
 /// build-installer.bat, tạo Release trên GitHub với tag "v{Version}" và đính
-/// kèm file installer_output\InTemKiotViet_V{Version}_Setup.exe.
+/// kèm MỌI file trong installer_output: Setup .exe, update-manifest.json và
+/// gói _Patch.zip (nếu có).
 /// </summary>
 public static class UpdateService
 {
-    private const string Repo = "Dung02052002/KiotViet_Printer";
+    internal const string Repo = "Dung02052002/KiotViet_Printer";
     private const string LatestReleaseApi = $"https://api.github.com/repos/{Repo}/releases/latest";
 
-    private static readonly HttpClient Http = CreateClient();
+    internal static readonly HttpClient Http = CreateClient();
 
     private static HttpClient CreateClient()
     {
@@ -59,8 +66,12 @@ public static class UpdateService
         if (latest <= current)
             return null;
 
-        JToken? asset = (release["assets"] as JArray)?
-            .FirstOrDefault(a => (a.Value<string>("name") ?? "").EndsWith(".exe", StringComparison.OrdinalIgnoreCase));
+        JArray assets = release["assets"] as JArray ?? new JArray();
+        JToken? FindAsset(Func<string, bool> match) => assets.FirstOrDefault(a => match(a.Value<string>("name") ?? ""));
+
+        JToken? asset = FindAsset(name => name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase));
+        JToken? manifest = FindAsset(name => name.Equals(UpdateManifest.AssetName, StringComparison.OrdinalIgnoreCase));
+        JToken? patch = FindAsset(name => name.EndsWith(UpdateManifest.PatchAssetSuffix, StringComparison.OrdinalIgnoreCase));
         if (asset == null)
         {
             StartupLog.Stage($"Cập nhật: release {tag} không có file .exe đính kèm — bỏ qua");
@@ -73,7 +84,10 @@ public static class UpdateService
             (release.Value<string>("body") ?? "").Trim(),
             asset.Value<string>("browser_download_url") ?? "",
             asset.Value<string>("name") ?? "Setup.exe",
-            asset.Value<long?>("size") ?? 0);
+            asset.Value<long?>("size") ?? 0,
+            manifest?.Value<string>("browser_download_url"),
+            patch?.Value<string>("browser_download_url"),
+            patch?.Value<long?>("size") ?? 0);
     }
 
     /// <summary>Tải file Setup về %TEMP%\InTemKiotViet_Update. progress nhận 0..100.</summary>
@@ -82,12 +96,19 @@ public static class UpdateService
         string folder = Path.Combine(Path.GetTempPath(), "InTemKiotViet_Update");
         Directory.CreateDirectory(folder);
         string target = Path.Combine(folder, update.FileName);
+        await DownloadFileAsync(update.DownloadUrl, target, update.Size, progress, ct).ConfigureAwait(false);
+        return target;
+    }
+
+    /// <summary>Tải về <paramref name="target"/> (ghi ra file tạm, đủ dữ liệu mới đổi tên). progress nhận 0..100.</summary>
+    internal static async Task DownloadFileAsync(string url, string target, long expectedSize, IProgress<int>? progress, CancellationToken ct)
+    {
         string partial = target + ".download";
 
-        using (HttpResponseMessage response = await Http.GetAsync(update.DownloadUrl, HttpCompletionOption.ResponseHeadersRead, ct).ConfigureAwait(false))
+        using (HttpResponseMessage response = await Http.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, ct).ConfigureAwait(false))
         {
             response.EnsureSuccessStatusCode();
-            long total = response.Content.Headers.ContentLength ?? update.Size;
+            long total = response.Content.Headers.ContentLength ?? expectedSize;
 
             await using Stream source = await response.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
             await using FileStream file = new(partial, FileMode.Create, FileAccess.Write, FileShare.None, 81920, useAsync: true);
@@ -117,7 +138,6 @@ public static class UpdateService
         }
 
         File.Move(partial, target, overwrite: true);
-        return target;
     }
 
     /// <summary>
