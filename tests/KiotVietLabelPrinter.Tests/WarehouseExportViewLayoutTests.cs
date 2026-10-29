@@ -93,6 +93,107 @@ public class WarehouseExportViewLayoutTests : IDisposable
     }
 
     /// <summary>
+    /// Rời màn hình (FormMain ẩn view) rồi mở lại — có / không đổi kích thước
+    /// cửa sổ trong lúc ẩn, có / không có dữ liệu, một / nhiều phiếu: bố cục
+    /// phải y như lúc chưa ẩn.
+    /// </summary>
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    [InlineData(true, true)]
+    public void HideThenShow_LayoutUnchanged(bool resizeWhileHidden, bool batch)
+    {
+        RunInMessageLoop(1300, 640, async (form, view) =>
+        {
+            await LoadSample(view, batch, $"hide-{resizeWhileHidden}-{batch}");
+            ScrollableControl scroll = (ScrollableControl)Grid(view).Parent!.Parent!.Parent!;
+            int gridHeight = Grid(view).Height;
+
+            view.Visible = false;
+            await Settle();
+            if (resizeWhileHidden)
+            {
+                form.ClientSize = new Size(876, 540);
+                await Settle();
+                form.ClientSize = new Size(1300, 640);
+                await Settle();
+            }
+            view.Visible = true;
+            await Settle();
+
+            SaveScreenshot(view, $"hide-show-{resizeWhileHidden}-{batch}");
+            AssertLayout(view);
+            Assert.Equal(gridHeight, Grid(view).Height);
+            scroll.AutoScrollPosition = new Point(0, int.MaxValue / 2);
+            await Settle();
+            Assert.True(scroll.RectangleToScreen(scroll.ClientRectangle).Contains(Grid(view).RectangleToScreen(Grid(view).ClientRectangle)),
+                "Mở lại màn hình, cuộn hết trang mà bảng không nằm trọn trong vùng nhìn thấy");
+            AssertLayout(view);
+        });
+    }
+
+    /// <summary>
+    /// Thu nhỏ cửa sổ xuống thanh tác vụ rồi mở lại, hoặc kéo hẹp tới mức nút
+    /// thao tác phải xếp thêm hàng rồi kéo rộng lại: thanh thao tác co về đúng
+    /// chiều cao, bố cục y như trước (trước đây thanh giữ chiều cao lúc hẹp,
+    /// thừa một mảng trống lớn và bóp vùng nội dung).
+    /// </summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void ShrinkThenRestore_LayoutUnchanged(bool minimize)
+    {
+        RunInMessageLoop(1300, 640, async (form, view) =>
+        {
+            await LoadSample(view, batch: true, $"shrink-{minimize}");
+            int gridHeight = Grid(view).Height;
+
+            if (minimize)
+                form.WindowState = FormWindowState.Minimized;
+            else
+                form.ClientSize = new Size(500, 640);
+            await Settle();
+            if (!minimize)
+                AssertActionsFit(view);
+            if (minimize)
+                form.WindowState = FormWindowState.Normal;
+            else
+                form.ClientSize = new Size(1300, 640);
+            await Settle();
+
+            SaveScreenshot(view, $"shrink-restore-{minimize}");
+            AssertLayout(view);
+            AssertActionsFit(view);
+            Assert.Equal(gridHeight, Grid(view).Height);
+        });
+    }
+
+    /// <summary>Thanh thao tác cao vừa đúng các hàng nút: không cắt nút, không thừa khoảng trống.</summary>
+    private static void AssertActionsFit(WarehouseExportView view)
+    {
+        Control footer = Visible(view).OfType<RoundedButton>().Single(b => b.Text == "IN PHIẾU").Parent!.Parent!;
+        Assert.Equal(footer.PreferredSize.Height, footer.Height);
+    }
+
+    private async Task LoadSample(WarehouseExportView view, bool batch, string name)
+    {
+        string template = WarehouseTestData.CreateTemplate(_dir, dataRows: 2, fileName: $"mau-{name}.xlsx");
+        string goods = batch
+            ? WarehouseTestData.CreateGoods(_dir,
+                ["Mã chuyển hàng", "Ghi chú chuyển", "Mã hàng", "Tên hàng", "Số lượng chuyển", "Số lượng nhận"],
+                [
+                    ["TRF023512", "BÌNH TÂN THÙNG 2", "SP3", "Ví nữ Pucini", 5, 5],
+                    ["TRF023510", "BÌNH TÂN THÙNG 1", "SP1", "Túi xách tay nữ Pucini", 3, 3],
+                ], $"hang-{name}.xlsx")
+            : WarehouseTestData.CreateGoods(_dir, ["Mã hàng", "Tên hàng", "Đơn vị tính", "Số lượng chuyển", "Số lượng nhận"],
+                Enumerable.Range(1, 17).Select(i => WarehouseTestData.Line($"SP{i:000}", $"Kính mắt gọng kim loại {i}", i)).ToArray(),
+                $"hang-{name}.xlsx");
+        await view.LoadFilesAsync(template, goods);
+        await Settle();
+    }
+
+    /// <summary>
     /// Lăn chuột để cuộn trang mà con trỏ lướt qua một ô chọn (chưa bấm vào ô
     /// đó): trang cuộn, giá trị ô KHÔNG đổi — không âm thầm đổi phạm vi font /
     /// máy in / khổ giấy.

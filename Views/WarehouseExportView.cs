@@ -383,7 +383,12 @@ public class WarehouseExportView : UserControl
         pnlCard.Controls.Add(BuildFooter());
 
         pnlScroll.ClientSizeChanged += (_, _) => ApplyResponsiveLayout();
-        tlpFooter.SizeChanged += (_, _) => ApplyResponsiveLayout();
+        // Xếp nút TRƯỚC khi card dock thanh thao tác + vùng cuộn (sự kiện Layout chạy
+        // trước bộ dàn trang): card đo thanh thao tác theo số hàng nút mới. Xếp lại
+        // sau đó (vd trong SizeChanged của thanh) thì card không đo lại — thanh giữ
+        // chiều cao cũ: nút bị cắt, hoặc thừa khoảng trống lớn và bóp vùng nội dung
+        // (rõ nhất khi thu nhỏ cửa sổ rồi mở lại: 7 nút xếp thành 7 hàng lúc 0×0).
+        pnlCard.Layout += (_, _) => ArrangeActions(pnlCard.DisplayRectangle.Width - tlpFooter.Padding.Horizontal);
         RouteWheelToPage();
 
         ResumeLayout(true);
@@ -845,10 +850,10 @@ public class WarehouseExportView : UserControl
 
     #region Bố cục co giãn
     /// <summary>
-    /// Những gì phụ thuộc kích thước cửa sổ: xếp máy in / font cạnh nhau hay
+    /// Những gì phụ thuộc kích thước vùng cuộn: xếp máy in / font cạnh nhau hay
     /// chồng lên nhau, 2 nút thiết lập in cùng dòng với ô lề hay xuống dòng,
-    /// số nút thao tác mỗi hàng, và chiều cao bảng. Chỉ đổi khi thật sự cần
-    /// (tránh dàn trang lại liên tục).
+    /// và chiều cao bảng (số nút thao tác mỗi hàng: xem <see cref="ArrangeActions"/>).
+    /// Chỉ đổi khi thật sự cần (tránh dàn trang lại liên tục).
     /// </summary>
     private void ApplyResponsiveLayout()
     {
@@ -869,7 +874,6 @@ public class WarehouseExportView : UserControl
             SetWrapWidth(lblPageInfo, contentWidth);
             SetWrapWidth(lblPrinterStatus, sideBySide ? (int)(contentWidth * PrinterColumnPercent / 100f) - secPrinter.Margin.Horizontal : contentWidth);
             SetPageButtonsInline(contentWidth >= flpMargins.PreferredSize.Width + flpPageButtons.PreferredSize.Width + S(ColumnGap * 2));
-            ArrangeActions(tlpFooter.ClientSize.Width - tlpFooter.Padding.Horizontal);
             dgvRows.Height = GridHeight();
         }
         finally
@@ -939,9 +943,16 @@ public class WarehouseExportView : UserControl
         tlpPageActions.SetCellPosition(flpPageButtons, new TableLayoutPanelCellPosition(inline ? 1 : 0, inline ? 0 : 1));
     }
 
-    /// <summary>Số nút thao tác mỗi hàng = bao nhiêu nút vừa mà chữ không bị cắt.</summary>
+    /// <summary>
+    /// Số nút thao tác mỗi hàng = bao nhiêu nút vừa mà chữ không bị cắt. Gọi
+    /// từ sự kiện Layout của card (xem BuildUi), không gọi giữa lượt dàn trang.
+    /// </summary>
     private void ArrangeActions(int width)
     {
+        // Cửa sổ thu nhỏ xuống thanh tác vụ (card 0×0): giữ nguyên cách xếp hiện tại.
+        if (width <= 0)
+            return;
+
         RoundedButton[] actions = Actions;
         int gap = S(ColumnGap);
         int minButton = actions.Max(b => b.GetContentWidth(S(14)));
