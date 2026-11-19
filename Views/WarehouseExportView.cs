@@ -1087,7 +1087,27 @@ public class WarehouseExportView : UserControl
     /// <summary>Mã phiếu đang hiển thị: chế độ nhiều phiếu lấy từ mã chuyển hàng của phiếu đang chọn.</summary>
     private TicketCodeResult CurrentTicketCode => _batchTicket != null
         ? _batchTicket.TicketCode(txtPrefix.Text)
-        : WarehouseTicketCodeService.Normalize(txtTicketCode.Text, txtPrefix.Text);
+        : _singleTransferCode != null
+            ? WarehouseTicketCodeService.FromTransferCode(_singleTransferCode, txtPrefix.Text)
+            : WarehouseTicketCodeService.Normalize(txtTicketCode.Text, txtPrefix.Text);
+
+    /// <summary>
+    /// Mã chuyển hàng của file chỉ có MỘT phiếu chuyển (đổi được sang mã phiếu xuất):
+    /// mã phiếu lấy thẳng từ đây, ô nhập mã bị khóa — không bắt người dùng gõ lại.
+    /// null: nhập mã tay như cũ.
+    /// </summary>
+    private string? _singleTransferCode;
+
+    /// <summary>Đặt / bỏ mã phiếu lấy từ mã chuyển hàng của file một phiếu.</summary>
+    private void SetSingleTransferCode(string? transfer)
+    {
+        bool wasAuto = _singleTransferCode != null;
+        _singleTransferCode = transfer;
+        if (transfer != null)
+            txtTicketCode.Text = WarehouseTicketCodeService.FromTransferCode(transfer, "").Code!;
+        else if (wasAuto)
+            txtTicketCode.Text = ""; // mã tự điền của file trước — không giữ lại cho file mới
+    }
 
     private void OnTicketInputChanged()
     {
@@ -1105,6 +1125,7 @@ public class WarehouseExportView : UserControl
     private void SetDocuments(WarehouseDocument? single, List<WarehouseBatchTicket>? batch)
     {
         _singleExport.Reset();
+        SetSingleTransferCode(null);
         _batch = batch;
         _batchTicket = batch?[0];
         _document = _batchTicket?.Document ?? single;
@@ -1444,11 +1465,12 @@ public class WarehouseExportView : UserControl
             SetDocuments(loaded, batch);
             _layout = loaded.Layout;
 
-            // File chỉ có MỘT phiếu chuyển: điền sẵn mã phiếu từ mã chuyển hàng (không đè mã người dùng đã gõ).
-            if (batch == null && txtTicketCode.Text.Trim().Length == 0 &&
+            // File chỉ có MỘT phiếu chuyển: mã phiếu lấy luôn từ mã chuyển hàng (thay mã cũ
+            // trong ô, kể cả mã gõ tay) — không cần nhập nữa.
+            if (batch == null &&
                 WarehouseDocumentService.SingleTransferCode(loaded.Goods) is { } transfer &&
-                WarehouseTicketCodeService.FromTransferCode(transfer, "") is { IsValid: true } body)
-                txtTicketCode.Text = body.Code!;
+                WarehouseTicketCodeService.FromTransferCode(transfer, "").IsValid)
+                SetSingleTransferCode(transfer);
 
             // File mẫu vừa được đọc lại; nếu thiết lập in của nó đã khác lần đọc trước
             // (mẫu bị sửa bên ngoài) thì phần "chỉ đổi mục khác mẫu" đang so với số
@@ -1965,7 +1987,7 @@ public class WarehouseExportView : UserControl
 
     #region Kiểm tra / xuất / in
     private WarehouseValidationReport BuildReport() =>
-        _documentService.Validate(txtTicketCode.Text, txtPrefix.Text, SelectedDocumentDate, _document, txtOutput.Text.Trim(),
+        _documentService.Validate(CurrentTicketCode, SelectedDocumentDate, _document, txtOutput.Text.Trim(),
             CurrentFontSettings(), CurrentPageSettings());
 
     private void ValidateAndShow()
@@ -2679,7 +2701,9 @@ public class WarehouseExportView : UserControl
         }
         else
         {
-            lblFullCode.Text = code.IsValid ? $"Mã phiếu hoàn chỉnh: {code.Code}" : (txtTicketCode.Text.Length == 0 ? "Mã phiếu hoàn chỉnh: —" : "⚠ " + code.Error);
+            lblFullCode.Text = code.IsValid
+                ? $"Mã phiếu hoàn chỉnh: {code.Code}" + (_singleTransferCode != null ? $" (lấy từ mã chuyển {_singleTransferCode})" : "")
+                :(txtTicketCode.Text.Length == 0 ? "Mã phiếu hoàn chỉnh: —" : "⚠ " + code.Error);
             lblFullCode.ForeColor = code.IsValid || txtTicketCode.Text.Length == 0 ? AppTheme.Colors.TextPrimary : AppTheme.Colors.Danger;
         }
 
@@ -2770,7 +2794,8 @@ public class WarehouseExportView : UserControl
         btnCheckPrinter.Enabled = idle && printer.Length > 0 && _printerState != PrinterState.Checking;
         cboScope.Enabled = idle;
         txtPrefix.Enabled = idle;
-        txtTicketCode.Enabled = idle && !BatchMode; // nhiều phiếu: mã lấy từ cột Mã chuyển hàng
+        // Mã lấy từ cột Mã chuyển hàng (nhiều phiếu, hoặc file một phiếu có mã chuyển) — không cho gõ.
+        txtTicketCode.Enabled = idle && !BatchMode && _singleTransferCode == null;
         cboBatchTicket.Enabled = idle;
         // Mã (theo tiền tố), số dòng lỗi, đã xuất / đã xem trước của từng phiếu trong ô chọn phiếu.
         RefreshBatchItems();
